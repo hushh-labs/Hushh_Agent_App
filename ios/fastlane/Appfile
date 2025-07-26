@@ -1,0 +1,5 @@
+app_identifier("com.yourcompany.yourapp")    # Replace with your actual Bundle ID
+apple_id("you@example.com")                  # Your Apple ID (login email)
+
+team_id("ABC123XYZ")                         # App Store Connect Team ID
+team_name("Your Company, Inc.")              # Optional but recommended
