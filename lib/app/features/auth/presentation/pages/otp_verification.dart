@@ -7,6 +7,7 @@ import '../components/otp_heading_section.dart';
 import '../components/otp_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../../domain/enum.dart';
+import '../../../../../shared/core/routing/routes.dart';
 
 class OtpVerificationPageArgs {
   final String emailOrPhone;
@@ -70,7 +71,10 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         listener: (context, state) {
           if (state is OtpVerifiedState) {
             // Navigate to home/dashboard after successful verification
-            Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              AppRoutes.home, 
+              (route) => false,
+            );
           } else if (state is OtpVerificationFailureState) {
             // Show error message
             ScaffoldMessenger.of(context).showSnackBar(

@@ -1,20 +1,15 @@
 // Firestore collections and subcollections constants
 class FirestoreCollections {
   // Main collections
-  static const String users = 'HushUsers';
+  static const String users = 'HushhAgents';
   static const String auth = 'auth';
   static const String profiles = 'profiles';
   static const String settings = 'settings';
   static const String notifications = 'notifications';
   static const String messages = 'messages';
   static const String chats = 'chats';
-  static const String posts = 'posts';
-  static const String comments = 'comments';
-  static const String likes = 'likes';
-  static const String follows = 'follows';
-  static const String reports = 'reports';
-  static const String analytics = 'analytics';
-  static const String logs = 'logs';
+  static const String agentcategories = 'AgentCategories';
+  static const String BrandDetails = 'BrandDetails';
 
   // Subcollections
   static const String userPosts = 'posts';
@@ -49,14 +44,14 @@ class FirestoreCollections {
 class FirestoreFields {
   // Common fields
   static const String id = 'id';
-  static const String userId = 'userId';
+  static const String userId = 'agentId';
   static const String createdAt = 'createdAt';
   static const String updatedAt = 'updatedAt';
   static const String deletedAt = 'deletedAt';
   static const String isActive = 'isActive';
   static const String isDeleted = 'isDeleted';
 
-  // User fields
+  // Agent fields
   static const String email = 'email';
   static const String name = 'name';
   static const String firstName = 'firstName';
@@ -92,21 +87,6 @@ class FirestoreFields {
   static const String passwordResetToken = 'passwordResetToken';
   static const String passwordResetExpires = 'passwordResetExpires';
 
-  // Post fields
-  static const String postTitle = 'title';
-  static const String content = 'content';
-  static const String mediaUrls = 'mediaUrls';
-  static const String mediaType = 'mediaType';
-  static const String tags = 'tags';
-  static const String category = 'category';
-  static const String postLocation = 'location';
-  static const String isPublic = 'isPublic';
-  static const String postIsEdited = 'isEdited';
-  static const String postEditedAt = 'editedAt';
-  static const String postLikeCount = 'likeCount';
-  static const String commentCount = 'commentCount';
-  static const String shareCount = 'shareCount';
-  static const String viewCount = 'viewCount';
 
   // Comment fields
   static const String postId = 'postId';

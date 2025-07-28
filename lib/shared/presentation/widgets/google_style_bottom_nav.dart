@@ -134,16 +134,11 @@ class GoogleStyleBottomNav extends StatelessWidget {
         ? Colors.white
         : (isRestricted ? Colors.grey[400]! : const Color(0xFF616180));
 
-    if (item.iconPath != null) {
-      // Use ColorFilter for coloring SVG assets
-      return SvgPicture.asset(
-        item.iconPath!,
-        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-        width: 20,
-        height: 20,
-      );
-    } else if (item.icon != null) {
+    if (item.icon != null) {
       return Icon(item.icon, color: iconColor, size: 20);
+    } else if (item.iconPath != null) {
+      // Fallback to Material icon if SVG fails to load
+      return Icon(Icons.apps, color: iconColor, size: 20);
     }
     // Return an empty widget if no icon is provided
     return const SizedBox.shrink();

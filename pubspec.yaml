@@ -182,6 +182,7 @@ flutter:
     - assets/fonts/
     - assets/splash-anim.json
     - assets/splash.gif
+    - assets/app-logo.png
   
   
   fonts:

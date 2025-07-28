@@ -45,5 +45,37 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Firebase Configuration -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>REVERSED_CLIENT_ID</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.53407187172-a77f9f5ee0e15396b32cf1b695da31</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>FIREBASE_PHONE_AUTH</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app-1-53407187172-ios-1bb8e3e3b0b6f9c2b32cf1</string>
+			</array>
+		</dict>
+	</array>
+	
+	<!-- Firebase Auth Phone Number -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	
+	<!-- Allow HTTP traffic for development -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

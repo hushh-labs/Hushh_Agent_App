@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../entities/user.dart' as domain;
 import '../entities/agent_card.dart';
 
 /// Abstract repository interface for authentication operations
@@ -13,10 +12,16 @@ abstract class AuthRepository {
   /// Sign up with email and password
   Future<UserCredential> signUpWithEmailAndPassword(String email, String password);
   
+  /// Send phone OTP
+  Future<void> sendPhoneOtp(String phoneNumber, {Function(String phoneNumber)? onOtpSent});
+  
   /// Sign in with phone number
   Future<void> signInWithPhoneNumber(String phoneNumber);
   
-  /// Verify OTP for phone authentication
+  /// Verify phone OTP using stored verification ID
+  Future<UserCredential> verifyPhoneOtp(String phoneNumber, String otp);
+  
+  /// Verify OTP for phone authentication with explicit verification ID
   Future<UserCredential> verifyOTP(String verificationId, String otp);
   
   /// Sign in with Google

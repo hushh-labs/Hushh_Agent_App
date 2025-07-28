@@ -1,4 +1,4 @@
-class AppRoutes {
+class LegacyAppRoutes {
   static const String home = '/';
   static const String auth = '/auth';
   static const String userGuide = '/user-guide';

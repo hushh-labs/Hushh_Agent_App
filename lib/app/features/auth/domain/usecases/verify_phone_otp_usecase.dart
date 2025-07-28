@@ -4,12 +4,13 @@ import 'package:hushh_agent_app/shared/domain/usecases/base_usecase.dart';
 import '../repositories/auth_repository.dart';
 
 class VerifyPhoneOtpParams {
-  final String verificationId;
+  final String phoneNumber;
   final String otp;
 
-  VerifyPhoneOtpParams({required this.verificationId, required this.otp});
+  VerifyPhoneOtpParams({required this.phoneNumber, required this.otp});
 }
 
+// Updated to use phoneNumber instead of verificationId
 class VerifyPhoneOtpUseCase
     implements UseCase<firebase_auth.UserCredential, VerifyPhoneOtpParams> {
   final AuthRepository _authRepository;
@@ -21,8 +22,8 @@ class VerifyPhoneOtpUseCase
     VerifyPhoneOtpParams params,
   ) async {
     try {
-      final result = await _authRepository.verifyOTP(
-        params.verificationId,
+      final result = await _authRepository.verifyPhoneOtp(
+        params.phoneNumber,
         params.otp,
       );
       return Success(result);

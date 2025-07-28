@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/features/splash/presentation/pages/splash_page_with_bloc.dart';
 import '../../../app/features/splash/presentation/bloc/splash_bloc.dart';
 import '../../../app/features/splash/domain/dependency/splash_injection.dart';
-import '../../../app/features/auth/presentation/pages/auth.dart';
 import '../../../app/features/auth/presentation/pages/main_auth_selection.dart';
 import '../../../app/features/auth/presentation/pages/otp_verification.dart';
 import '../../../app/features/auth/domain/enum.dart';
@@ -16,23 +15,17 @@ import '../../../app/features/auth/presentation/bloc/auth_bloc.dart';
 
 class AppRoutes {
     
-    // intial routes ....
-
+    // Initial routes
     static const String initial = '/';
     static const String splash = '/splash';
 
-    // auth part ...
+    // Auth routes
     static const String mainAuth = '/mainAuth';
     static const String otpVerification = '/otpVerification';
     
-    // home part ...
+    // Home routes
     static const String home = '/home';
-
-    
-     
 }
-
-
 
 class NavigationManager {
        static final Map<String, WidgetBuilder> routes = {

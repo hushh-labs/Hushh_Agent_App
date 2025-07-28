@@ -2,13 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
-import '../../domain/entities/initialization_result.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../bloc/splash_bloc.dart';
 import '../bloc/splash_event.dart';
 import '../bloc/splash_state.dart';
 import '../../../../../shared/core/routing/routes.dart';
 
 /// Splash screen with complete Clean Architecture and BLoC implementation
+/// Now leverages HomeBloc for routing decisions
 class SplashPageWithBloc extends StatefulWidget {
   const SplashPageWithBloc({Key? key}) : super(key: key);
 
@@ -20,7 +21,7 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   bool _animationCompleted = false;
-  SplashState? _pendingNavigationState;
+  bool _initializationCompleted = false;
 
   @override
   void initState() {
@@ -36,21 +37,8 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed && !_animationCompleted) {
         _animationCompleted = true;
-        // Notify BLoC that animation is complete
-        context.read<SplashBloc>().add(const SplashAnimationCompleteEvent());
-        
-        // Check if there's a pending navigation state
-        if (_pendingNavigationState != null) {
-          _handleNavigationForState(_pendingNavigationState!);
-          _pendingNavigationState = null;
-        } else {
-          // Fallback: if no specific state, navigate to auth after a delay
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted && _pendingNavigationState == null) {
-              _navigateBasedOnAction(context, NextAction.navigateToAuth);
-            }
-          });
-        }
+        // Check if we can proceed with routing
+        _checkForRouting();
       }
     });
 
@@ -59,7 +47,6 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
       context.read<SplashBloc>().add(const SplashInitializeEvent());
       _animationController.forward();
     });
-    
   }
 
   @override
@@ -85,46 +72,55 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
 
   /// Handle state changes for navigation and side effects
   void _handleStateChanges(BuildContext context, SplashState state) {
-    if (state is SplashNavigatingState) {
-      _navigateBasedOnAction(context, state.nextAction);
-    } else if (state is SplashInitializationCompleteState) {
-      // Wait for animation to complete before navigating
-      if (_animationCompleted) {
-        _navigateBasedOnAction(context, state.nextAction);
-      } else {
-        _pendingNavigationState = state;
-      }
-    } else if (state is SplashNoAgentState) {
-      // No agent found, navigate to auth after animation completes
-      if (_animationCompleted) {
-        _navigateBasedOnAction(context, NextAction.navigateToAuth);
-      } else {
-        _pendingNavigationState = state;
-      }
-    } else if (state is SplashInitializationErrorState) {
-      // On error, navigate to auth after animation completes (for demo purposes)
-      if (_animationCompleted) {
-        _navigateBasedOnAction(context, NextAction.navigateToAuth);
-      } else {
-        _pendingNavigationState = state;
-      }
+    if (state is SplashInitializationCompleteState || 
+        state is SplashNoAgentState || 
+        state is SplashInitializationErrorState) {
+      _initializationCompleted = true;
+      _checkForRouting();
     }
   }
 
-  /// Handle navigation for a specific state
-  void _handleNavigationForState(SplashState state) {
-    if (state is SplashInitializationCompleteState) {
-      _navigateBasedOnAction(context, state.nextAction);
-    } else if (state is SplashNoAgentState || state is SplashInitializationErrorState) {
-      _navigateBasedOnAction(context, NextAction.navigateToAuth);
+  /// Check if both animation and initialization are complete, then route
+  void _checkForRouting() {
+    if (_animationCompleted && _initializationCompleted && mounted) {
+      _routeBasedOnAuthentication();
     }
+  }
+
+  /// Route based on authentication status using HomeBloc logic
+  void _routeBasedOnAuthentication() {
+    // Add slight delay for smooth UX
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+
+      // Check Firebase Auth state directly
+      final currentUser = FirebaseAuth.instance.currentUser;
+      
+      if (currentUser != null) {
+        // User is authenticated, navigate to home
+        debugPrint('🏠 → User authenticated, navigating to Home Dashboard');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.home,
+          (route) => false,
+        );
+      } else {
+        // User not authenticated, navigate to auth
+        debugPrint('🔐 → User not authenticated, navigating to Authentication');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.mainAuth,
+          (route) => false,
+        );
+      }
+    });
   }
 
   /// Build the UI based on current state
   Widget _buildBody(BuildContext context, SplashState state) {
     return Stack(
       children: [
-        // Main content - Lottie animation (same as original)
+        // Main content - Lottie animation
         Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -173,7 +169,7 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
 
   /// Build loading indicator with progress and message
   Widget _buildLoadingIndicator(SplashState state) {
-    String message = 'Initializing...';
+    String message = 'Initializing Hushh Agent...';
     double progress = 0.0;
 
     if (state is SplashInitializingState) {
@@ -260,83 +256,38 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
               ),
               const SizedBox(height: 24),
               
-              if (state.canRetry)
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<SplashBloc>().add(
-                      const SplashRetryInitializationEvent(),
-                    );
-                  },
-                  child: const Text('Retry'),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (state.canRetry)
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<SplashBloc>().add(
+                          const SplashRetryInitializationEvent(),
+                        );
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Force navigate to auth on error
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        AppRoutes.mainAuth,
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                    ),
+                    child: const Text('Continue'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  /// Navigate based on the next action determined by business logic
-  void _navigateBasedOnAction(BuildContext context, NextAction nextAction) {
-    // Add slight delay for smooth UX
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
-
-      switch (nextAction) {
-        case NextAction.navigateToAuth:
-          debugPrint('🔐 → Navigating to Authentication');
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.mainAuth,
-            (route) => false,
-          );
-          break;
-          
-        case NextAction.navigateToOnboarding:
-          debugPrint('📚 → Navigating to Onboarding');
-          // For now, navigate to auth as onboarding is not implemented yet
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.mainAuth,
-            (route) => false,
-          );
-          break;
-          
-        case NextAction.navigateToBusinessSetup:
-          debugPrint('🏢 → Navigating to Business Setup');
-          // For now, navigate to auth as business setup is not implemented yet
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.mainAuth,
-            (route) => false,
-          );
-          break;
-          
-        case NextAction.navigateToVerification:
-          debugPrint('⏳ → Navigating to Verification Status');
-          // For now, navigate to auth as verification is not implemented yet
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.mainAuth,
-            (route) => false,
-          );
-          break;
-          
-        case NextAction.navigateToDashboard:
-          debugPrint('📊 → Navigating to Agent Dashboard');
-          // Navigate to home which contains the dashboard
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.home,
-            (route) => false,
-          );
-          break;
-          
-        case NextAction.showError:
-          debugPrint('❌ → Showing Error State');
-          // Error is already handled in the UI
-          break;
-      }
-    });
   }
 } 

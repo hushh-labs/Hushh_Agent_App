@@ -1,186 +1,193 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../domain/enum.dart';
-
-import '../bloc/auth_bloc.dart';
-import '../../di/auth_injection.dart';
 import 'auth.dart';
+import '../../domain/enum.dart';
+import '../../../../../shared/core/utils/screen_utils.dart';
+import '../../di/auth_injection.dart' as auth_di;
+import '../bloc/auth_bloc.dart';
 
-class MainAuthSelectionPage extends StatelessWidget {
+class MainAuthSelectionPage extends StatefulWidget {
   const MainAuthSelectionPage({super.key});
+
+  @override
+  State<MainAuthSelectionPage> createState() => _MainAuthSelectionPageState();
+}
+
+class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
+  final List<Map<String, dynamic>> socialMethods = [
+    {
+      'type': 'Phone',
+      'icon': Icons.phone,
+      'text': 'Continue with Phone',
+    },
+    {
+      'type': 'Email',
+      'icon': Icons.email,
+      'text': 'Continue with Email',
+    },
+    {
+      'type': 'Guest', 
+      'icon': Icons.person_outline, 
+      'text': 'Continue as Guest'
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Material(
-        child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE54D60), // Pink/Red
-              Color(0xFFA342FF), // Purple
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-                // Hushh Agent Logo/Icon
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'S',
-                      style: TextStyle(
-                        fontSize: 60,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                // App Title
-                const Text(
-                  'Hushh Agent',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Subtitle
-                const Text(
-                  'Unlock the power of your data',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const Spacer(flex: 3),
-                // Authentication Options
-                Column(
-                  children: [
-                    _buildAuthButton(
-                      context,
-                      'Continue With Phone',
-                      Icons.phone,
-                      () => _navigateToAuth(context, LoginMode.phone),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildAuthButton(
-                      context,
-                      'Continue With Email',
-                      Icons.email,
-                      () => _navigateToAuth(context, LoginMode.email),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildAuthButton(
-                      context,
-                      'Continue With Guest',
-                      Icons.person,
-                      () => _navigateToGuest(context),
-                    ),
-                  ],
-                ),
-                const Spacer(flex: 1),
-                // Terms of Service
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
                     children: [
-                      const TextSpan(text: 'By entering information, I agree to Hushh\'s '),
-                      TextSpan(
-                        text: 'Terms of Service',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: Colors.white,
+                      const SizedBox(height: 8),
+                      Container(
+                        height: context.heightPercent(75),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomLeft,
+                            colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Image.asset(
+                                        'assets/app-logo.png',
+                                        width: context.widthPercent(33),
+                                        fit: BoxFit.contain,
+                                        height: context.widthPercent(33) * 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Hushh Agent 🤫',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            letterSpacing: -1,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Unlock the power of your data',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.8,
+                                            ),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Column(
+                                children: List.generate(
+                                  socialMethods.length,
+                                  (index) =>
+                                      SocialButton(
+                                            text: socialMethods[index]['text']!,
+                                            icon: socialMethods[index]['icon']!,
+                                            onTap: () {
+                                              // Handle button tap based on type
+                                              if (socialMethods[index]['type'] ==
+                                                  'Phone') {
+                                                _showAuthBottomSheet(
+                                                  context,
+                                                  LoginMode.phone,
+                                                );
+                                              } else if (socialMethods[index]['type'] ==
+                                                  'Email') {
+                                                _showAuthBottomSheet(
+                                                  context,
+                                                  LoginMode.email,
+                                                );
+                                              } else if (socialMethods[index]['type'] ==
+                                                  'Guest') {
+                                                // Handle guest login
+                                                _navigateToGuest(context);
+                                              }
+                                            },
+                                          )
+                                          .animate(delay: (300 * index).ms)
+                                          .fade(duration: 700.ms)
+                                          .moveX(duration: 800.ms),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         ),
                       ),
-                      const TextSpan(text: ', '),
-                      TextSpan(
-                        text: 'Non-discrimination Policy',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const TextSpan(text: ' and '),
-                      TextSpan(
-                        text: 'Payments Terms of Service',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const TextSpan(text: ' and acknowledge the '),
-                      TextSpan(
-                        text: 'Privacy Policy',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const TextSpan(text: '.'),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    ));
-  }
-
-  Widget _buildAuthButton(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: Colors.black),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
+            // Legal text at the bottom with minimal spacing
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 2.0,
+              ),
+              child: Text.rich(
+                TextSpan(
+                  text: "By entering information, I agree to Hushh's ",
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.black.withValues(alpha: 0.7),
+                  ),
+                  children: <InlineSpan>[
+                    const TextSpan(
+                      text: 'Terms of Service',
+                      style: TextStyle(color: Color(0xFFE54D60)),
+                    ),
+                    const TextSpan(text: ', '),
+                    const TextSpan(
+                      text: 'Non-discrimination Policy',
+                      style: TextStyle(color: Color(0xFFE54D60)),
+                    ),
+                    const TextSpan(text: ' and '),
+                    const TextSpan(
+                      text: 'Payments Terms of Service',
+                      style: TextStyle(color: Color(0xFFE54D60)),
+                    ),
+                    const TextSpan(text: ' and acknowledge the '),
+                    const TextSpan(
+                      text: 'Privacy Policy',
+                      style: TextStyle(color: Color(0xFFE54D60)),
+                    ),
+                    const TextSpan(text: '.'),
+                  ],
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
@@ -189,21 +196,20 @@ class MainAuthSelectionPage extends StatelessWidget {
     );
   }
 
-  void _navigateToAuth(BuildContext context, LoginMode mode) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BlocProvider(
-          create: (context) => sl<AuthBloc>(),
-          child: AuthPage(loginMode: mode),
-        ),
+  void _showAuthBottomSheet(BuildContext context, LoginMode loginMode) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BlocProvider(
+        create: (context) => auth_di.sl<AuthBloc>(),
+        child: AuthPage(loginMode: loginMode),
       ),
     );
   }
 
   void _navigateToGuest(BuildContext context) {
     // Guest authentication - continue without login
-    // This allows users to use the app without creating an account
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -221,7 +227,6 @@ class MainAuthSelectionPage extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pop();
                 // Navigate to dashboard in guest mode
-                // For now, show a success message
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Welcome, Guest! Enjoy exploring the app.'),
@@ -229,13 +234,74 @@ class MainAuthSelectionPage extends StatelessWidget {
                   ),
                 );
                 // TODO: Navigate to dashboard when implemented
-                // Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
+                // Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
               },
               child: const Text('Continue'),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class SocialButton extends StatelessWidget {
+  final String text;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const SocialButton({
+    super.key,
+    required this.text,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          width: double.infinity,
+          height: 56,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: Colors.black87,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 } 

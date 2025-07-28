@@ -4,17 +4,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/agent_card.dart';
 import '../models/agent_card_model.dart';
+import '../datasources/hushh_agent_firestore_service.dart';
+import '../models/hushh_agent_model.dart';
 
 
 
 class AuthRepositoryImpl implements AuthRepository {
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final HushhAgentFirestoreService _agentService = HushhAgentFirestoreService();
 
   // Store verification ID for OTP verification
   String? _verificationId;
   // Store verification email for email OTP verification
   String? _verificationEmail;
+  // Store current agent data
+  HushhAgentModel? _currentAgent;
 
   @override
   Future<void> sendPhoneOtp(
@@ -22,10 +27,33 @@ class AuthRepositoryImpl implements AuthRepository {
     Function(String phoneNumber)? onOtpSent,
   }) async {
     try {
-      // Ensure phone number has proper format
-      String formattedPhone = phoneNumber;
-      if (!phoneNumber.startsWith('+')) {
-        formattedPhone = '+$phoneNumber';
+      // Ensure phone number has proper format for Firebase
+      String formattedPhone = phoneNumber.trim();
+      if (!formattedPhone.startsWith('+')) {
+        formattedPhone = '+$formattedPhone';
+      }
+
+      // Validate phone number format
+      if (formattedPhone.length < 10) {
+        throw Exception('Phone number is too short. Please enter a valid phone number.');
+      }
+
+      print('📱 [AUTH] Starting phone OTP process for: $formattedPhone');
+      
+      // Additional safety check for Firebase initialization
+      if (_auth.app == null) {
+        throw Exception('Firebase is not properly initialized. Please restart the app.');
+      }
+
+      // Create or update agent record in Firestore
+      try {
+        _currentAgent = await _agentService.createOrUpdateAgent(
+          phone: formattedPhone,
+        );
+        print('✅ [AUTH] Agent record created/updated in Firestore');
+      } catch (e) {
+        print('❌ [AUTH] Failed to create agent record: $e');
+        // Continue with OTP process even if Firestore fails
       }
 
       // Use a Completer to handle the async callback properly
@@ -37,6 +65,7 @@ class AuthRepositoryImpl implements AuthRepository {
             (firebase_auth.PhoneAuthCredential credential) async {
               // Completely disable auto-verification to force manual OTP entry
               // Do nothing - let user manually enter OTP
+              print('📱 [AUTH] Auto-verification completed (ignoring)');
             },
         verificationFailed: (firebase_auth.FirebaseAuthException e) {
           // Handle specific Firebase error codes
@@ -121,6 +150,19 @@ class AuthRepositoryImpl implements AuthRepository {
       // Sign in with credential
       final userCredential = await _auth.signInWithCredential(credential);
 
+      print('✅ [AUTH] Phone OTP verified successfully');
+
+      // Update agent login status in Firestore
+      if (_currentAgent != null) {
+        try {
+          await _agentService.updateAgentLoginStatus(_currentAgent!.agentId, true);
+          print('✅ [AUTH] Agent login status updated in Firestore');
+        } catch (e) {
+          print('❌ [AUTH] Failed to update agent login status: $e');
+          // Continue anyway, authentication was successful
+        }
+      }
+
       // Clear verification ID after successful verification
       _verificationId = null;
 
@@ -133,6 +175,19 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> sendEmailOtp(String email) async {
     try {
+      print('📧 [AUTH] Starting email OTP process for: $email');
+
+      // Create or update agent record in Firestore with email
+      try {
+        _currentAgent = await _agentService.createOrUpdateAgent(
+          email: email,
+        );
+        print('✅ [AUTH] Agent record created/updated with email in Firestore');
+      } catch (e) {
+        print('❌ [AUTH] Failed to create agent record: $e');
+        // Continue with OTP process even if Firestore fails
+      }
+
       // For demonstration, we'll simulate sending an email OTP
       // In a real implementation, you would integrate with an email service
       // like SendGrid, Firebase Functions, or your backend API
@@ -183,7 +238,18 @@ class AuthRepositoryImpl implements AuthRepository {
       // For now, we'll simulate successful authentication
       // In a real app, you would integrate with your authentication system
       
-      print('🚀 [DEMO] Email OTP verified for: $email');
+      print('✅ [AUTH] Email OTP verified successfully for: $email');
+
+      // Update agent login status in Firestore
+      if (_currentAgent != null) {
+        try {
+          await _agentService.updateAgentLoginStatus(_currentAgent!.agentId, true);
+          print('✅ [AUTH] Agent login status updated in Firestore');
+        } catch (e) {
+          print('❌ [AUTH] Failed to update agent login status: $e');
+          // Continue anyway, authentication was successful
+        }
+      }
       
       // Create anonymous user for demonstration
       // In production, you would handle this based on your authentication flow

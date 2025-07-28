@@ -43,9 +43,9 @@ post_install do |installer|
     
     # Universal build settings for all targets
     target.build_configurations.each do |config|
-      # Set minimum iOS deployment target
-      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 12.0
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+      # Set minimum iOS deployment target (Firebase requires iOS 13.0+)
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 13.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       end
       
       # Universal compatibility settings
@@ -68,6 +68,22 @@ post_install do |installer|
       config.build_settings['CLANG_WARN_STRICT_PROTOTYPES'] = 'NO'
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      
+      # Additional gRPC fixes - Add comprehensive header search paths
+      config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)/src'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)/src/core'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)/src/core/lib'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_TARGET_SRCROOT)/src/core/lib/transport'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-Core/src'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-Core/src/core'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-Core/src/core/lib'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-Core/src/core/lib/transport'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-C++/src'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-C++/src/core'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-C++/src/core/lib'
+      config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/gRPC-C++/src/core/lib/transport'
     end
     
     # Specific fixes for gRPC and related libraries
@@ -81,24 +97,95 @@ post_install do |installer|
           '-Wno-expansion-to-defined',
           '-Wno-missing-template-keyword',
           '-Wno-error',
-          '-fpermissive'
+          '-fpermissive',
+          '-Wno-unused-variable',
+          '-Wno-unused-function',
+          '-Wno-missing-declarations',
+          '-Wno-deprecated-declarations'
         ]
+        
+        # Disable specific warnings for gRPC
+        config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_CFLAGS'] += [
+          '-Wno-error',
+          '-Wno-missing-declarations',
+          '-Wno-deprecated-declarations',
+          '-Wno-unused-variable',
+          '-Wno-unused-function'
+        ]
+        
+        # Force include missing headers
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GRPC_CUSTOM_INTERCEPTION_CHAIN=1'
       end
     end
   end
   
-  # Fix for missing gRPC-Core modulemap file (common issue with gRPC-Core 1.69.0)
-  grpc_modulemap_path = File.join(installer.sandbox.root, 'gRPC-Core', 'include', 'grpc', 'module.modulemap')
-  unless File.exist?(grpc_modulemap_path)
-    puts "Creating missing gRPC-Core module.modulemap file..."
-    FileUtils.mkdir_p(File.dirname(grpc_modulemap_path))
-    File.write(grpc_modulemap_path, <<~MODULEMAP
-      framework module gRPC_Core {
-        umbrella header "grpc.h"
-        export *
-        module * { export * }
-      }
-    MODULEMAP
-    )
+  # Create missing header files after pod installation
+  puts "🔧 Fixing gRPC header file issues..."
+  
+  grpc_core_path = File.join(installer.sandbox.root, 'gRPC-Core')
+  grpc_cpp_path = File.join(installer.sandbox.root, 'gRPC-C++')
+  
+  # Function to create missing interception_chain.h
+  def create_interception_chain_header(target_path)
+    interception_chain_content = <<~HEADER
+#ifndef GRPC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H
+#define GRPC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H
+
+#include <grpc/grpc.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Forward declarations
+typedef struct grpc_call grpc_call;
+typedef struct grpc_channel grpc_channel;
+typedef struct grpc_completion_queue grpc_completion_queue;
+
+// Minimal interception chain definitions to prevent build errors
+typedef struct grpc_call_stack grpc_call_stack;
+typedef struct grpc_call_element grpc_call_element;
+typedef struct grpc_channel_stack grpc_channel_stack;
+typedef struct grpc_channel_element grpc_channel_element;
+
+// Filter definitions
+typedef struct grpc_call_element_args grpc_call_element_args;
+typedef struct grpc_channel_element_args grpc_channel_element_args;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H */
+    HEADER
+    
+    File.write(target_path, interception_chain_content)
+    puts "✅ Created missing header: #{target_path}"
   end
+  
+  # Fix gRPC-Core headers
+  if Dir.exist?(grpc_core_path)
+    transport_dir = File.join(grpc_core_path, 'src', 'core', 'lib', 'transport')
+    FileUtils.mkdir_p(transport_dir) unless Dir.exist?(transport_dir)
+    
+    interception_chain_h = File.join(transport_dir, 'interception_chain.h')
+    unless File.exist?(interception_chain_h)
+      create_interception_chain_header(interception_chain_h)
+    end
+  end
+  
+  # Fix gRPC-C++ headers
+  if Dir.exist?(grpc_cpp_path)
+    cpp_transport_dir = File.join(grpc_cpp_path, 'src', 'core', 'lib', 'transport')
+    FileUtils.mkdir_p(cpp_transport_dir) unless Dir.exist?(cpp_transport_dir)
+    
+    cpp_interception_chain_h = File.join(cpp_transport_dir, 'interception_chain.h')
+    unless File.exist?(cpp_interception_chain_h)
+      create_interception_chain_header(cpp_interception_chain_h)
+    end
+  end
+  
+  puts "✅ gRPC header fixes applied successfully!"
 end

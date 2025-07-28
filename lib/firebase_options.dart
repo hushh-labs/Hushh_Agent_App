@@ -47,29 +47,34 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyC8w_jXmgx2aSqrLdBdPWL8Zzl6JzFq-qE',
+    apiKey: 'AIzaSyBAqKMc8Jg-75B07_QvAhIG_QKm-GTZuK8',
     appId: '1:53407187172:web:00758b5c83efe7adb32cf1',
     messagingSenderId: '53407187172',
     projectId: 'hushone-app',
     authDomain: 'hushone-app.firebaseapp.com',
+    databaseURL: 'https://hushone-app-default-rtdb.firebaseio.com',
     storageBucket: 'hushone-app.appspot.com',
-    measurementId: 'G-XXXXXXXXXX',
+    measurementId: 'G-J9KVCBH2L5',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC8w_jXmgx2aSqrLdBdPWL8Zzl6JzFq-qE',
-    appId: '1:53407187172:android:6f3e2b29617cd47ab32cf1',
+    apiKey: 'AIzaSyBcFDiD_GotGnPhjCso9tHCHievk1putmQ',
+    appId: '1:53407187172:android:9494409c4f156fc6b32cf1',
     messagingSenderId: '53407187172',
     projectId: 'hushone-app',
+    databaseURL: 'https://hushone-app-default-rtdb.firebaseio.com',
     storageBucket: 'hushone-app.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyC8w_jXmgx2aSqrLdBdPWL8Zzl6JzFq-qE',
-    appId: '1:53407187172:ios:a77f9f5ee0e15396b32cf1',
+    apiKey: 'AIzaSyAfo5qtNDVT6edPNFl6OmQ-XE5RGZeADk4',
+    appId: '1:53407187172:ios:1bb8e3e3b0b6f9c2b32cf1',
     messagingSenderId: '53407187172',
     projectId: 'hushone-app',
+    databaseURL: 'https://hushone-app-default-rtdb.firebaseio.com',
     storageBucket: 'hushone-app.appspot.com',
-    iosBundleId: 'com.hushh.agent.app',
+    androidClientId: '53407187172-0h9ckq232jev9dd2u8re190pck2kku3o.apps.googleusercontent.com',
+    iosBundleId: 'com.example.hushhAgentApp',
   );
+
 } 

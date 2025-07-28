@@ -335,17 +335,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(VerifyingOtpState());
 
-    final params = VerifyPhoneOtpParams(
-      verificationId: event.phoneNumber, // This should be verificationId from previous step
-      otp: event.otp,
-    );
+    try {
+      // Create parameters for phone OTP verification
+      final params = VerifyPhoneOtpParams(
+        phoneNumber: event.phoneNumber,
+        otp: event.otp,
+      );
 
-    final result = await _verifyPhoneOtpUseCase(params);
+      final result = await _verifyPhoneOtpUseCase(params);
 
-    if (result is Success) {
-      emit(OtpVerifiedState((result as Success).data));
-    } else if (result is Failed) {
-      emit(OtpVerificationFailureState((result as Failed).failure.message));
+      if (result is Success<firebase_auth.UserCredential>) {
+        // Emit success state with Firebase user credential
+        emit(OtpVerifiedState(result.data));
+        
+        // Check if agent card exists and handle accordingly
+        final user = result.data.user;
+        if (user != null) {
+          add(CheckAgentCardEvent(user.uid));
+        }
+      } else if (result is Failed<firebase_auth.UserCredential>) {
+        emit(OtpVerificationFailureState(result.failure.message));
+      }
+    } catch (e) {
+      emit(OtpVerificationFailureState('OTP verification failed: ${e.toString()}'));
     }
   }
 
@@ -371,13 +383,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(VerifyingOtpState());
 
-    final params = VerifyEmailOtpParams(email: event.email, otp: event.otp);
-    final result = await _verifyEmailOtpUseCase(params);
+    try {
+      // Create parameters for email OTP verification
+      final params = VerifyEmailOtpParams(
+        email: event.email,
+        otp: event.otp,
+      );
 
-    if (result is Success) {
-      emit(OtpVerifiedState((result as Success).data.user!));
-    } else if (result is Failed) {
-      emit(OtpVerificationFailureState((result as Failed).failure.message));
+      final result = await _verifyEmailOtpUseCase(params);
+
+      if (result is Success<firebase_auth.UserCredential>) {
+        // Emit success state with Firebase user credential
+        emit(OtpVerifiedState(result.data));
+        
+        // Check if agent card exists and handle accordingly
+        final user = result.data.user;
+        if (user != null) {
+          add(CheckAgentCardEvent(user.uid));
+        }
+      } else if (result is Failed<firebase_auth.UserCredential>) {
+        emit(OtpVerificationFailureState(result.failure.message));
+      }
+    } catch (e) {
+      emit(OtpVerificationFailureState('Email OTP verification failed: ${e.toString()}'));
     }
   }
 
@@ -502,14 +530,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
                       fontSize: 14.0,
                       color: Colors.black,
                     ),
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: SvgPicture.asset(
-                        'assets/search_new.svg',
-                        colorFilter: const ColorFilter.mode(
-                          Colors.black,
-                          BlendMode.srcIn,
-                        ),
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: Icon(
+                        Icons.search,
+                        color: Colors.black,
+                        size: 20,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(

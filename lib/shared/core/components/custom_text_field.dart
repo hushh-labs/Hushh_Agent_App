@@ -57,14 +57,12 @@ class CustomTextField extends StatelessWidget {
               fontWeight: FontWeight.w300,
             ),
             prefixIcon: showPrefix
-                ? Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: SvgPicture.asset(
-                      'assets/search_new.svg',
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF616180),
-                        BlendMode.srcIn,
-                      ),
+                ? const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Icon(
+                      Icons.search,
+                      color: Color(0xFF616180),
+                      size: 20,
                     ),
                   )
                 : null,
