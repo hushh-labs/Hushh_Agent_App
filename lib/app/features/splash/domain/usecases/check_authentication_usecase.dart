@@ -1,5 +1,5 @@
 import '../repositories/splash_repository.dart';
-import '../../../../../shared/core/use_cases/usecase.dart';
+import '../../../../../shared/core/usecases/usecase.dart';
 
 /// Use case for checking if agent is authenticated
 class CheckAuthenticationUseCase implements UseCase<bool, NoParams> {

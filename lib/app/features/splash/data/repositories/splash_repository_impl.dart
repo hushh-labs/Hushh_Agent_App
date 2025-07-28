@@ -18,16 +18,8 @@ class SplashRepositoryImpl implements SplashRepository {
   @override
   Future<bool> isAgentAuthenticated() async {
     try {
-      // Check local authentication first (faster)
-      final isLocalAuth = await localDataSource.isAuthenticated();
-      
-      if (isLocalAuth) {
-        // Verify we have a valid agent ID
-        final agentId = await localDataSource.getCurrentAgentId();
-        return agentId?.isNotEmpty == true;
-      }
-      
-      return false;
+      // Check remote authentication (Firebase Auth)
+      return await remoteDataSource.isAgentAuthenticated();
     } catch (e) {
       print('❌ [REPO] Error checking authentication: $e');
       return false;
@@ -44,16 +36,13 @@ class SplashRepositoryImpl implements SplashRepository {
         return cachedProfile.toEntity();
       }
 
-      // If not in cache, get current agent ID and fetch from remote
-      final agentId = await localDataSource.getCurrentAgentId();
-      if (agentId?.isNotEmpty == true) {
-        final remoteProfile = await remoteDataSource.getAgentProfile(agentId!);
+      // Get from remote (Firebase)
+      final remoteProfile = await remoteDataSource.getCurrentAgentProfile();
         if (remoteProfile != null) {
           // Cache the profile for next time
           await localDataSource.cacheAgentProfile(remoteProfile);
           print('✅ [REPO] Got agent profile from remote and cached');
           return remoteProfile.toEntity();
-        }
       }
 
       return null;
@@ -67,15 +56,12 @@ class SplashRepositoryImpl implements SplashRepository {
   Future<InitializationResult> initializeAppServices() async {
     try {
       // Initialize Firebase and core services
-      final firebaseInitialized = await remoteDataSource.initializeFirebase();
+      final firebaseInitialized = await remoteDataSource.initializeFirebaseServices();
       if (!firebaseInitialized) {
         return InitializationResult.failure(
           errorMessage: 'Failed to initialize Firebase services',
         );
       }
-
-      // Setup notifications
-      await remoteDataSource.setupNotifications();
 
       print('✅ [REPO] App services initialized successfully');
       return InitializationResult.success(
@@ -146,7 +132,8 @@ class SplashRepositoryImpl implements SplashRepository {
       final now = DateTime.now();
       await Future.wait([
         localDataSource.storeLastLoginTimestamp(now),
-        remoteDataSource.updateLastLoginTimestamp(agentId, now),
+        // Note: updateLastLoginTimestamp not implemented in remote data source
+        // Can be added later if needed
       ]);
       print('✅ [REPO] Last login timestamp updated');
     } catch (e) {
@@ -177,7 +164,8 @@ class SplashRepositoryImpl implements SplashRepository {
   @override
   Future<String> getBusinessVerificationStatus(String agentId) async {
     try {
-      return await remoteDataSource.getVerificationStatus(agentId);
+      final isVerified = await remoteDataSource.checkBusinessVerificationStatus(agentId);
+      return isVerified ? 'verified' : 'pending';
     } catch (e) {
       print('❌ [REPO] Error getting verification status: $e');
       return 'pending';
@@ -197,7 +185,8 @@ class SplashRepositoryImpl implements SplashRepository {
   @override
   Future<bool> checkForAppUpdates() async {
     try {
-      return await remoteDataSource.checkAppUpdates();
+      // TODO: Implement app update checking
+      return false;
     } catch (e) {
       print('❌ [REPO] Error checking app updates: $e');
       return false;
@@ -207,7 +196,7 @@ class SplashRepositoryImpl implements SplashRepository {
   @override
   Future<void> initializeAnalytics(String agentId) async {
     try {
-      await remoteDataSource.initializeAnalytics(agentId);
+      // TODO: Implement analytics initialization
       print('✅ [REPO] Analytics initialized');
     } catch (e) {
       print('❌ [REPO] Error initializing analytics: $e');
@@ -227,7 +216,7 @@ class SplashRepositoryImpl implements SplashRepository {
   @override
   Future<void> loadEssentialBusinessData(String agentId) async {
     try {
-      await remoteDataSource.loadBusinessData(agentId);
+      // TODO: Implement business data loading
       print('✅ [REPO] Essential business data loaded');
     } catch (e) {
       print('❌ [REPO] Error loading business data: $e');

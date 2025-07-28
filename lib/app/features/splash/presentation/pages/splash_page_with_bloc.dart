@@ -6,6 +6,7 @@ import '../../domain/entities/initialization_result.dart';
 import '../bloc/splash_bloc.dart';
 import '../bloc/splash_event.dart';
 import '../bloc/splash_state.dart';
+import '../../../../../shared/core/routing/routes.dart';
 
 /// Splash screen with complete Clean Architecture and BLoC implementation
 class SplashPageWithBloc extends StatefulWidget {
@@ -19,6 +20,7 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   bool _animationCompleted = false;
+  SplashState? _pendingNavigationState;
 
   @override
   void initState() {
@@ -36,6 +38,19 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
         _animationCompleted = true;
         // Notify BLoC that animation is complete
         context.read<SplashBloc>().add(const SplashAnimationCompleteEvent());
+        
+        // Check if there's a pending navigation state
+        if (_pendingNavigationState != null) {
+          _handleNavigationForState(_pendingNavigationState!);
+          _pendingNavigationState = null;
+        } else {
+          // Fallback: if no specific state, navigate to auth after a delay
+          Future.delayed(const Duration(seconds: 1), () {
+            if (mounted && _pendingNavigationState == null) {
+              _navigateBasedOnAction(context, NextAction.navigateToAuth);
+            }
+          });
+        }
       }
     });
 
@@ -76,7 +91,32 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
       // Wait for animation to complete before navigating
       if (_animationCompleted) {
         _navigateBasedOnAction(context, state.nextAction);
+      } else {
+        _pendingNavigationState = state;
       }
+    } else if (state is SplashNoAgentState) {
+      // No agent found, navigate to auth after animation completes
+      if (_animationCompleted) {
+        _navigateBasedOnAction(context, NextAction.navigateToAuth);
+      } else {
+        _pendingNavigationState = state;
+      }
+    } else if (state is SplashInitializationErrorState) {
+      // On error, navigate to auth after animation completes (for demo purposes)
+      if (_animationCompleted) {
+        _navigateBasedOnAction(context, NextAction.navigateToAuth);
+      } else {
+        _pendingNavigationState = state;
+      }
+    }
+  }
+
+  /// Handle navigation for a specific state
+  void _handleNavigationForState(SplashState state) {
+    if (state is SplashInitializationCompleteState) {
+      _navigateBasedOnAction(context, state.nextAction);
+    } else if (state is SplashNoAgentState || state is SplashInitializationErrorState) {
+      _navigateBasedOnAction(context, NextAction.navigateToAuth);
     }
   }
 
@@ -245,32 +285,51 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
       switch (nextAction) {
         case NextAction.navigateToAuth:
           debugPrint('🔐 → Navigating to Authentication');
-          // TODO: Navigate to login
-          // context.go('/auth/login');
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.mainAuth,
+            (route) => false,
+          );
           break;
           
         case NextAction.navigateToOnboarding:
           debugPrint('📚 → Navigating to Onboarding');
-          // TODO: Navigate to onboarding
-          // context.go('/onboarding');
+          // For now, navigate to auth as onboarding is not implemented yet
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.mainAuth,
+            (route) => false,
+          );
           break;
           
         case NextAction.navigateToBusinessSetup:
           debugPrint('🏢 → Navigating to Business Setup');
-          // TODO: Navigate to business setup
-          // context.go('/business-setup');
+          // For now, navigate to auth as business setup is not implemented yet
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.mainAuth,
+            (route) => false,
+          );
           break;
           
         case NextAction.navigateToVerification:
           debugPrint('⏳ → Navigating to Verification Status');
-          // TODO: Navigate to verification status
-          // context.go('/business-verification');
+          // For now, navigate to auth as verification is not implemented yet
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.mainAuth,
+            (route) => false,
+          );
           break;
           
         case NextAction.navigateToDashboard:
           debugPrint('📊 → Navigating to Agent Dashboard');
-          // TODO: Navigate to dashboard
-          // context.go('/dashboard');
+          // Navigate to home which contains the dashboard
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.home,
+            (route) => false,
+          );
           break;
           
         case NextAction.showError:

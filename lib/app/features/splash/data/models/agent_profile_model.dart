@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/agent_profile.dart';
 
 /// Data model for AgentProfile with JSON serialization
@@ -49,6 +50,30 @@ class AgentProfileModel extends AgentProfile {
     );
   }
 
+  /// Create from Firestore document
+  factory AgentProfileModel.fromFirestore(Map<String, dynamic> data, String documentId) {
+    return AgentProfileModel(
+      agentId: documentId,
+      email: data['email'] as String,
+      displayName: data['displayName'] as String?,
+      phoneNumber: data['phoneNumber'] as String?,
+      profilePictureUrl: data['profilePictureUrl'] as String?,
+      verificationStatus: AgentVerificationStatus.values.firstWhere(
+        (e) => e.value == data['verificationStatus'],
+        orElse: () => AgentVerificationStatus.pending,
+      ),
+      isActive: data['isActive'] as bool? ?? true,
+      isOnline: data['isOnline'] as bool? ?? false,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      hasCompletedOnboarding: data['hasCompletedOnboarding'] as bool? ?? false,
+      hasCompletedBusinessSetup: data['hasCompletedBusinessSetup'] as bool? ?? false,
+      fcmToken: data['fcmToken'] as String?,
+      lastLoginAt: (data['lastLoginAt'] as Timestamp?)?.toDate(),
+      businessInfo: data['businessInfo'] as Map<String, dynamic>?,
+    );
+  }
+
   /// Create from JSON String
   factory AgentProfileModel.fromJsonString(String jsonString) {
     final Map<String, dynamic> json = jsonDecode(jsonString);
@@ -72,6 +97,26 @@ class AgentProfileModel extends AgentProfile {
       'hasCompletedBusinessSetup': hasCompletedBusinessSetup,
       'fcmToken': fcmToken,
       'lastLoginAt': lastLoginAt?.toIso8601String(),
+      'businessInfo': businessInfo,
+    };
+  }
+
+  /// Convert to Firestore Map
+  Map<String, dynamic> toFirestore() {
+    return {
+      'email': email,
+      'displayName': displayName,
+      'phoneNumber': phoneNumber,
+      'profilePictureUrl': profilePictureUrl,
+      'verificationStatus': verificationStatus.value,
+      'isActive': isActive,
+      'isOnline': isOnline,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+      'hasCompletedOnboarding': hasCompletedOnboarding,
+      'hasCompletedBusinessSetup': hasCompletedBusinessSetup,
+      'fcmToken': fcmToken,
+      'lastLoginAt': lastLoginAt != null ? Timestamp.fromDate(lastLoginAt!) : null,
       'businessInfo': businessInfo,
     };
   }

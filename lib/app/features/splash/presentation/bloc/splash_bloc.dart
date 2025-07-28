@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/initialize_app_usecase.dart';
 import '../../domain/usecases/check_authentication_usecase.dart';
 import '../../domain/entities/initialization_result.dart';
-import '../../../../../shared/core/use_cases/usecase.dart';
+import '../../../../../shared/core/usecases/usecase.dart';
 import 'splash_event.dart';
 import 'splash_state.dart';
 

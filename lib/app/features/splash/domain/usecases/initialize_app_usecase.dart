@@ -1,7 +1,7 @@
 import '../entities/agent_profile.dart';
 import '../entities/initialization_result.dart';
 import '../repositories/splash_repository.dart';
-import '../../../../../shared/core/use_cases/usecase.dart';
+import '../../../../../shared/core/usecases/usecase.dart';
 
 /// Main use case for initializing the app during splash screen
 class InitializeAppUseCase implements UseCase<InitializationResult, NoParams> {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "53407187172",
+    "project_id": "hushone-app",
+    "storage_bucket": "hushone-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:53407187172:android:6f3e2b29617cd47ab32cf1",
+        "android_client_info": {
+          "package_name": "com.hushh.agent.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8w_jXmgx2aSqrLdBdPWL8Zzl6JzFq-qE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 
