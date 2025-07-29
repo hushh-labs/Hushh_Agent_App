@@ -137,23 +137,6 @@ class _DashboardView extends StatelessWidget {
     );
   }
 
-  void _completeProfile(BuildContext context) {
-    // Navigate to profile completion flow
-    Navigator.pushNamed(context, AppRoutes.completeProfileEmail);
-  }
-
-  void _dismissCongrats(BuildContext context) {
-    // Optionally hide the congratulations message permanently
-    // For now, just show a simple acknowledgment
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Welcome to your agent dashboard!'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   void _selectTab(BuildContext context, dashboard.DashboardTab tab) {
     context.read<dashboard.DashboardBloc>().add(dashboard.SelectTabEvent(tab));
   }

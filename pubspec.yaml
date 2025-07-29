@@ -46,7 +46,6 @@ dependencies:
   pretty_dio_logger: ^1.3.1
   connectivity_plus: ^4.0.2
   retrofit: ^4.0.3
-  retrofit_generator: ^7.0.8
 
   # Firebase
   firebase_core: ^2.15.1
@@ -98,6 +97,9 @@ dependencies:
 
   # Chat UI
   flutter_chat_ui: ^1.6.8
+  
+  # OTP Input
+  pin_code_fields: ^8.0.1
 
   # Location and Maps
   geolocator: ^10.1.0
@@ -124,7 +126,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   injectable_generator: ^2.4.1
   hive_generator: ^2.0.1
-  retrofit_generator: ^8.0.4
+  retrofit_generator: ^8.2.1
   
   # ===== TESTING =====
   bloc_test: ^9.1.5

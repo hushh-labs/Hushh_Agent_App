@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../data/models/countries_model.dart';
 import '../../domain/usecases/send_phone_otp_usecase.dart';
@@ -180,7 +179,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   late List<Country> _countryList;
   late List<Country> filteredCountries;
   late TextEditingController phoneController;
-  MaskTextInputFormatter? formatter;
   var phoneNumberWithoutCountryCode = "";
   Country? selectedCountry;
 
@@ -234,10 +232,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (item) => item.code == "IN",
       orElse: () => _countryList.first,
     );
-    formatter = MaskTextInputFormatter(
-      mask: countryMasks[selectedCountry!.code] ?? '+# ### ### ####',
-      filter: {"#": RegExp(r'[0-9]')},
-    );
     filteredCountries = _countryList;
     phoneController = TextEditingController();
   }
@@ -264,10 +258,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     selectedCountry = _countryList.firstWhere(
       (item) => item.code == "IN",
       orElse: () => _countryList.first,
-    );
-    formatter = MaskTextInputFormatter(
-      mask: countryMasks[selectedCountry!.code] ?? '+# ### ### ####',
-      filter: {"#": RegExp(r'[0-9]')},
     );
     _countryList = countries;
     filteredCountries = _countryList;
@@ -556,12 +546,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
                       ListTile(
                         onTap: () {
                           selectedCountry = filteredCountries[index];
-                          formatter = MaskTextInputFormatter(
-                            mask:
-                                countryMasks[selectedCountry!.code] ??
-                                '+# ### ### ####',
-                            filter: {"#": RegExp(r'[0-9]')},
-                          );
                           // Clear phone controller when country changes to prevent auto-fill
                           phoneController.clear();
                           phoneNumberWithoutCountryCode = "";

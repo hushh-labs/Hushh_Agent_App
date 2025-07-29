@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'auth.dart';
 import '../../domain/enum.dart';
@@ -134,10 +133,7 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                                         _navigateToGuest(context);
                                       }
                                     },
-                                  )
-                                      .animate(delay: (300 * index).ms)
-                                      .fade(duration: 700.ms)
-                                      .moveX(duration: 800.ms),
+                                  ),
                                 ),
                               ),
                             ),
