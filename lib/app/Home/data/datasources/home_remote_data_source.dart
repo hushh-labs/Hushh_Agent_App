@@ -77,9 +77,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       counts['notifications'] = notificationsQuery.docs.length;
 
       // Add other notification counts as needed
+      counts['chat'] = 5; // Mock chat notifications
       counts['dashboard'] = 0;
       counts['profile'] = 0;
-      counts['reports'] = 0;
 
       return counts;
     } catch (e) {
@@ -191,15 +191,15 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   List<HomeSectionModel> _getDefaultSections() {
     return [
       const HomeSectionModel(
-        id: 'dashboard',
-        title: 'Dashboard',
-        icon: 'dashboard',
-        index: 0,
-      ),
-      const HomeSectionModel(
         id: 'chat',
         title: 'Chat',
         icon: 'chat',
+        index: 0,
+      ),
+      const HomeSectionModel(
+        id: 'dashboard',
+        title: 'Dashboard',
+        icon: 'dashboard',
         index: 1,
       ),
       const HomeSectionModel(
@@ -207,12 +207,6 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
         title: 'Profile',
         icon: 'profile',
         index: 2,
-      ),
-      const HomeSectionModel(
-        id: 'reports',
-        title: 'Reports',
-        icon: 'reports',
-        index: 3,
       ),
     ];
   }

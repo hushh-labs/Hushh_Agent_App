@@ -42,17 +42,17 @@ class HomeSection extends Equatable {
 
 /// Predefined home sections
 class HomeSections {
-  static const HomeSection dashboard = HomeSection(
-    id: 'dashboard',
-    title: 'Dashboard',
-    icon: 'dashboard',
-    index: 0,
-  );
-
   static const HomeSection chat = HomeSection(
     id: 'chat',
     title: 'Chat',
     icon: 'chat',
+    index: 0,
+  );
+
+  static const HomeSection dashboard = HomeSection(
+    id: 'dashboard',
+    title: 'Dashboard',
+    icon: 'dashboard',
     index: 1,
   );
 
@@ -63,17 +63,9 @@ class HomeSections {
     index: 2,
   );
 
-  static const HomeSection reports = HomeSection(
-    id: 'reports',
-    title: 'Reports',
-    icon: 'reports',
-    index: 3,
-  );
-
   static const List<HomeSection> defaultSections = [
-    dashboard,
     chat,
+    dashboard,
     profile,
-    reports,
   ];
 } 

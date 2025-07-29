@@ -5,9 +5,10 @@ import '../../domain/entities/home_section.dart';
 import '../../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../../features/chat/presentation/pages/chat_page.dart';
 import '../../../features/profile/presentation/pages/profile_page.dart';
-import '../../../features/reports/presentation/pages/reports_page.dart';
+
 import '../../../../shared/constants/colors.dart';
 import '../../../../shared/core/routing/routes.dart';
+import '../../../../shared/presentation/widgets/google_style_bottom_nav.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -39,45 +40,6 @@ class _HomePageState extends State<HomePage> {
         }
       },
       builder: (context, state) {
-        if (state is HomeLoadingState) {
-          return Scaffold(
-            backgroundColor: CustomColors.primary,
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Hushh Logo or App Logo
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.business,
-                      size: 40,
-                      color: CustomColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Loading your business dashboard...',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
         if (state is HomeAuthenticationRequiredState) {
           return Scaffold(
             backgroundColor: CustomColors.primary,
@@ -195,165 +157,89 @@ class _HomePageState extends State<HomePage> {
             body: IndexedStack(
               index: state.currentTabIndex,
               children: const [
-                DashboardPage(),
                 ChatPage(),
+                DashboardPage(),
                 ProfilePage(),
-                ReportsPage(),
               ],
             ),
             bottomNavigationBar: _buildBottomNavigationBar(state),
           );
         }
 
-        // Initial state - show loading
-        return Scaffold(
-          backgroundColor: CustomColors.primary,
+        // Initial state - minimal loading (authentication check happens instantly)
+        return const Scaffold(
+          backgroundColor: Colors.white,
           body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(
-                    Icons.business,
-                    size: 40,
-                    color: CustomColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Initializing Hushh Agent...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
+            child: SizedBox.shrink(), // Minimal loading - authentication check is instant
           ),
         );
       },
     );
   }
 
+  /// Enhanced Bottom Navigation Bar with Complete Animation System
   Widget _buildBottomNavigationBar(HomeLoadedState state) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: state.currentTabIndex,
-        onTap: (index) {
-          context.read<HomeBloc>().add(NavigateToTabEvent(index));
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: CustomColors.primary,
-        unselectedItemColor: Colors.grey.shade600,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        items: state.sections.map((section) {
-          return BottomNavigationBarItem(
-            icon: _buildSectionIcon(section, false),
-            activeIcon: _buildSectionIcon(section, true),
-            label: section.title,
-          );
-        }).toList(),
-      ),
+    return GoogleStyleBottomNav(
+      currentIndex: state.currentTabIndex,
+      onTap: (index) {
+        context.read<HomeBloc>().add(NavigateToTabEvent(index));
+      },
+      isAgentApp: true,
+      items: _buildBottomNavItems(state.sections),
     );
   }
 
-  Widget _buildSectionIcon(HomeSection section, bool isActive) {
-    IconData iconData;
-    
-    switch (section.id) {
-      case 'dashboard':
-        iconData = Icons.dashboard_outlined;
-        break;
-      case 'chat':
-        iconData = Icons.chat_bubble_outline;
-        break;
-      case 'profile':
-        iconData = Icons.person_outline;
-        break;
-      case 'reports':
-        iconData = Icons.analytics_outlined;
-        break;
-      default:
-        iconData = Icons.apps;
-    }
-
-    if (isActive) {
-      switch (section.id) {
-        case 'dashboard':
-          iconData = Icons.dashboard;
-          break;
-        case 'chat':
-          iconData = Icons.chat_bubble;
-          break;
-        case 'profile':
-          iconData = Icons.person;
-          break;
-        case 'reports':
-          iconData = Icons.analytics;
-          break;
-        default:
-          iconData = Icons.apps;
-      }
-    }
-
-    Widget iconWidget = Icon(iconData);
-
-    // Add notification badge if needed
-    if (section.notificationCount != null && section.notificationCount! > 0) {
-      iconWidget = Stack(
-        children: [
-          iconWidget,
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
-              child: Text(
-                section.notificationCount! > 99 
-                    ? '99+' 
-                    : section.notificationCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ],
+  /// Convert HomeSection objects to BottomNavItem objects
+  List<BottomNavItem> _buildBottomNavItems(List<HomeSection> sections) {
+    return sections.map((section) {
+      return BottomNavItem.agent(
+        label: section.title,
+        icon: _getIconForSection(section.id),
+        iconPath: _getSvgPathForSection(section.id), // For SVG icons if you have them
+        isRestrictedForGuest: _isRestrictedSection(section.id),
       );
-    }
+    }).toList();
+  }
 
-    return iconWidget;
+  /// Get Material icon for each section
+  IconData _getIconForSection(String sectionId) {
+    switch (sectionId) {
+      case 'chat':
+        return Icons.message; // More visible chat icon
+      case 'dashboard':
+        return Icons.dashboard;
+      case 'profile':
+        return Icons.person;
+      default:
+        return Icons.apps;
+    }
+  }
+
+  /// Get SVG icon path for each section (if you have SVG assets)
+  String? _getSvgPathForSection(String sectionId) {
+    switch (sectionId) {
+      case 'chat':
+        return null; // Will fallback to Material icon
+      case 'dashboard':
+        return null; // Will fallback to Material icon  
+      case 'profile':
+        return null; // Will fallback to Material icon
+      default:
+        return null;
+    }
+  }
+
+  /// Define which sections are restricted for guest users
+  bool _isRestrictedSection(String sectionId) {
+    switch (sectionId) {
+      case 'chat':
+        return true; // Chat requires authentication
+      case 'dashboard':
+        return true; // Dashboard requires authentication
+      case 'profile':
+        return true; // Profile requires authentication
+      default:
+        return false;
+    }
   }
 } 

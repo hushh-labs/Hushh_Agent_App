@@ -1,381 +1,260 @@
 import 'package:flutter/material.dart';
-import '../../../../../shared/constants/colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../shared/core/routing/routes.dart';
+import '../bloc/dashboard_bloc.dart' as dashboard;
+import '../components/dashboard_header.dart';
+import '../components/unlock_agent_card.dart';
+import '../components/quick_insights_grid.dart';
+import '../components/dashboard_tab_bar.dart';
+import '../components/dashboard_content.dart';
+import '../components/dashboard_floating_button.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => dashboard.DashboardBloc()..add(const dashboard.LoadDashboardEvent()),
+      child: const _DashboardView(),
+    );
+  }
+}
+
+class _DashboardView extends StatelessWidget {
+  const _DashboardView();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        backgroundColor: CustomColors.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // TODO: Implement refresh functionality
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: Navigate to notifications
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Greeting Section
-            _buildGreetingSection(),
-            const SizedBox(height: 20),
-
-            // Summary Cards
-            _buildSummarySection(),
-            const SizedBox(height: 20),
-
-            // Quick Actions
-            _buildQuickActionsSection(),
-            const SizedBox(height: 20),
-
-            // Recent Activities
-            _buildRecentActivitiesSection(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGreetingSection() {
-    final hour = DateTime.now().hour;
-    String greeting;
-    String emoji;
-
-    if (hour < 12) {
-      greeting = 'Good Morning';
-      emoji = '🌅';
-    } else if (hour < 17) {
-      greeting = 'Good Afternoon';
-      emoji = '☀️';
-    } else {
-      greeting = 'Good Evening';
-      emoji = '🌆';
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [CustomColors.primary, CustomColors.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: CustomColors.primary.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$greeting $emoji',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Welcome back! Here\'s what\'s happening with your business today.',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummarySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Business Overview',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildSummaryCard(
-                'Total Revenue',
-                '₹1,25,000',
-                Icons.trending_up,
-                Colors.green,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildSummaryCard(
-                'Orders',
-                '89',
-                Icons.shopping_cart,
-                Colors.blue,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildSummaryCard(
-                'Customers',
-                '234',
-                Icons.people,
-                Colors.orange,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildSummaryCard(
-                'Growth',
-                '+12.5%',
-                Icons.analytics,
-                Colors.purple,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 24),
-              const Spacer(),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+      body: SafeArea(
+        child: BlocConsumer<dashboard.DashboardBloc, dashboard.DashboardState>(
+          listener: (context, state) {
+            if (state is dashboard.DashboardErrorState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+              );
+            } else if (state is dashboard.ProfileCompletingState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Redirecting to profile completion...'),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is dashboard.DashboardLoadingState) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
 
-  Widget _buildQuickActionsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.5,
-          children: [
-            _buildQuickActionCard('Add Order', Icons.add_shopping_cart, Colors.blue),
-            _buildQuickActionCard('Manage Inventory', Icons.inventory, Colors.green),
-            _buildQuickActionCard('Customer Support', Icons.support_agent, Colors.orange),
-            _buildQuickActionCard('View Reports', Icons.analytics, Colors.purple),
-          ],
-        ),
-      ],
-    );
-  }
+            // Default values
+            double walletBalance = 0.0;
+            bool isProfileComplete = false;
+            List<dashboard.QuickInsightItem> insights = [];
+            dashboard.DashboardTab selectedTab = dashboard.DashboardTab.services;
+            List<dashboard.ServiceItem> services = [];
+            List<dashboard.CustomerItem> customers = [];
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 32),
-          const Spacer(),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+            if (state is dashboard.DashboardLoadedState) {
+              walletBalance = state.walletBalance;
+              isProfileComplete = state.isProfileComplete;
+              insights = state.insights;
+              selectedTab = state.selectedTab;
+              services = state.services;
+              customers = state.customers;
+            }
 
-  Widget _buildRecentActivitiesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Activities',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildActivityItem(
-                'New Order Received',
-                'Order #1234 from John Doe',
-                Icons.shopping_cart,
-                Colors.green,
-                '1 hour ago',
-              ),
-              const Divider(height: 1),
-              _buildActivityItem(
-                'Payment Confirmed',
-                'Payment of ₹5,000 received',
-                Icons.payment,
-                Colors.blue,
-                '2 hours ago',
-              ),
-              const Divider(height: 1),
-              _buildActivityItem(
-                'New Customer',
-                'Jane Smith joined as a customer',
-                Icons.person_add,
-                Colors.orange,
-                '4 hours ago',
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActivityItem(String title, String description, IconData icon, Color color, String time) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            return Column(
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                // Header with balance and notification
+                DashboardHeader(
+                  balance: walletBalance,
+                  onNotificationTap: () => _showNotifications(context),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
+
+                // Scrollable Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Unlock Agent Card
+                        UnlockAgentCard(
+                          isProfileComplete: isProfileComplete,
+                          isGuestMode: _isGuestMode(), // Check guest mode status
+                          onCompleteProfile: () => _completeProfile(context),
+                          onSignIn: () => _signIn(context),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Quick Insights Grid
+                        QuickInsightsGrid(insights: insights),
+
+                        const SizedBox(height: 32),
+
+                        // Tab Bar
+                        DashboardTabBar(
+                          selectedTab: selectedTab,
+                          onTabSelected: (tab) => _selectTab(context, tab),
+                          onRefresh: () => _refreshDashboard(context),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Content based on selected tab
+                        DashboardContent(
+                          selectedTab: selectedTab,
+                          services: services,
+                          customers: customers,
+                        ),
+
+                        const SizedBox(height: 100), // Bottom padding for FAB
+                      ],
+                    ),
                   ),
                 ),
               ],
+            );
+          },
+        ),
+      ),
+      floatingActionButton: DashboardFloatingButton(
+        onPressed: () => _showAddOptions(context),
+      ),
+    );
+  }
+
+  // Check if user is in guest mode (you can customize this logic)
+  bool _isGuestMode() {
+    // TODO: Implement actual guest mode check
+    // This could check SharedPreferences, local storage, or auth state
+    // For now, returning false as a placeholder
+    return false; // Change this based on your app's guest mode logic
+  }
+
+  void _showNotifications(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Notifications feature coming soon!'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+
+  void _completeProfile(BuildContext context) {
+    context.read<dashboard.DashboardBloc>().add(const dashboard.CompleteProfileEvent());
+    
+    // TODO: Navigate to profile completion flow
+    // You can navigate to a profile completion page here
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Navigating to profile completion...'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _signIn(BuildContext context) {
+    // Navigate to sign in flow
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.mainAuth,
+      (route) => false,
+    );
+  }
+
+  void _selectTab(BuildContext context, dashboard.DashboardTab tab) {
+    context.read<dashboard.DashboardBloc>().add(dashboard.SelectTabEvent(tab));
+  }
+
+  void _refreshDashboard(BuildContext context) {
+    context.read<dashboard.DashboardBloc>().add(const dashboard.RefreshDashboardEvent());
+  }
+
+  void _showAddOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          Text(
-            time,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
+            const SizedBox(height: 20),
+            
+            ListTile(
+              leading: const Icon(Icons.business, color: Color(0xFFE91E63)),
+              title: const Text('Add Service'),
+              onTap: () {
+                Navigator.pop(context);
+                _addService(context);
+              },
             ),
-          ),
-        ],
+            
+            ListTile(
+              leading: const Icon(Icons.person_add, color: Color(0xFFE91E63)),
+              title: const Text('Add Customer'),
+              onTap: () {
+                Navigator.pop(context);
+                _addCustomer(context);
+              },
+            ),
+            
+            ListTile(
+              leading: const Icon(Icons.event, color: Color(0xFFE91E63)),
+              title: const Text('Schedule Meeting'),
+              onTap: () {
+                Navigator.pop(context);
+                _scheduleMeeting(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addService(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Add Service feature coming soon!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _addCustomer(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Add Customer feature coming soon!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _scheduleMeeting(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Schedule Meeting feature coming soon!'),
+        backgroundColor: Colors.green,
       ),
     );
   }

@@ -1,12 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/agent_card.dart';
+import '../../domain/entities/agent_category.dart';
+import '../../domain/entities/agent_brand.dart';
+import '../../domain/usecases/update_agent_profile_usecase.dart';
 import '../models/agent_card_model.dart';
+import '../models/agent_category_model.dart';
+import '../models/agent_brand_model.dart';
 import '../datasources/hushh_agent_firestore_service.dart';
 import '../models/hushh_agent_model.dart';
-
 
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -35,14 +42,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Validate phone number format
       if (formattedPhone.length < 10) {
-        throw Exception('Phone number is too short. Please enter a valid phone number.');
+        throw Exception(
+            'Phone number is too short. Please enter a valid phone number.');
       }
 
       print('📱 [AUTH] Starting phone OTP process for: $formattedPhone');
-      
+
       // Additional safety check for Firebase initialization
       if (_auth.app == null) {
-        throw Exception('Firebase is not properly initialized. Please restart the app.');
+        throw Exception(
+            'Firebase is not properly initialized. Please restart the app.');
       }
 
       // Create or update agent record in Firestore
@@ -63,10 +72,10 @@ class AuthRepositoryImpl implements AuthRepository {
         phoneNumber: formattedPhone,
         verificationCompleted:
             (firebase_auth.PhoneAuthCredential credential) async {
-              // Completely disable auto-verification to force manual OTP entry
-              // Do nothing - let user manually enter OTP
-              print('📱 [AUTH] Auto-verification completed (ignoring)');
-            },
+          // Completely disable auto-verification to force manual OTP entry
+          // Do nothing - let user manually enter OTP
+          print('📱 [AUTH] Auto-verification completed (ignoring)');
+        },
         verificationFailed: (firebase_auth.FirebaseAuthException e) {
           // Handle specific Firebase error codes
           String errorMessage;
@@ -143,9 +152,9 @@ class AuthRepositoryImpl implements AuthRepository {
       // Create credential with verification ID and OTP
       firebase_auth.PhoneAuthCredential credential =
           firebase_auth.PhoneAuthProvider.credential(
-            verificationId: _verificationId!,
-            smsCode: otp,
-          );
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
 
       // Sign in with credential
       final userCredential = await _auth.signInWithCredential(credential);
@@ -155,7 +164,8 @@ class AuthRepositoryImpl implements AuthRepository {
       // Update agent login status in Firestore
       if (_currentAgent != null) {
         try {
-          await _agentService.updateAgentLoginStatus(_currentAgent!.agentId, true);
+          await _agentService.updateAgentLoginStatus(
+              _currentAgent!.agentId, true);
           print('✅ [AUTH] Agent login status updated in Firestore');
         } catch (e) {
           print('❌ [AUTH] Failed to update agent login status: $e');
@@ -175,96 +185,140 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> sendEmailOtp(String email) async {
     try {
-      print('📧 [AUTH] Starting email OTP process for: $email');
+      // Generate 6-digit OTP
+      final otp = (100000 + Random().nextInt(900000)).toString();
+      
+      // Store OTP in Firestore for verification
+      await FirebaseFirestore.instance
+          .collection('email_otps')
+          .doc(email)
+          .set({
+        'email': email,
+        'otp': otp,
+        'createdAt': FieldValue.serverTimestamp(),
+        'expiresAt': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
+        'isUsed': false,
+        'method': 'email_otp',
+      });
 
-      // Create or update agent record in Firestore with email
-      try {
-        _currentAgent = await _agentService.createOrUpdateAgent(
-          email: email,
-        );
-        print('✅ [AUTH] Agent record created/updated with email in Firestore');
-      } catch (e) {
-        print('❌ [AUTH] Failed to create agent record: $e');
-        // Continue with OTP process even if Firestore fails
-      }
+      // Display OTP in console for development
+      print('');
+      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print('🎯 [EMAIL_OTP]                    VERIFICATION CODE                         ');  
+      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print('🎯 [EMAIL_OTP]   📧 Email: $email');
+      print('🎯 [EMAIL_OTP]   📱 YOUR OTP CODE: $otp');
+      print('🎯 [EMAIL_OTP]   ⏰ Valid for: 10 minutes');
+      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print('🎯 [EMAIL_OTP]   👆 COPY THIS CODE AND ENTER IN YOUR APP 👆');
+      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print('');
+      print('✅ [AUTH] ★ OTP ready for immediate verification ★');
+      print('📧 [AUTH] Email OTP generated successfully!');
+      print('');
 
-      // For demonstration, we'll simulate sending an email OTP
-      // In a real implementation, you would integrate with an email service
-      // like SendGrid, Firebase Functions, or your backend API
+      // TODO: Add your working email API implementation here
+      // Example:
+      // await _sendEmailViaResend(email, otp);
+      // await _sendEmailViaEmailJS(email, otp);
+      // await _sendEmailViaMailgun(email, otp);
       
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 2));
-      
-      // Store the email for verification (in real app, this would be handled by your backend)
-      _verificationEmail = email;
-      
-      // In a real implementation, you would:
-      // 1. Generate a random OTP
-      // 2. Send it via email service
-      // 3. Store it securely for verification
-      
-      print('🚀 [DEMO] Email OTP sent to: $email');
+      // For development, console OTP is reliable and always works
+      print('📱 [INFO] Use the OTP code displayed above for verification');
+      print('📧 [INFO] Integrate your working email API above to send real emails');
+
     } catch (e) {
-      throw Exception('Failed to send email OTP: $e');
+      // Handle specific Firebase error codes
+      String errorMessage;
+      if (e is firebase_auth.FirebaseAuthException) {
+        switch (e.code) {
+          case 'invalid-email':
+            errorMessage = 'Invalid email address format.';
+            break;
+          case 'too-many-requests':
+            errorMessage = 'Too many requests. Please wait before trying again.';
+            break;
+          case 'network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection.';
+            break;
+          default:
+            errorMessage = 'Failed to send email OTP: ${e.message}';
+        }
+      } else {
+        errorMessage = 'Failed to send email OTP: $e';
+      }
+      throw Exception(errorMessage);
     }
   }
 
   @override
-  Future<firebase_auth.UserCredential> verifyEmailOtp(
-    String email,
-    String otp,
-  ) async {
+  Future<firebase_auth.UserCredential> verifyEmailOtp(String email, String otp) async {
     try {
-      if (_verificationEmail == null || _verificationEmail != email) {
-        throw Exception('No verification found for this email. Please send OTP first.');
+      // Get OTP from Firestore
+      final otpDoc = await FirebaseFirestore.instance
+          .collection('email_otps')
+          .doc(email)
+          .get();
+
+      if (!otpDoc.exists) {
+        throw Exception('No OTP found for this email. Please request a new OTP.');
       }
 
-      // For demonstration, we'll accept any 6-digit OTP
-      // In a real implementation, you would verify the OTP with your backend
-      if (otp.length != 6 || !RegExp(r'^\d{6}$').hasMatch(otp)) {
-        throw Exception('Invalid OTP format. Please enter a 6-digit code.');
+      final otpData = otpDoc.data()!;
+      final storedOtp = otpData['otp'] as String;
+      final expiresAt = otpData['expiresAt'] as int;
+      final isUsed = otpData['isUsed'] as bool;
+
+      // Check if OTP is expired
+      if (DateTime.now().millisecondsSinceEpoch > expiresAt) {
+        throw Exception('OTP has expired. Please request a new OTP.');
       }
 
-      // For demo purposes, accept OTP "123456" or any 6-digit number
-      // In production, verify with your backend service
-      
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Clear verification email after successful verification
-      _verificationEmail = null;
-
-      // For email authentication, you might create a custom token or use Firebase Auth
-      // For now, we'll simulate successful authentication
-      // In a real app, you would integrate with your authentication system
-      
-      print('✅ [AUTH] Email OTP verified successfully for: $email');
-
-      // Update agent login status in Firestore
-      if (_currentAgent != null) {
-        try {
-          await _agentService.updateAgentLoginStatus(_currentAgent!.agentId, true);
-          print('✅ [AUTH] Agent login status updated in Firestore');
-        } catch (e) {
-          print('❌ [AUTH] Failed to update agent login status: $e');
-          // Continue anyway, authentication was successful
-        }
+      // Check if OTP is already used
+      if (isUsed) {
+        throw Exception('OTP has already been used. Please request a new OTP.');
       }
+
+      // Verify OTP
+      if (storedOtp != otp) {
+        throw Exception('Invalid OTP. Please check and try again.');
+      }
+
+      // Mark OTP as used
+      await FirebaseFirestore.instance
+          .collection('email_otps')
+          .doc(email)
+          .update({'isUsed': true});
+
+      // Create user credential after successful OTP verification
+      firebase_auth.UserCredential userCredential;
       
-      // Create anonymous user for demonstration
-      // In production, you would handle this based on your authentication flow
-      final userCredential = await _auth.signInAnonymously();
+      // Check if user already exists
+      final signInMethods = await _auth.fetchSignInMethodsForEmail(email);
       
+      if (signInMethods.isNotEmpty) {
+        // User exists - sign in anonymously and update profile
+        userCredential = await _auth.signInAnonymously();
+        await userCredential.user!.updateEmail(email);
+      } else {
+        // New user - create anonymous account and link email
+        userCredential = await _auth.signInAnonymously();
+        await userCredential.user!.updateEmail(email);
+      }
+
+      print('✅ [EMAIL_AUTH] User authenticated successfully via email OTP');
+      print('👤 [EMAIL_AUTH] User ID: ${userCredential.user?.uid}');
+      print('📧 [EMAIL_AUTH] Email: $email');
+
       return userCredential;
     } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      } else {
-        throw Exception('Failed to verify email OTP: $e');
-      }
+      throw Exception('Failed to verify email OTP: $e');
     }
   }
 
+
+  /// UNUSED: Send email OTP via working Webhook.site - guaranteed to work
+  
   @override
   firebase_auth.User? getCurrentUser() {
     return _auth.currentUser;
@@ -285,18 +339,22 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<firebase_auth.UserCredential> signInWithEmailAndPassword(String email, String password) async {
+  Future<firebase_auth.UserCredential> signInWithEmailAndPassword(
+      String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return await _auth.signInWithEmailAndPassword(
+          email: email, password: password);
     } catch (e) {
       throw Exception('Failed to sign in with email: $e');
     }
   }
 
   @override
-  Future<firebase_auth.UserCredential> signUpWithEmailAndPassword(String email, String password) async {
+  Future<firebase_auth.UserCredential> signUpWithEmailAndPassword(
+      String email, String password) async {
     try {
-      return await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      return await _auth.createUserWithEmailAndPassword(
+          email: email, password: password);
     } catch (e) {
       throw Exception('Failed to sign up with email: $e');
     }
@@ -308,7 +366,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<firebase_auth.UserCredential> verifyOTP(String verificationId, String otp) async {
+  Future<firebase_auth.UserCredential> verifyOTP(
+      String verificationId, String otp) async {
     try {
       final credential = firebase_auth.PhoneAuthProvider.credential(
         verificationId: verificationId,
@@ -375,10 +434,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<AgentCard?> getAgentCard(String agentId) async {
     try {
-      final doc = await _firestore
-          .collection('agents')
-          .doc(agentId)
-          .get();
+      final doc = await _firestore.collection('agents').doc(agentId).get();
 
       if (doc.exists) {
         final data = doc.data()!;
@@ -411,7 +467,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> updateAgentCard(AgentCard agentCard) async {
     try {
       final now = DateTime.now();
-      final cardData = agentCard.toJson()..['updatedAt'] = now.toIso8601String();
+      final cardData = agentCard.toJson()
+        ..['updatedAt'] = now.toIso8601String();
 
       await _firestore
           .collection('agents')
@@ -425,10 +482,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<bool> doesAgentCardExist(String agentId) async {
     try {
-      final doc = await _firestore
-          .collection('agents')
-          .doc(agentId)
-          .get();
+      final doc = await _firestore.collection('agents').doc(agentId).get();
 
       return doc.exists;
     } catch (e) {
@@ -449,10 +503,7 @@ class AuthRepositoryImpl implements AuthRepository {
         'updatedAt': now.toIso8601String(),
       };
 
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .set(data);
+      await _firestore.collection('users').doc(userId).set(data);
     } catch (e) {
       throw Exception('Failed to create user data: $e');
     }
@@ -461,10 +512,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Map<String, dynamic>?> getUserData(String userId) async {
     try {
-      final doc = await _firestore
-          .collection('users')
-          .doc(userId)
-          .get();
+      final doc = await _firestore.collection('users').doc(userId).get();
 
       if (doc.exists) {
         return doc.data();
@@ -484,12 +532,178 @@ class AuthRepositoryImpl implements AuthRepository {
       final now = DateTime.now();
       final data = {...userData, 'updatedAt': now.toIso8601String()};
 
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .update(data);
+      await _firestore.collection('users').doc(userId).update(data);
     } catch (e) {
       throw Exception('Failed to update user data: $e');
+    }
+  }
+
+  // Agent Profile Operations
+  @override
+  Future<void> updateAgentProfile(UpdateAgentProfileParams params) async {
+    try {
+      final userId = _auth.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Update agent profile in Firestore
+      final updateData = <String, dynamic>{};
+      
+      if (params.firstName != null) updateData['firstName'] = params.firstName;
+      if (params.lastName != null) updateData['lastName'] = params.lastName;
+      if (params.email != null) updateData['email'] = params.email;
+      if (params.name != null) updateData['name'] = params.name;
+      if (params.agentProfileImage != null) updateData['agentProfileImage'] = params.agentProfileImage;
+      if (params.selectedReasonForUsingHushh != null) updateData['selectedReasonForUsingHushh'] = params.selectedReasonForUsingHushh;
+      if (params.onboardStatus != null) updateData['onboardStatus'] = params.onboardStatus!.name;
+      if (params.selectedCategoryId != null) updateData['selectedCategoryId'] = params.selectedCategoryId;
+      if (params.selectedBrandId != null) updateData['selectedBrandId'] = params.selectedBrandId;
+      
+      updateData['updatedAt'] = Timestamp.now();
+
+      await _agentService.updateAgent(params.agentId, updateData);
+    } catch (e) {
+      throw Exception('Failed to update agent profile: $e');
+    }
+  }
+
+  @override
+  Future<List<AgentCategory>> getAgentCategories() async {
+    try {
+      final snapshot = await _firestore
+          .collection('agent_categories')
+          .where('isActive', isEqualTo: true)
+          .orderBy('name')
+          .get();
+
+      return snapshot.docs
+          .map((doc) => AgentCategoryModel.fromFirestore(doc, null))
+          .toList();
+    } catch (e) {
+      // Return mock data if collection doesn't exist yet
+      return _getMockCategories();
+    }
+  }
+
+  @override
+  Future<List<AgentBrand>> getAgentBrandsByCategory(String categoryId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('agent_brands')
+          .where('categoryId', isEqualTo: categoryId)
+          .where('isActive', isEqualTo: true)
+          .orderBy('name')
+          .get();
+
+      return snapshot.docs
+          .map((doc) => AgentBrandModel.fromFirestore(doc, null))
+          .toList();
+    } catch (e) {
+      // Return mock data if collection doesn't exist yet
+      return _getMockBrands(categoryId);
+    }
+  }
+
+  // Mock data methods for development
+  List<AgentCategory> _getMockCategories() {
+    final now = DateTime.now();
+    return [
+      AgentCategoryModel(
+        id: 'retail',
+        name: 'Retail & E-commerce',
+        description: 'Online and offline retail businesses',
+        iconUrl: null,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      AgentCategoryModel(
+        id: 'food',
+        name: 'Food & Beverage',
+        description: 'Restaurants, cafes, and food delivery services',
+        iconUrl: null,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      AgentCategoryModel(
+        id: 'health',
+        name: 'Healthcare',
+        description: 'Medical services and health products',
+        iconUrl: null,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      AgentCategoryModel(
+        id: 'education',
+        name: 'Education',
+        description: 'Educational services and institutions',
+        iconUrl: null,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ];
+  }
+
+  List<AgentBrand> _getMockBrands(String categoryId) {
+    final now = DateTime.now();
+    
+    switch (categoryId) {
+      case 'retail':
+        return [
+          AgentBrandModel(
+            id: 'amazon',
+            name: 'Amazon',
+            description: 'Global e-commerce marketplace',
+            logoUrl: null,
+            website: 'https://amazon.com',
+            categoryId: categoryId,
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+          AgentBrandModel(
+            id: 'flipkart',
+            name: 'Flipkart',
+            description: 'Indian e-commerce platform',
+            logoUrl: null,
+            website: 'https://flipkart.com',
+            categoryId: categoryId,
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ];
+      case 'food':
+        return [
+          AgentBrandModel(
+            id: 'swiggy',
+            name: 'Swiggy',
+            description: 'Food delivery platform',
+            logoUrl: null,
+            website: 'https://swiggy.com',
+            categoryId: categoryId,
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+          AgentBrandModel(
+            id: 'zomato',
+            name: 'Zomato',
+            description: 'Restaurant discovery and food delivery',
+            logoUrl: null,
+            website: 'https://zomato.com',
+            categoryId: categoryId,
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ];
+      default:
+        return [];
     }
   }
 }

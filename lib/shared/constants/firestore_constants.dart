@@ -1,7 +1,7 @@
 // Firestore collections and subcollections constants
 class FirestoreCollections {
   // Main collections
-  static const String users = 'HushhAgents';
+  static const String users = 'Hushhagents';
   static const String auth = 'auth';
   static const String profiles = 'profiles';
   static const String settings = 'settings';

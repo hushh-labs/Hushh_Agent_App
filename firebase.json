@@ -1,1 +1,31 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"hushone-app","appId":"1:53407187172:android:9494409c4f156fc6b32cf1","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"hushone-app","appId":"1:53407187172:ios:1bb8e3e3b0b6f9c2b32cf1","uploadDebugSymbols":true,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"hushone-app","configurations":{"android":"1:53407187172:android:9494409c4f156fc6b32cf1","ios":"1:53407187172:ios:1bb8e3e3b0b6f9c2b32cf1","web":"1:53407187172:web:00758b5c83efe7adb32cf1"}}}}}}
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "hushone-app",
+                    "appId": "1:53407187172:android:9494409c4f156fc6b32cf1",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "ios": {
+                "default": {
+                    "projectId": "hushone-app",
+                    "appId": "1:53407187172:ios:1bb8e3e3b0b6f9c2b32cf1",
+                    "uploadDebugSymbols": true,
+                    "fileOutput": "ios/Runner/GoogleService-Info.plist"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "hushone-app",
+                    "configurations": {
+                        "android": "1:53407187172:android:9494409c4f156fc6b32cf1",
+                        "ios": "1:53407187172:ios:1bb8e3e3b0b6f9c2b32cf1",
+                        "web": "1:53407187172:web:00758b5c83efe7adb32cf1"
+                    }
+                }
+            }
+        }
+    }
+}

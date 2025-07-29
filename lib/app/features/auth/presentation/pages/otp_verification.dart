@@ -221,9 +221,29 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                     onPressed: () {
                       if (countDownForResendStartValue.toString() == "60") {
                         countDownForResendFunction();
-                        // TODO: Replace with proper logging
-                        // print('🔥 [OTP_VERIFICATION] Resend OTP for: ${args.emailOrPhone}');
-                        // print('🔥 [OTP_VERIFICATION] Type: ${args.type}');
+                        
+                        // Resend OTP based on type
+                        if (args.type == OtpVerificationType.email) {
+                          context.read<AuthBloc>().add(
+                            SendEmailOtpEvent(args.emailOrPhone),
+                          );
+                        } else {
+                          context.read<AuthBloc>().add(
+                            SendPhoneOtpEvent(args.emailOrPhone),
+                          );
+                        }
+                        
+                        // Show confirmation message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              args.type == OtpVerificationType.email 
+                                  ? 'OTP sent to your email'
+                                  : 'OTP sent to your phone',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
                       }
                     },
                     child: countDownForResendStartValue.toString().length == 1

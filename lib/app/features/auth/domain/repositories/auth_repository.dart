@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../entities/agent_card.dart';
+import '../entities/agent_category.dart';
+import '../entities/agent_brand.dart';
+import '../usecases/update_agent_profile_usecase.dart';
 
 /// Abstract repository interface for authentication operations
 abstract class AuthRepository {
@@ -69,4 +72,14 @@ abstract class AuthRepository {
 
   /// Check if agent card exists
   Future<bool> doesAgentCardExist(String agentId);
+
+  // Agent Profile Operations
+  /// Update agent profile information
+  Future<void> updateAgentProfile(UpdateAgentProfileParams params);
+
+  /// Get all agent categories
+  Future<List<AgentCategory>> getAgentCategories();
+
+  /// Get agent brands by category
+  Future<List<AgentBrand>> getAgentBrandsByCategory(String categoryId);
 }

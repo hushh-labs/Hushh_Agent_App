@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class EmailTextField extends StatefulWidget {
   final TextEditingController? controller;
+  final Function(bool)? onValidationChanged;
 
-  const EmailTextField({super.key, this.controller});
+  const EmailTextField({super.key, this.controller, this.onValidationChanged});
 
   @override
   State<EmailTextField> createState() => _EmailTextFieldState();
@@ -11,11 +12,39 @@ class EmailTextField extends StatefulWidget {
 
 class _EmailTextFieldState extends State<EmailTextField> {
   late final TextEditingController _controller;
+  String? _errorText;
 
   @override
   void initState() {
     super.initState();
     _controller = widget.controller ?? TextEditingController();
+    _controller.addListener(_validateEmail);
+  }
+
+  void _validateEmail() {
+    final email = _controller.text;
+    bool isValid = false;
+    
+    if (email.isEmpty) {
+      setState(() {
+        _errorText = null;
+      });
+    } else {
+      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!emailRegex.hasMatch(email)) {
+        setState(() {
+          _errorText = 'Please enter a valid email address';
+        });
+      } else {
+        setState(() {
+          _errorText = null;
+        });
+        isValid = true;
+      }
+    }
+    
+    // Notify parent about validation status
+    widget.onValidationChanged?.call(isValid);
   }
 
   @override
@@ -49,6 +78,7 @@ class _EmailTextFieldState extends State<EmailTextField> {
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
           hintText: "Enter email address",
+          errorText: _errorText,
           hintStyle: TextStyle(
             color: const Color.fromARGB(
               255,

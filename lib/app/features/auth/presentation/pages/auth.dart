@@ -8,7 +8,7 @@ import '../bloc/auth_bloc.dart';
 import '../components/country_code_text_field.dart';
 import '../components/email_text_field.dart';
 import '../components/phone_number_text_field.dart';
-import '../components/sign_in_with_email_button.dart';
+
 import '../../domain/enum.dart';
 import 'otp_verification.dart';
 
@@ -25,11 +25,15 @@ class AuthPage extends StatefulWidget {
 
 class _AuthPageState extends State<AuthPage> {
   final TextEditingController _emailController = TextEditingController();
+  String _lastUsedPhoneNumber = '';
+  late AuthBloc _authBloc;
+  bool _isEmailValid = false;
 
   @override
   void initState() {
     super.initState();
-    context.read<AuthBloc>().add(InitializeEvent(true));
+    _authBloc = context.read<AuthBloc>();
+    _authBloc.add(InitializeEvent(true));
   }
 
   @override
@@ -39,19 +43,41 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   void _sendOtp() {
-    final authBloc = context.read<AuthBloc>();
-    
     if (widget.loginMode == LoginMode.email) {
-      // Send email OTP
-      authBloc.add(SendEmailOtpEvent(_emailController.text));
+      // Send email OTP only if email is valid
+      if (_isEmailValid && _emailController.text.isNotEmpty) {
+        _authBloc.add(SendEmailOtpEvent(_emailController.text));
+      }
     } else {
       // Send phone OTP
-      final phoneDigits = authBloc.phoneNumberWithoutCountryCode;
-      final countryCode = authBloc.selectedCountry?.dialCode ?? '91';
+      final phoneDigits = _authBloc.phoneNumberWithoutCountryCode;
+      final countryCode = _authBloc.selectedCountry?.dialCode ?? '91';
       final fullPhoneNumber = '+$countryCode$phoneDigits';
+      
+      // Store the phone number locally for navigation
+      _lastUsedPhoneNumber = fullPhoneNumber;
 
-      authBloc.add(SendPhoneOtpEvent(fullPhoneNumber));
+      _authBloc.add(SendPhoneOtpEvent(fullPhoneNumber));
     }
+  }
+
+  void _navigateToOtpVerification(BuildContext context, String emailOrPhone) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider<AuthBloc>.value(
+          value: _authBloc,
+          child: OtpVerificationPage(
+            args: OtpVerificationPageArgs(
+              emailOrPhone: emailOrPhone,
+              type: widget.loginMode == LoginMode.email 
+                  ? OtpVerificationType.email 
+                  : OtpVerificationType.phone,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -65,21 +91,12 @@ class _AuthPageState extends State<AuthPage> {
           // OTP sent successfully, navigate to verification
           final emailOrPhone = widget.loginMode == LoginMode.email 
               ? _emailController.text 
-              : context.read<AuthBloc>().phoneNumberWithoutCountryCode;
+              : _lastUsedPhoneNumber;
           
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OtpVerificationPage(
-                args: OtpVerificationPageArgs(
-                  emailOrPhone: emailOrPhone,
-                  type: widget.loginMode == LoginMode.email 
-                      ? OtpVerificationType.email 
-                      : OtpVerificationType.phone,
-                ),
-              ),
-            ),
-          );
+          // Use post frame callback to ensure navigation happens after build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _navigateToOtpVerification(context, emailOrPhone);
+          });
         }
       },
       child: Material(
@@ -158,9 +175,54 @@ class _AuthPageState extends State<AuthPage> {
                 ),
                 const SizedBox(height: 26),
                 if (widget.loginMode == LoginMode.email) ...[
-                  EmailTextField(controller: _emailController),
+                  EmailTextField(
+                    controller: _emailController,
+                    onValidationChanged: (isValid) {
+                      setState(() {
+                        _isEmailValid = isValid;
+                      });
+                    },
+                  ),
                   const SizedBox(height: 20),
-                  SignInWithEmailButton(onPressed: _sendOtp),
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      final isDisabled = state is SendingOtpState || !_isEmailValid;
+                      
+                      return InkWell(
+                        onTap: isDisabled ? null : _sendOtp,
+                        child: Container(
+                          width: double.infinity,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: isDisabled 
+                                ? LinearGradient(
+                                    colors: [Colors.grey.shade400, Colors.grey.shade500],
+                                  )
+                                : const LinearGradient(
+                                    colors: [Color(0XFFA342FF), Color(0XFFE54D60)],
+                                  ),
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                          child: Center(
+                            child: state is SendingOtpState
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : Text(
+                                    "Continue",
+                                    style: TextStyle(
+                                      color: isDisabled 
+                                          ? Colors.grey.shade600 
+                                          : const Color(0xffFFFFFF),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ] else ...[
                   const CountryCodeTextField(),
                   const SizedBox(height: 8),

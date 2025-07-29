@@ -27,8 +27,8 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
       'text': 'Continue with Email',
     },
     {
-      'type': 'Guest', 
-      'icon': Icons.person_outline, 
+      'type': 'Guest',
+      'icon': Icons.person_outline,
       'text': 'Continue as Guest'
     },
   ];
@@ -65,15 +65,14 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                          50), // Adjust value for roundness
                                       child: Image.asset(
                                         'assets/app-logo.png',
                                         width: context.widthPercent(33),
-                                        fit: BoxFit.contain,
                                         height: context.widthPercent(33) * 1.2,
+                                        fit: BoxFit.contain,
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -112,34 +111,33 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                               child: Column(
                                 children: List.generate(
                                   socialMethods.length,
-                                  (index) =>
-                                      SocialButton(
-                                            text: socialMethods[index]['text']!,
-                                            icon: socialMethods[index]['icon']!,
-                                            onTap: () {
-                                              // Handle button tap based on type
-                                              if (socialMethods[index]['type'] ==
-                                                  'Phone') {
-                                                _showAuthBottomSheet(
-                                                  context,
-                                                  LoginMode.phone,
-                                                );
-                                              } else if (socialMethods[index]['type'] ==
-                                                  'Email') {
-                                                _showAuthBottomSheet(
-                                                  context,
-                                                  LoginMode.email,
-                                                );
-                                              } else if (socialMethods[index]['type'] ==
-                                                  'Guest') {
-                                                // Handle guest login
-                                                _navigateToGuest(context);
-                                              }
-                                            },
-                                          )
-                                          .animate(delay: (300 * index).ms)
-                                          .fade(duration: 700.ms)
-                                          .moveX(duration: 800.ms),
+                                  (index) => SocialButton(
+                                    text: socialMethods[index]['text']!,
+                                    icon: socialMethods[index]['icon']!,
+                                    onTap: () {
+                                      // Handle button tap based on type
+                                      if (socialMethods[index]['type'] ==
+                                          'Phone') {
+                                        _showAuthBottomSheet(
+                                          context,
+                                          LoginMode.phone,
+                                        );
+                                      } else if (socialMethods[index]['type'] ==
+                                          'Email') {
+                                        _showAuthBottomSheet(
+                                          context,
+                                          LoginMode.email,
+                                        );
+                                      } else if (socialMethods[index]['type'] ==
+                                          'Guest') {
+                                        // Handle guest login
+                                        _navigateToGuest(context);
+                                      }
+                                    },
+                                  )
+                                      .animate(delay: (300 * index).ms)
+                                      .fade(duration: 700.ms)
+                                      .moveX(duration: 800.ms),
                                 ),
                               ),
                             ),
@@ -162,8 +160,8 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                 TextSpan(
                   text: "By entering information, I agree to Hushh's ",
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.black.withValues(alpha: 0.7),
-                  ),
+                        color: Colors.black.withValues(alpha: 0.7),
+                      ),
                   children: <InlineSpan>[
                     const TextSpan(
                       text: 'Terms of Service',
@@ -292,9 +290,9 @@ class SocialButton extends StatelessWidget {
                   child: Text(
                     text,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
                   ),
                 ),
               ],
@@ -304,4 +302,4 @@ class SocialButton extends StatelessWidget {
       ),
     );
   }
-} 
+}

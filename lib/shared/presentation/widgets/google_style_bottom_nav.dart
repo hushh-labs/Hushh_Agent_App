@@ -4,12 +4,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../utils/app_local_storage.dart';
 import '../../core/routing/routes.dart';
 
-/// Google-style bottom navigation bar component based on your design inspiration.
+/// Google-style bottom navigation bar component with complete animation system
 class GoogleStyleBottomNav extends StatelessWidget {
   final int currentIndex;
   final List<BottomNavItem> items;
   final Function(int) onTap;
-  final bool isAgentApp; // This property is kept from your original code
+  final bool isAgentApp;
 
   const GoogleStyleBottomNav({
     super.key,
@@ -22,24 +22,24 @@ class GoogleStyleBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // The outer container for shadow and background color
+      // Outer container with shadow and styling
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -3),
+            color: Colors.black.withValues(alpha: 0.08), // Subtle shadow
+            blurRadius: 12,                               // Soft blur effect
+            offset: const Offset(0, -3),                 // Shadow above the bar
           ),
         ],
       ),
       child: SafeArea(
         child: Container(
-          height: 53, // Reduced from 50 to 45 to minimize gap below
+          height: 53,                                     // Fixed height
           padding: const EdgeInsets.symmetric(
             horizontal: 8.0,
             vertical: 8.0,
-          ), // Increased vertical padding to 8.0 for more gap
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: items.asMap().entries.map((entry) {
@@ -58,61 +58,74 @@ class GoogleStyleBottomNav extends StatelessWidget {
     );
   }
 
-  /// Builds a single navigation item.
+  /// Individual Navigation Item with Animations
   Widget _buildNavItem({
     required BuildContext context,
     required BottomNavItem item,
     required int index,
     required bool isSelected,
   }) {
-    final isRestrictedForGuest =
-        AppLocalStorage.isGuestMode && item.isRestrictedForGuest;
+    final isRestrictedForGuest = AppLocalStorage.isGuestMode && item.isRestrictedForGuest;
 
     return GestureDetector(
       onTap: () {
-        HapticFeedback.lightImpact();
+        // HAPTIC FEEDBACK ANIMATION
+        HapticFeedback.lightImpact();              // Physical vibration feedback
+        
         if (isRestrictedForGuest) {
           _showGuestAccessDialog(context, item.label);
           return;
         }
         onTap(index);
       },
-      // Using a transparent color to ensure the gesture detector covers the whole area
-      // even for unselected items.
-      behavior: HitTestBehavior.translucent,
+      behavior: HitTestBehavior.translucent,       // Full area touch detection
+      
+      // MAIN ANIMATION CONTAINER
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.ease,
+        // ANIMATION TIMING & CURVES
+        duration: const Duration(milliseconds: 300),  // Smooth transition timing
+        curve: Curves.ease,                           // Easing animation curve
+        
+        // DYNAMIC PADDING ANIMATION
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 16.0 : 8.0,
-          vertical: isSelected ? 10.0 : 4.0,
-        ), // Increased vertical padding for selected items
+          horizontal: isSelected ? 16.0 : 8.0,       // Expand/contract horizontally
+          vertical: isSelected ? 10.0 : 4.0,         // Expand/contract vertically
+        ),
+        
+        // BACKGROUND DECORATION ANIMATION
         decoration: BoxDecoration(
+          // COLOR & GRADIENT ANIMATIONS
           color: isSelected ? const Color(0xFF616180) : Colors.transparent,
           gradient: isSelected
-              ? const LinearGradient(colors: [Colors.purple, Colors.pinkAccent])
-              : null,
-          borderRadius: BorderRadius.circular(20.0), // Slightly reduced radius
+              ? const LinearGradient(                 // Gradient for selected state
+                  colors: [Colors.purple, Colors.pinkAccent]
+                )
+              : null,                                 // No gradient for unselected
+          borderRadius: BorderRadius.circular(20.0),  // Rounded corners
         ),
+        
+        // CONTENT LAYOUT
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // ICON WITH COLOR ANIMATION
             _buildIcon(
               item: item,
               isSelected: isSelected,
               isRestricted: isRestrictedForGuest,
             ),
-            // Conditionally add spacing and the label if the item is selected
+            
+            // CONDITIONAL TEXT ANIMATION (Show/Hide)
             if (isSelected) ...[
-              const SizedBox(width: 6.0), // Reduced spacing
+              const SizedBox(width: 6.0),            // Spacing animation
               Text(
                 item.label,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.white,               // White text on gradient
                   fontWeight: FontWeight.bold,
-                  fontSize: 12, // Reduced font size
+                  fontSize: 12,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -123,33 +136,57 @@ class GoogleStyleBottomNav extends StatelessWidget {
     );
   }
 
-  /// Builds the icon for a navigation item.
+  /// Icon Animation & Color Transitions
   Widget _buildIcon({
     required BottomNavItem item,
     required bool isSelected,
     required bool isRestricted,
   }) {
-    // Determine the icon color based on its state
+    // DYNAMIC COLOR CALCULATION
     final Color iconColor = isSelected
-        ? Colors.white
-        : (isRestricted ? Colors.grey[400]! : const Color(0xFF616180));
+        ? Colors.white                              // Selected: White
+        : (isRestricted 
+            ? Colors.grey[400]!                     // Restricted: Gray
+            : const Color(0xFF616180));             // Default: Dark gray
 
-    if (item.icon != null) {
-      return Icon(item.icon, color: iconColor, size: 20);
-    } else if (item.iconPath != null) {
-      // Fallback to Material icon if SVG fails to load
-      return Icon(Icons.apps, color: iconColor, size: 20);
+    // SVG ICON WITH COLOR FILTER ANIMATION (with error handling)
+    if (item.iconPath != null) {
+      return SvgPicture.asset(
+        item.iconPath!,
+        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn), // Color animation
+        width: 20,
+        height: 20,
+        // Fallback to Material icon if SVG fails to load
+        placeholderBuilder: (context) => Icon(
+          item.icon ?? Icons.circle,
+          color: iconColor,
+          size: 20,
+        ),
+      );
+    } 
+    // MATERIAL ICON WITH COLOR ANIMATION
+    else if (item.icon != null) {
+      return Icon(
+        item.icon, 
+        color: iconColor,                           // Animated color transition
+        size: 20
+      );
     }
-    // Return an empty widget if no icon is provided
-    return const SizedBox.shrink();
+    
+    // FALLBACK ICON
+    return Icon(
+      Icons.circle,
+      color: iconColor,
+      size: 20,
+    );
   }
 
-  /// Shows a dialog for guest users trying to access restricted features.
+  /// Guest Access Dialog Animation
   void _showGuestAccessDialog(BuildContext context, String featureName) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return AlertDialog(                         // Built-in fade animation
           title: const Text('Sign In Required'),
           content: Text('Please sign in to access $featureName.'),
           actions: [
@@ -172,11 +209,11 @@ class GoogleStyleBottomNav extends StatelessWidget {
   }
 }
 
-/// Data class for bottom navigation items (this class remains the same)
+/// BottomNavItem Data Structure
 class BottomNavItem {
   final String label;
-  final String? iconPath; // For SVG icons
-  final IconData? icon; // For Material icons
+  final String? iconPath;                         // For SVG icons
+  final IconData? icon;                           // For Material icons
   final bool isRestrictedForGuest;
 
   const BottomNavItem({
@@ -186,6 +223,7 @@ class BottomNavItem {
     this.isRestrictedForGuest = false,
   });
 
+  // Factory constructors for different app types
   factory BottomNavItem.user({
     required String label,
     String? iconPath,

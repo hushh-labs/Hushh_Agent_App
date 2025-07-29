@@ -146,10 +146,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     InitializeHomeEvent event,
     Emitter<HomeState> emit,
   ) async {
-    emit(HomeLoadingState());
-    
+    // Skip loading state and directly check authentication
     try {
-      // First check authentication status
+      // Directly check authentication without emitting loading state
       add(CheckAuthenticationEvent());
       
     } catch (e) {
@@ -172,19 +171,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         return;
       }
 
-      // User is authenticated, proceed with home initialization
-      final initParams = InitializeHomeParams(
-        preferredSection: null,
-      );
-      final initResult = await _initializeHomeUseCase(initParams);
+      // User is authenticated, directly load sections without delay
+      final result = await _getHomeSectionsUseCase();
       
-      if (initResult is Failed) {
-        emit(HomeErrorState('Failed to initialize home'));
-        return;
+      if (result is Success<List<HomeSection>>) {
+        final sections = result.data;
+        emit(HomeLoadedState(
+          currentTabIndex: 0,
+          sections: sections,
+          currentUser: currentUser,
+        ));
+      } else if (result is Failed) {
+        emit(HomeErrorState('Failed to load home sections'));
       }
-      
-      // Load home sections
-      add(LoadHomeSectionsEvent());
       
     } catch (e) {
       emit(HomeErrorState('Authentication check failed: ${e.toString()}'));

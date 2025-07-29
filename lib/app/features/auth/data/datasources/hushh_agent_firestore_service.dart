@@ -17,40 +17,34 @@ class HushhAgentFirestoreService {
   Future<HushhAgentModel> createOrUpdateAgent({
     String? phone,
     String? email,
+    String? name,
     String? fullName,
   }) async {
     try {
-      if (phone == null && email == null) {
+      print('🔄 [Firestore] Creating or updating agent...');
+
+      // Try to find existing agent by phone or email
+      Query<HushhAgentModel> query = _collection;
+      if (phone != null && phone.isNotEmpty) {
+        query = query.where('phone', isEqualTo: phone);
+      } else if (email != null && email.isNotEmpty) {
+        query = query.where('email', isEqualTo: email);
+      } else {
         throw Exception('Either phone or email must be provided');
       }
 
-      print('🔥 [Firestore] Creating/updating agent for phone: $phone, email: $email');
+      final existingDocs = await query.limit(1).get();
 
-      QuerySnapshot<HushhAgentModel>? existingAgentQuery;
-
-      // Check if agent already exists by phone number or email
-      if (phone != null && phone.isNotEmpty) {
-        existingAgentQuery = await _collection
-            .where('phone', isEqualTo: phone)
-            .limit(1)
-            .get();
-      } else if (email != null && email.isNotEmpty) {
-        existingAgentQuery = await _collection
-            .where('email', isEqualTo: email)
-            .limit(1)
-            .get();
-      }
-
-      if (existingAgentQuery != null && existingAgentQuery.docs.isNotEmpty) {
+      if (existingDocs.docs.isNotEmpty) {
         // Update existing agent
-        final existingDoc = existingAgentQuery.docs.first;
+        final existingDoc = existingDocs.docs.first;
         final existingAgent = existingDoc.data();
         
         final updatedAgent = existingAgent.copyWith(
           phone: phone ?? existingAgent.phone,
           email: email ?? existingAgent.email,
+          name: name ?? existingAgent.name,
           fullName: fullName ?? existingAgent.fullName,
-          isActive: true,
           updatedAt: DateTime.now(),
         );
 
@@ -63,6 +57,7 @@ class HushhAgentFirestoreService {
         final newAgent = HushhAgentModel.create(
           phone: phone ?? '',
           email: email,
+          name: name,
           fullName: fullName,
         );
 
@@ -73,7 +68,7 @@ class HushhAgentFirestoreService {
       }
     } catch (e) {
       print('❌ [Firestore] Error creating/updating agent: $e');
-      rethrow;
+      throw Exception('Failed to create or update agent: ${e.toString()}');
     }
   }
 
@@ -151,24 +146,66 @@ class HushhAgentFirestoreService {
   /// Update agent email
   Future<void> updateAgentEmail(String agentId, String email) async {
     try {
-      print('🔄 [Firestore] Updating email for agent: $agentId');
+      print('🔄 [Firestore] Updating agent email for ID: $agentId');
 
-      final querySnapshot = await _collection
-          .where('agentId', isEqualTo: agentId)
-          .limit(1)
-          .get();
+      // First check if document exists
+      final docRef = _collection.doc(agentId);
+      final doc = await docRef.get();
 
-      if (querySnapshot.docs.isNotEmpty) {
-        final doc = querySnapshot.docs.first;
-        await doc.reference.update({
-          'email': email,
-          'updatedAt': Timestamp.fromDate(DateTime.now()),
-        });
-        
-        print('✅ [Firestore] Agent email updated successfully');
+      if (!doc.exists) {
+        throw Exception('Agent with ID $agentId not found');
       }
+
+      // Update the email
+      await docRef.update({
+        'email': email,
+        'updatedAt': Timestamp.now(),
+      });
+
+      print('✅ [Firestore] Agent email updated successfully');
     } catch (e) {
       print('❌ [Firestore] Error updating agent email: $e');
+      throw Exception('Failed to update agent email: ${e.toString()}');
+    }
+  }
+
+  /// Update agent with custom data
+  Future<void> updateAgent(String agentId, Map<String, dynamic> updateData) async {
+    try {
+      print('🔄 [Firestore] Updating agent profile for ID: $agentId');
+
+      // First check if document exists
+      final docRef = _collection.doc(agentId);
+      final doc = await docRef.get();
+
+      if (!doc.exists) {
+        throw Exception('Agent with ID $agentId not found');
+      }
+
+      // Update with provided data
+      await docRef.update(updateData);
+
+      print('✅ [Firestore] Agent profile updated successfully');
+    } catch (e) {
+      print('❌ [Firestore] Error updating agent profile: $e');
+      throw Exception('Failed to update agent profile: ${e.toString()}');
+    }
+  }
+
+  /// Get all agents
+  Future<List<HushhAgentModel>> getAllAgents() async {
+    try {
+      print('🔄 [Firestore] Getting all agents...');
+
+      final querySnapshot = await _collection.get();
+      final agents = querySnapshot.docs
+          .map((doc) => doc.data().copyWith(id: doc.id))
+          .toList();
+
+      print('✅ [Firestore] Retrieved ${agents.length} agents');
+      return agents;
+    } catch (e) {
+      print('❌ [Firestore] Error getting all agents: $e');
       rethrow;
     }
   }
