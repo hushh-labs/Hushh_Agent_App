@@ -126,7 +126,7 @@ class _DashboardView extends StatelessWidget {
         ),
       ),
       floatingActionButton: DashboardFloatingButton(
-        onPressed: () => _showAddOptions(context),
+        onPressed: () => _launchQRScanner(context),
       ),
     );
   }
@@ -153,55 +153,11 @@ class _DashboardView extends StatelessWidget {
     context.read<dashboard.DashboardBloc>().add(const dashboard.RefreshDashboardEvent());
   }
 
-  void _showAddOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            ListTile(
-              leading: const Icon(Icons.business, color: Color(0xFFE91E63)),
-              title: const Text('Add Service'),
-              onTap: () {
-                Navigator.pop(context);
-                _addService(context);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.person_add, color: Color(0xFFE91E63)),
-              title: const Text('Add Customer'),
-              onTap: () {
-                Navigator.pop(context);
-                _addCustomer(context);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.event, color: Color(0xFFE91E63)),
-              title: const Text('Schedule Meeting'),
-              onTap: () {
-                Navigator.pop(context);
-                _scheduleMeeting(context);
-              },
-            ),
-          ],
-        ),
+  void _launchQRScanner(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('QR Scanner feature coming soon!'),
+        backgroundColor: Colors.blue,
       ),
     );
   }

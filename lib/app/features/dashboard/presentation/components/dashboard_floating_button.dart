@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 class DashboardFloatingButton extends StatelessWidget {
-  final VoidCallback? onPressed;
+  final VoidCallback onPressed;
 
   const DashboardFloatingButton({
     super.key,
-    this.onPressed,
+    required this.onPressed,
   });
 
   @override
@@ -13,9 +13,10 @@ class DashboardFloatingButton extends StatelessWidget {
     return FloatingActionButton(
       onPressed: onPressed,
       backgroundColor: const Color(0xFFE91E63),
-      elevation: 8,
+      elevation: 4,
+      shape: const CircleBorder(),
       child: const Icon(
-        Icons.add,
+        Icons.qr_code_scanner,
         color: Colors.white,
         size: 28,
       ),
