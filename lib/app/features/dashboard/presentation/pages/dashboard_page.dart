@@ -8,7 +8,7 @@ import '../components/quick_insights_grid.dart';
 import '../components/dashboard_tab_bar.dart';
 import '../components/dashboard_content.dart';
 import '../components/dashboard_floating_button.dart';
-import '../components/complete_profile_section.dart';
+
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -86,16 +86,13 @@ class _DashboardView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Complete Profile Section (replaces agent card)
-                        if (!isProfileComplete)
-                          CompleteProfileSection(
-                            onCompleteProfile: () => _completeProfile(context),
-                          ),
-
                         const SizedBox(height: 24),
 
                         // Quick Insights Grid
-                        QuickInsightsGrid(insights: insights),
+                        QuickInsightsGrid(
+                          insights: insights,
+                          onInsightTap: (insightId) => _handleInsightTap(context, insightId),
+                        ),
 
                         const SizedBox(height: 32),
 
@@ -145,6 +142,18 @@ class _DashboardView extends StatelessWidget {
     Navigator.pushNamed(context, AppRoutes.completeProfileEmail);
   }
 
+  void _dismissCongrats(BuildContext context) {
+    // Optionally hide the congratulations message permanently
+    // For now, just show a simple acknowledgment
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Welcome to your agent dashboard!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _selectTab(BuildContext context, dashboard.DashboardTab tab) {
     context.read<dashboard.DashboardBloc>().add(dashboard.SelectTabEvent(tab));
   }
@@ -154,12 +163,8 @@ class _DashboardView extends StatelessWidget {
   }
 
   void _launchQRScanner(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('QR Scanner feature coming soon!'),
-        backgroundColor: Colors.blue,
-      ),
-    );
+    // Navigate to Lookbooks & Products page
+    Navigator.pushNamed(context, AppRoutes.agentLookbook);
   }
 
   void _addService(BuildContext context) {
@@ -187,5 +192,33 @@ class _DashboardView extends StatelessWidget {
         backgroundColor: Colors.green,
       ),
     );
+  }
+
+  void _handleInsightTap(BuildContext context, String insightId) {
+    switch (insightId) {
+      case 'logbooks_products':
+        Navigator.pushNamed(context, AppRoutes.agentLookbook);
+        break;
+      case 'new_customers':
+        // TODO: Navigate to customers page
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Customers feature coming soon!')),
+        );
+        break;
+      case 'total_orders':
+        // TODO: Navigate to orders page
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Orders feature coming soon!')),
+        );
+        break;
+      case 'total_revenue':
+        // TODO: Navigate to revenue/analytics page
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Revenue analytics coming soon!')),
+        );
+        break;
+      default:
+        break;
+    }
   }
 } 

@@ -71,9 +71,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is OtpVerifiedState) {
-            // Navigate to home/dashboard after successful verification
+            // Navigate to agent profile flow after successful verification
             Navigator.of(context).pushNamedAndRemoveUntil(
-              AppRoutes.home, 
+              AppRoutes.agentProfileEmail, 
               (route) => false,
             );
           } else if (state is OtpVerificationFailureState) {

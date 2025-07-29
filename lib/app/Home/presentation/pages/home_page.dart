@@ -158,8 +158,8 @@ class _HomePageState extends State<HomePage> {
             body: IndexedStack(
               index: state.currentTabIndex,
               children: const [
-                ChatPage(),
                 DashboardPage(),
+                ChatPage(),
                 ProfilePage(),
               ],
             ),
@@ -205,26 +205,26 @@ class _HomePageState extends State<HomePage> {
   /// Get Material icon for each section
   IconData _getIconForSection(String sectionId) {
     switch (sectionId) {
-      case 'chat':
-        return Icons.message; // More visible chat icon
       case 'dashboard':
-        return Icons.dashboard;
+        return Icons.home_outlined;
+      case 'chat':
+        return Icons.chat_bubble_outline;
       case 'profile':
-        return Icons.person;
+        return Icons.person_outline;
       default:
-        return Icons.apps;
+        return Icons.circle;
     }
   }
 
   /// Get SVG icon path for each section (if you have SVG assets)
   String? _getSvgPathForSection(String sectionId) {
     switch (sectionId) {
-      case 'chat':
-        return null; // Will fallback to Material icon
       case 'dashboard':
-        return null; // Will fallback to Material icon  
+        return 'assets/dashboard_bottom_bar_icon.svg';
+      case 'chat':
+        return null; // Force Material icon fallback for chat
       case 'profile':
-        return null; // Will fallback to Material icon
+        return 'assets/profile_bottom_bar_icon.svg';
       default:
         return null;
     }

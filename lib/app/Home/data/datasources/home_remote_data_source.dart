@@ -191,15 +191,15 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   List<HomeSectionModel> _getDefaultSections() {
     return [
       const HomeSectionModel(
-        id: 'chat',
-        title: 'Chat',
-        icon: 'chat',
-        index: 0,
-      ),
-      const HomeSectionModel(
         id: 'dashboard',
         title: 'Dashboard',
         icon: 'dashboard',
+        index: 0,
+      ),
+      const HomeSectionModel(
+        id: 'chat',
+        title: 'Chat',
+        icon: 'chat',
         index: 1,
       ),
       const HomeSectionModel(

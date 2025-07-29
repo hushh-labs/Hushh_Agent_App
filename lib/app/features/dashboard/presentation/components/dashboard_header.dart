@@ -18,7 +18,7 @@ class DashboardHeader extends StatelessWidget {
         children: [
           // Title
           const Text(
-            'Agent Wallet',
+            'Dashboard',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,

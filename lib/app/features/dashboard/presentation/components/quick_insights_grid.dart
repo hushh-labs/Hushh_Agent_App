@@ -4,10 +4,12 @@ import 'quick_insight_card.dart';
 
 class QuickInsightsGrid extends StatelessWidget {
   final List<QuickInsightItem> insights;
+  final Function(String insightId)? onInsightTap;
 
   const QuickInsightsGrid({
     super.key,
     required this.insights,
+    this.onInsightTap,
   });
 
   @override
@@ -43,7 +45,10 @@ class QuickInsightsGrid extends StatelessWidget {
             itemCount: insights.length,
             itemBuilder: (context, index) {
               final insight = insights[index];
-              return QuickInsightCard(insight: insight);
+              return QuickInsightCard(
+                insight: insight,
+                onTap: onInsightTap != null ? () => onInsightTap!(insight.id) : null,
+              );
             },
           ),
         ),

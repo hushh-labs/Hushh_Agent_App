@@ -176,40 +176,40 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     emit(const DashboardLoadingState());
     
     try {
-      // TODO: Implement actual data loading from repository
+      // TODO: Implement actual dashboard data loading
       await Future.delayed(const Duration(milliseconds: 500));
       
-      // Mock data
+      // Mock dashboard data
       final insights = [
         const QuickInsightItem(
           id: 'new_customers',
-          title: 'New\nCustomers',
+          title: 'New Customers',
           iconName: 'people',
-          value: '', // Removed digit
+          value: '', // Empty as requested
         ),
         const QuickInsightItem(
-          id: 'upcoming_meetings',
-          title: 'Upcoming\nMeetings',
-          iconName: 'calendar',
-          value: '', // Removed digit
+          id: 'logbooks_products',
+          title: 'Logbooks &\nProducts',
+          iconName: 'inventory',
+          value: '', // Empty as requested
         ),
         const QuickInsightItem(
-          id: 'lookbook_products',
-          title: 'Lookbook &\nProducts',
-          iconName: 'shield',
-          value: '', // Removed digit
+          id: 'total_orders',
+          title: 'Total Orders',
+          iconName: 'shopping_cart',
+          value: '', // Empty as requested
         ),
         const QuickInsightItem(
-          id: 'incentive_progress',
-          title: 'Incentive\nProgress',
-          iconName: 'trending_up',
-          value: '', // Removed digit
+          id: 'total_revenue',
+          title: 'Total Revenue',
+          iconName: 'attach_money',
+          value: '', // Empty as requested
         ),
       ];
-
+      
       emit(DashboardLoadedState(
-        walletBalance: 0.0,
-        isProfileComplete: false,
+        walletBalance: 1250.00,
+        isProfileComplete: true, // Changed to true to show congratulations
         insights: insights,
         selectedTab: DashboardTab.services,
         services: [],
@@ -293,9 +293,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         
         // Remove mock customers - return empty list
         emit(currentState.copyWith(customers: []));
-      } catch (e) {
-        emit(DashboardErrorState('Failed to load customers: ${e.toString()}'));
+              } catch (e) {
+          emit(DashboardErrorState('Failed to load customers: ${e.toString()}'));
+        }
       }
     }
   }
-} 

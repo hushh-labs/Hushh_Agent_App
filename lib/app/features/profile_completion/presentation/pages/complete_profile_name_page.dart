@@ -120,7 +120,7 @@ class _CompleteProfileNameViewState extends State<_CompleteProfileNameView> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    '50%',
+                    '100%',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -131,7 +131,7 @@ class _CompleteProfileNameViewState extends State<_CompleteProfileNameView> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(50),
                   child: LinearProgressIndicator(
-                    value: 0.50,
+                    value: 1.0,
                     backgroundColor: Colors.grey[300],
                     valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6725F2)),
                     minHeight: 10,

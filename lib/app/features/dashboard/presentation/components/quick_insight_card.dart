@@ -3,16 +3,18 @@ import '../bloc/dashboard_bloc.dart';
 
 class QuickInsightCard extends StatelessWidget {
   final QuickInsightItem insight;
+  final VoidCallback? onTap;
 
   const QuickInsightCard({
     super.key,
     required this.insight,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: insight.onTap,
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -96,6 +98,12 @@ class QuickInsightCard extends StatelessWidget {
         return Icons.shield_outlined;
       case 'trending_up':
         return Icons.trending_up;
+      case 'inventory':
+        return Icons.inventory_2_outlined;
+      case 'shopping_cart':
+        return Icons.shopping_cart_outlined;
+      case 'attach_money':
+        return Icons.attach_money_outlined;
       default:
         return Icons.info_outline;
     }

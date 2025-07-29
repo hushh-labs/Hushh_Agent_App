@@ -106,7 +106,7 @@ class _CompleteProfileEmailViewState extends State<_CompleteProfileEmailView> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    '25%',
+                    '50%',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -117,7 +117,7 @@ class _CompleteProfileEmailViewState extends State<_CompleteProfileEmailView> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(50),
                   child: LinearProgressIndicator(
-                    value: 0.25,
+                    value: 0.50,
                     backgroundColor: Colors.grey[300],
                     valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6725F2)),
                     minHeight: 10,
