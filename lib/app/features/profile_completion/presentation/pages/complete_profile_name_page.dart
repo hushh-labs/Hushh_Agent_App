@@ -31,6 +31,7 @@ class _CompleteProfileNameView extends StatefulWidget {
 }
 
 class _CompleteProfileNameViewState extends State<_CompleteProfileNameView> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   bool _isNameValid = false;
 
@@ -61,28 +62,27 @@ class _CompleteProfileNameViewState extends State<_CompleteProfileNameView> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
+        titleSpacing: 20,
+        title: Text(
           'Complete profile',
           style: TextStyle(
-            color: Colors.grey,
+            color: const Color(0xFF797979).withOpacity(0.8),
+            fontWeight: FontWeight.w600,
             fontSize: 16,
-            fontWeight: FontWeight.w500,
           ),
         ),
         actions: [
           IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(
-              Icons.close,
-              color: Colors.grey,
+              Icons.clear,
+              color: Color(0xFF797979),
             ),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: BlocConsumer<ProfileCompletionBloc, ProfileCompletionState>(
@@ -110,163 +110,181 @@ class _CompleteProfileNameViewState extends State<_CompleteProfileNameView> {
           }
         },
         builder: (context, state) {
-          return Column(
-            children: [
-              // Progress Bar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text(
-                      '0%',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: 0.0,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6A4CFF)),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 60),
-
-              // Title
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Progress indicator
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
                   child: Text(
-                    'What\'s your name?',
+                    '50%',
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Colors.grey[600],
+                      fontSize: 14,
                     ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Name Input
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _nameController,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.blue,
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Enter your name',
-                        hintStyle: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Name Tag Display
-                    if (_nameController.text.isNotEmpty)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _nameController.text,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () {
-                                  _nameController.clear();
-                                },
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: LinearProgressIndicator(
+                    value: 0.50,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6725F2)),
+                    minHeight: 10,
+                  ),
                 ),
-              ),
 
-              const Spacer(),
+                const SizedBox(height: 26),
 
-              // Continue Button
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isNameValid
-                        ? () {
-                            context.read<ProfileCompletionBloc>().add(
-                              CompleteProfileEvent(
-                                email: widget.email,
-                                name: _nameController.text.trim(),
-                              ),
-                            );
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isNameValid
-                          ? null
-                          : Colors.grey.shade300,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      elevation: 0,
-                    ).copyWith(
-                      backgroundColor: _isNameValid
-                          ? WidgetStateProperty.resolveWith<Color>((states) {
-                              return const Color(0xFF6A4CFF);
-                            })
-                          : WidgetStateProperty.all(Colors.grey.shade300),
-                    ),
-                    child: state is ProfileCompletionLoadingState
-                        ? const CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          )
-                        : const Text(
-                            'Continue',
-                            style: TextStyle(
+                // Title
+                const Text(
+                  "What's your name?",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                    color: Colors.black,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Subtitle
+                const Text(
+                  "Let's start with your name",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Name input form
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _nameController,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Enter your full name',
+                            hintStyle: TextStyle(
+                              color: Colors.grey[400],
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF6725F2),
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.red),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
                             ),
                           ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            if (value.trim().length < 2) {
+                              return 'Name should be at least 2 characters';
+                            }
+                            return null;
+                          },
+                          onChanged: (value) => setState(() {}),
+                          textInputAction: TextInputAction.next,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+
+                // Continue button
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(43),
+                      gradient: _isNameValid
+                          ? const LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Color(0xFFA342FF),
+                                Color(0xFFE54D60),
+                              ],
+                            )
+                          : null,
+                      color: !_isNameValid ? Colors.grey : null,
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isNameValid
+                          ? () {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                context.read<ProfileCompletionBloc>().add(
+                                  CompleteProfileEvent(
+                                    email: widget.email,
+                                    name: _nameController.text.trim(),
+                                  ),
+                                );
+                              }
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(43),
+                        ),
+                      ),
+                      child: state is ProfileCompletionLoadingState
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
+                          : const Text(
+                              'Complete',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
           );
         },
       ),
