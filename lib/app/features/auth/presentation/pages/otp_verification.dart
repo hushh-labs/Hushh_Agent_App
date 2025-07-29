@@ -8,6 +8,7 @@ import '../components/otp_text_field.dart';
 import '../bloc/auth_bloc.dart';
 import '../../domain/enum.dart';
 import '../../../../../shared/core/routing/routes.dart';
+import '../../../../../shared/constants/app_routes.dart';
 
 class OtpVerificationPageArgs {
   final String emailOrPhone;

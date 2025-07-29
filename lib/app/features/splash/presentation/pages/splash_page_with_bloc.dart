@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../bloc/splash_bloc.dart';
 import '../bloc/splash_event.dart';
 import '../bloc/splash_state.dart';
-import '../../../../../shared/core/routing/routes.dart';
+import '../../../../../shared/constants/app_routes.dart';
 
 /// Splash screen with complete Clean Architecture and BLoC implementation
 /// Now leverages HomeBloc for routing decisions

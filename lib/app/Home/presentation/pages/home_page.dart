@@ -9,6 +9,7 @@ import '../../../features/profile/presentation/pages/profile_page.dart';
 import '../../../../shared/constants/colors.dart';
 import '../../../../shared/core/routing/routes.dart';
 import '../../../../shared/presentation/widgets/google_style_bottom_nav.dart';
+import '../../../../shared/constants/app_routes.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

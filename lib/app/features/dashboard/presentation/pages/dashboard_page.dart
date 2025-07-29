@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../shared/core/routing/routes.dart';
+import '../../../../../shared/constants/app_routes.dart';
 import '../bloc/dashboard_bloc.dart' as dashboard;
 import '../components/dashboard_header.dart';
-import '../components/unlock_agent_card.dart';
 import '../components/quick_insights_grid.dart';
 import '../components/dashboard_tab_bar.dart';
 import '../components/dashboard_content.dart';
 import '../components/dashboard_floating_button.dart';
+import '../components/complete_profile_section.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -85,13 +86,11 @@ class _DashboardView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Unlock Agent Card
-                        UnlockAgentCard(
-                          isProfileComplete: isProfileComplete,
-                          isGuestMode: _isGuestMode(), // Check guest mode status
-                          onCompleteProfile: () => _completeProfile(context),
-                          onSignIn: () => _signIn(context),
-                        ),
+                        // Complete Profile Section (replaces agent card)
+                        if (!isProfileComplete)
+                          CompleteProfileSection(
+                            onCompleteProfile: () => _completeProfile(context),
+                          ),
 
                         const SizedBox(height: 24),
 
@@ -132,14 +131,6 @@ class _DashboardView extends StatelessWidget {
     );
   }
 
-  // Check if user is in guest mode (you can customize this logic)
-  bool _isGuestMode() {
-    // TODO: Implement actual guest mode check
-    // This could check SharedPreferences, local storage, or auth state
-    // For now, returning false as a placeholder
-    return false; // Change this based on your app's guest mode logic
-  }
-
   void _showNotifications(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -150,25 +141,8 @@ class _DashboardView extends StatelessWidget {
   }
 
   void _completeProfile(BuildContext context) {
-    context.read<dashboard.DashboardBloc>().add(const dashboard.CompleteProfileEvent());
-    
-    // TODO: Navigate to profile completion flow
-    // You can navigate to a profile completion page here
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigating to profile completion...'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _signIn(BuildContext context) {
-    // Navigate to sign in flow
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.mainAuth,
-      (route) => false,
-    );
+    // Navigate to profile completion flow
+    Navigator.pushNamed(context, AppRoutes.completeProfileEmail);
   }
 
   void _selectTab(BuildContext context, dashboard.DashboardTab tab) {

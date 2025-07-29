@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../../shared/core/routing/routes.dart';
+import '../../../../../shared/constants/app_routes.dart';
 import '../../../auth/di/auth_injection.dart' as auth_di;
 import '../../../auth/presentation/bloc/auth_bloc.dart' as auth;
 import '../bloc/profile_bloc.dart' as profile;

@@ -146,66 +146,24 @@ class HushhAgentFirestoreService {
   /// Update agent email
   Future<void> updateAgentEmail(String agentId, String email) async {
     try {
-      print('🔄 [Firestore] Updating agent email for ID: $agentId');
+      print('🔄 [Firestore] Updating email for agent: $agentId');
 
-      // First check if document exists
-      final docRef = _collection.doc(agentId);
-      final doc = await docRef.get();
+      final querySnapshot = await _collection
+          .where('agentId', isEqualTo: agentId)
+          .limit(1)
+          .get();
 
-      if (!doc.exists) {
-        throw Exception('Agent with ID $agentId not found');
+      if (querySnapshot.docs.isNotEmpty) {
+        final doc = querySnapshot.docs.first;
+        await doc.reference.update({
+          'email': email,
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
+        });
+        
+        print('✅ [Firestore] Agent email updated successfully');
       }
-
-      // Update the email
-      await docRef.update({
-        'email': email,
-        'updatedAt': Timestamp.now(),
-      });
-
-      print('✅ [Firestore] Agent email updated successfully');
     } catch (e) {
       print('❌ [Firestore] Error updating agent email: $e');
-      throw Exception('Failed to update agent email: ${e.toString()}');
-    }
-  }
-
-  /// Update agent with custom data
-  Future<void> updateAgent(String agentId, Map<String, dynamic> updateData) async {
-    try {
-      print('🔄 [Firestore] Updating agent profile for ID: $agentId');
-
-      // First check if document exists
-      final docRef = _collection.doc(agentId);
-      final doc = await docRef.get();
-
-      if (!doc.exists) {
-        throw Exception('Agent with ID $agentId not found');
-      }
-
-      // Update with provided data
-      await docRef.update(updateData);
-
-      print('✅ [Firestore] Agent profile updated successfully');
-    } catch (e) {
-      print('❌ [Firestore] Error updating agent profile: $e');
-      throw Exception('Failed to update agent profile: ${e.toString()}');
-    }
-  }
-
-  /// Get all agents
-  Future<List<HushhAgentModel>> getAllAgents() async {
-    try {
-      print('🔄 [Firestore] Getting all agents...');
-
-      final querySnapshot = await _collection.get();
-      final agents = querySnapshot.docs
-          .map((doc) => doc.data().copyWith(id: doc.id))
-          .toList();
-
-      print('✅ [Firestore] Retrieved ${agents.length} agents');
-      return agents;
-    } catch (e) {
-      print('❌ [Firestore] Error getting all agents: $e');
       rethrow;
     }
   }
