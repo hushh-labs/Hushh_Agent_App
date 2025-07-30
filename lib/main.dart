@@ -9,6 +9,7 @@ import 'app/features/auth/di/auth_injection.dart' as auth_di;
 import 'app/features/splash/domain/dependency/splash_injection.dart'
     as splash_di;
 import 'app/Home/di/home_injection.dart' as home_di;
+import 'app/features/profile/di/profile_injection.dart' as profile_di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,7 @@ void main() async {
   auth_di.initializeAuthFeature();
   splash_di.initializeSplashFeature();
   await home_di.initializeHomeFeature();
+  profile_di.initializeProfileFeature();
 
   runApp(const MyApp());
 }

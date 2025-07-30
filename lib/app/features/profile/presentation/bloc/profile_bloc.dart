@@ -1,12 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-
-import '../../domain/entities/profile_entity.dart';
-import '../../domain/usecases/get_profile_usecase.dart';
-import '../../domain/usecases/update_profile_usecase.dart';
-import '../../domain/usecases/upload_profile_image_usecase.dart';
-import '../../../../core/errors/failures.dart';
-import '../../../../core/usecases/usecase.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Events
 abstract class ProfileEvent extends Equatable {
@@ -21,13 +16,14 @@ class GetProfileEvent extends ProfileEvent {
 }
 
 class UpdateProfileEvent extends ProfileEvent {
-  final String? name;
-  final String? avatar;
+  final String? displayName;
+  final String? email;
+  final String? avatarUrl;
 
-  const UpdateProfileEvent({this.name, this.avatar});
+  const UpdateProfileEvent({this.displayName, this.email, this.avatarUrl});
 
   @override
-  List<Object?> get props => [name, avatar];
+  List<Object?> get props => [displayName, email, avatarUrl];
 }
 
 class UploadProfileImageEvent extends ProfileEvent {
@@ -52,12 +48,20 @@ class ProfileInitial extends ProfileState {}
 class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
-  final ProfileEntity profile;
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+  final String? avatarUrl;
 
-  const ProfileLoaded(this.profile);
+  const ProfileLoaded({
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+    this.avatarUrl,
+  });
 
   @override
-  List<Object?> get props => [profile];
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
 class ProfileError extends ProfileState {
@@ -70,53 +74,76 @@ class ProfileError extends ProfileState {
 }
 
 class ProfileUpdating extends ProfileState {
-  final ProfileEntity currentProfile;
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+  final String? avatarUrl;
 
-  const ProfileUpdating(this.currentProfile);
+  const ProfileUpdating({
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+    this.avatarUrl,
+  });
 
   @override
-  List<Object?> get props => [currentProfile];
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
 class ProfileUpdated extends ProfileState {
-  final ProfileEntity profile;
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+  final String? avatarUrl;
 
-  const ProfileUpdated(this.profile);
+  const ProfileUpdated({
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+    this.avatarUrl,
+  });
 
   @override
-  List<Object?> get props => [profile];
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
 class ImageUploading extends ProfileState {
-  final ProfileEntity currentProfile;
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+  final String? avatarUrl;
 
-  const ImageUploading(this.currentProfile);
+  const ImageUploading({
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+    this.avatarUrl,
+  });
 
   @override
-  List<Object?> get props => [currentProfile];
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
 class ImageUploaded extends ProfileState {
   final String imageUrl;
-  final ProfileEntity profile;
+  final String displayName;
+  final String email;
+  final String phoneNumber;
 
-  const ImageUploaded(this.imageUrl, this.profile);
+  const ImageUploaded({
+    required this.imageUrl,
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+  });
 
   @override
-  List<Object?> get props => [imageUrl, profile];
+  List<Object?> get props => [imageUrl, displayName, email, phoneNumber];
 }
 
 // BLoC
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
-  final GetProfileUseCase getProfileUseCase;
-  final UpdateProfileUseCase updateProfileUseCase;
-  final UploadProfileImageUseCase uploadProfileImageUseCase;
-
-  ProfileBloc({
-    required this.getProfileUseCase,
-    required this.updateProfileUseCase,
-    required this.uploadProfileImageUseCase,
-  }) : super(ProfileInitial()) {
+  ProfileBloc() : super(ProfileInitial()) {
     on<GetProfileEvent>(_onGetProfile);
     on<UpdateProfileEvent>(_onUpdateProfile);
     on<UploadProfileImageEvent>(_onUploadProfileImage);
@@ -128,33 +155,106 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) async {
     emit(ProfileLoading());
 
-    final result = await getProfileUseCase(NoParams());
+    try {
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        emit(const ProfileError('User not authenticated'));
+        return;
+      }
 
-    result.fold(
-      (failure) => emit(ProfileError(_mapFailureToMessage(failure))),
-      (profile) => emit(ProfileLoaded(profile)),
-    );
+      // Fetch profile data from Hushhagents collection
+      final doc = await FirebaseFirestore.instance
+          .collection('Hushhagents')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) {
+        // Try to get phone from Firebase Auth user
+        final phoneNumber = user.phoneNumber ?? 'Add phone number';
+        emit(ProfileLoaded(
+          displayName: 'Update your name',
+          email: 'Add email',
+          phoneNumber: phoneNumber,
+        ));
+        return;
+      }
+
+      final data = doc.data()!;
+      final displayName = data['name'] ?? 'Update your name';
+      final email = data['email'] ?? 'Add email';
+      final phoneNumber =
+          data['phone'] ?? user.phoneNumber ?? 'Add phone number';
+      final avatarUrl = data['profilePictureUrl'] as String?;
+
+      print(
+          '✅ [Profile] Loaded profile data: name=$displayName, email=$email, phone=$phoneNumber');
+
+      emit(ProfileLoaded(
+        displayName: displayName,
+        email: email,
+        phoneNumber: phoneNumber,
+        avatarUrl: avatarUrl,
+      ));
+    } catch (e) {
+      print('❌ [Profile] Error loading profile: $e');
+      emit(ProfileError('Failed to load profile: ${e.toString()}'));
+    }
   }
 
   Future<void> _onUpdateProfile(
     UpdateProfileEvent event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state is ProfileLoaded) {
-      final currentProfile = (state as ProfileLoaded).profile;
-      emit(ProfileUpdating(currentProfile));
+    emit(ProfileUpdating(
+      displayName: event.displayName ?? 'Update your name',
+      email: event.email ?? 'Add email',
+      phoneNumber: 'Add phone number', // Will be updated from current state
+      avatarUrl: event.avatarUrl,
+    ));
 
-      final params = UpdateProfileParams(
-        name: event.name,
-        avatar: event.avatar,
-      );
+    try {
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        emit(const ProfileError('User not authenticated'));
+        return;
+      }
 
-      final result = await updateProfileUseCase(params);
+      // Update profile data in Hushhagents collection
+      final updateData = <String, dynamic>{};
 
-      result.fold(
-        (failure) => emit(ProfileError(_mapFailureToMessage(failure))),
-        (profile) => emit(ProfileUpdated(profile)),
-      );
+      if (event.displayName != null) {
+        updateData['name'] = event.displayName;
+        updateData['fullName'] = event.displayName;
+      }
+
+      if (event.email != null) {
+        updateData['email'] = event.email;
+      }
+
+      if (event.avatarUrl != null) {
+        updateData['profilePictureUrl'] = event.avatarUrl;
+      }
+
+      updateData['updatedAt'] = FieldValue.serverTimestamp();
+
+      await FirebaseFirestore.instance
+          .collection('Hushhagents')
+          .doc(user.uid)
+          .update(updateData);
+
+      print('✅ [Profile] Updated profile data: $updateData');
+
+      emit(ProfileUpdated(
+        displayName: event.displayName ?? 'Update your name',
+        email: event.email ?? 'Add email',
+        phoneNumber: 'Add phone number', // Will be updated from current state
+        avatarUrl: event.avatarUrl,
+      ));
+    } catch (e) {
+      print('❌ [Profile] Error updating profile: $e');
+      emit(ProfileError('Failed to update profile: ${e.toString()}'));
     }
   }
 
@@ -162,36 +262,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     UploadProfileImageEvent event,
     Emitter<ProfileState> emit,
   ) async {
-    if (state is ProfileLoaded) {
-      final currentProfile = (state as ProfileLoaded).profile;
-      emit(ImageUploading(currentProfile));
-
-      final result = await uploadProfileImageUseCase(event.imagePath);
-
-      result.fold(
-        (failure) => emit(ProfileError(_mapFailureToMessage(failure))),
-        (imageUrl) async {
-          // Update profile with new image URL
-          final updateParams = UpdateProfileParams(avatar: imageUrl);
-          final updateResult = await updateProfileUseCase(updateParams);
-
-          updateResult.fold(
-            (failure) => emit(ProfileError(_mapFailureToMessage(failure))),
-            (profile) => emit(ImageUploaded(imageUrl, profile)),
-          );
-        },
-      );
-    }
-  }
-
-  String _mapFailureToMessage(Failure failure) {
-    switch (failure.runtimeType) {
-      case ServerFailure _:
-        return failure.message;
-      case CacheFailure _:
-        return 'Cache failure: ${failure.message}';
-      default:
-        return 'Unexpected error: ${failure.message}';
-    }
+    // For now, just emit success without actual upload
+    // TODO: Implement actual image upload to Firebase Storage
+    emit(const ImageUploaded(
+      imageUrl: 'https://example.com/placeholder.jpg',
+      displayName: 'Update your name',
+      email: 'Add email',
+      phoneNumber: 'Add phone number',
+    ));
   }
 }

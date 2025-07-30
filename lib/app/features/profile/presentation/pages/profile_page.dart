@@ -7,9 +7,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:hushh_user_app/shared/constants/app_routes.dart';
+import '../../../../../shared/constants/app_routes.dart';
 import '../bloc/profile_bloc.dart';
-import 'package:hushh_user_app/features/auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -38,11 +38,11 @@ class _ProfilePageState extends State<ProfilePage>
     );
     _slideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutBack,
-          ),
-        );
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutBack,
+      ),
+    );
 
     _getAppInfo();
     _animationController.forward();
@@ -140,8 +140,8 @@ class _ProfilePageState extends State<ProfilePage>
                       ElevatedButton(
                         onPressed: () {
                           context.read<ProfileBloc>().add(
-                            const GetProfileEvent(),
-                          );
+                                const GetProfileEvent(),
+                              );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFA342FF),
@@ -161,13 +161,34 @@ class _ProfilePageState extends State<ProfilePage>
                   state is ProfileUpdated ||
                   state is ImageUploading ||
                   state is ImageUploaded) {
-                final profile = state is ProfileLoaded
-                    ? state.profile
+                final displayName = state is ProfileLoaded
+                    ? state.displayName
                     : state is ProfileUpdated
-                    ? state.profile
-                    : state is ImageUploaded
-                    ? state.profile
-                    : (state as ProfileUpdating).currentProfile;
+                        ? state.displayName
+                        : state is ImageUploaded
+                            ? state.displayName
+                            : (state as ProfileUpdating).displayName;
+                final email = state is ProfileLoaded
+                    ? state.email
+                    : state is ProfileUpdated
+                        ? state.email
+                        : state is ImageUploaded
+                            ? state.email
+                            : (state as ProfileUpdating).email;
+                final phoneNumber = state is ProfileLoaded
+                    ? state.phoneNumber
+                    : state is ProfileUpdated
+                        ? state.phoneNumber
+                        : state is ImageUploaded
+                            ? state.phoneNumber
+                            : (state as ProfileUpdating).phoneNumber;
+                final avatarUrl = state is ProfileLoaded
+                    ? state.avatarUrl
+                    : state is ProfileUpdated
+                        ? state.avatarUrl
+                        : state is ImageUploaded
+                            ? state.imageUrl
+                            : (state as ProfileUpdating).avatarUrl;
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -178,7 +199,8 @@ class _ProfilePageState extends State<ProfilePage>
                       const SizedBox(height: 8),
 
                       // Enhanced Profile Header
-                      _buildEnhancedProfileHeader(profile, state),
+                      _buildEnhancedProfileHeader(
+                          displayName, email, phoneNumber, avatarUrl, state),
 
                       const SizedBox(height: 20),
 
@@ -209,7 +231,8 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildEnhancedProfileHeader(profile, ProfileState state) {
+  Widget _buildEnhancedProfileHeader(String displayName, String email,
+      String phoneNumber, String? avatarUrl, ProfileState state) {
     final isLoading = state is ProfileUpdating || state is ImageUploading;
 
     return Container(
@@ -226,21 +249,13 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ],
       ),
-      child: _buildUserProfileHeader(profile, isLoading),
+      child: _buildUserProfileHeader(
+          displayName, email, phoneNumber, avatarUrl, isLoading),
     );
   }
 
-  Widget _buildUserProfileHeader(profile, bool isLoading) {
-    final displayName = profile.name.isNotEmpty
-        ? profile.name
-        : 'Update your name';
-    final phoneNumber = profile.phoneNumber?.isNotEmpty == true
-        ? profile.phoneNumber!
-        : 'Add phone number';
-    final email = profile.email?.isNotEmpty == true
-        ? profile.email!
-        : 'Add email address';
-
+  Widget _buildUserProfileHeader(String displayName, String email,
+      String phoneNumber, String? avatarUrl, bool isLoading) {
     return Column(
       children: [
         Row(
@@ -272,10 +287,10 @@ class _ProfilePageState extends State<ProfilePage>
                         shape: BoxShape.circle,
                         color: Colors.white,
                       ),
-                      child: profile.avatar?.isNotEmpty == true
+                      child: avatarUrl?.isNotEmpty == true
                           ? ClipOval(
                               child: CachedNetworkImage(
-                                imageUrl: profile.avatar!,
+                                imageUrl: avatarUrl!,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => Container(
                                   decoration: BoxDecoration(
@@ -365,13 +380,13 @@ class _ProfilePageState extends State<ProfilePage>
                   _buildInfoRow(
                     Icons.email_outlined,
                     email,
-                    profile.email?.isNotEmpty == true,
+                    email.isNotEmpty && email != 'Add email',
                   ),
                   const SizedBox(height: 6),
                   _buildInfoRow(
                     Icons.phone_outlined,
                     phoneNumber,
-                    profile.phoneNumber?.isNotEmpty == true,
+                    phoneNumber.isNotEmpty && phoneNumber != 'Add phone number',
                   ),
                 ],
               ),
@@ -397,7 +412,8 @@ class _ProfilePageState extends State<ProfilePage>
                 child: InkWell(
                   onTap: isLoading
                       ? null
-                      : () => _showEditProfileBottomSheet(context, profile),
+                      : () => _showEditProfileBottomSheet(
+                          context, displayName, email, avatarUrl),
                   borderRadius: BorderRadius.circular(10),
                   child: Padding(
                     padding: const EdgeInsets.all(10),
@@ -448,7 +464,7 @@ class _ProfilePageState extends State<ProfilePage>
         _buildMenuCard([
           _MenuItemData('Notifications', Icons.notifications_outlined, () {
             try {
-              Navigator.pushNamed(context, AppRoutes.cardWallet.notifications);
+              Navigator.pushNamed(context, AppRoutes.home);
             } catch (e) {
               _showErrorSnackBar(
                 'Unable to open Notifications: ${e.toString()}',
@@ -457,7 +473,7 @@ class _ProfilePageState extends State<ProfilePage>
           }),
           _MenuItemData('Permissions', Icons.security_outlined, () {
             try {
-              Navigator.pushNamed(context, AppRoutes.permissions);
+              Navigator.pushNamed(context, AppRoutes.home);
             } catch (e) {
               _showErrorSnackBar('Unable to open Permissions');
             }
@@ -474,9 +490,7 @@ class _ProfilePageState extends State<ProfilePage>
             },
           ),
         ]),
-
         const SizedBox(height: 20),
-
         _buildSectionTitle('More'),
         const SizedBox(height: 12),
         _buildMenuCard([
@@ -490,7 +504,7 @@ class _ProfilePageState extends State<ProfilePage>
           if (!kIsWeb) ...[
             _MenuItemData('Delete Account', Icons.delete_outline, () {
               try {
-                Navigator.pushNamed(context, AppRoutes.deleteAccount);
+                Navigator.pushNamed(context, AppRoutes.home);
               } catch (e) {
                 _showErrorSnackBar('Unable to open Delete Account');
               }
@@ -672,8 +686,9 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  void _showEditProfileBottomSheet(BuildContext context, profile) {
-    final nameController = TextEditingController(text: profile.name);
+  void _showEditProfileBottomSheet(BuildContext context, String displayName,
+      String email, String? avatarUrl) {
+    final nameController = TextEditingController(text: displayName);
     String? selectedImagePath;
 
     showModalBottomSheet(
@@ -769,40 +784,40 @@ class _ProfilePageState extends State<ProfilePage>
                                           fit: BoxFit.cover,
                                         ),
                                       )
-                                    : (profile.avatar?.isNotEmpty == true
-                                          ? ClipOval(
-                                              child: CachedNetworkImage(
-                                                imageUrl: profile.avatar!,
-                                                fit: BoxFit.cover,
-                                                errorWidget:
-                                                    (
-                                                      context,
-                                                      url,
-                                                      error,
-                                                    ) => Container(
-                                                      decoration: BoxDecoration(
-                                                        shape: BoxShape.circle,
-                                                        color: Colors.grey[50],
-                                                      ),
-                                                      child: Icon(
-                                                        Icons.person,
-                                                        size: 45,
-                                                        color: Colors.grey[400],
-                                                      ),
-                                                    ),
+                                    : (avatarUrl?.isNotEmpty == true
+                                        ? ClipOval(
+                                            child: CachedNetworkImage(
+                                              imageUrl: avatarUrl!,
+                                              fit: BoxFit.cover,
+                                              errorWidget: (
+                                                context,
+                                                url,
+                                                error,
+                                              ) =>
+                                                  Container(
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Colors.grey[50],
+                                                ),
+                                                child: Icon(
+                                                  Icons.person,
+                                                  size: 45,
+                                                  color: Colors.grey[400],
+                                                ),
                                               ),
-                                            )
-                                          : Container(
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Colors.grey[50],
-                                              ),
-                                              child: Icon(
-                                                Icons.person,
-                                                size: 45,
-                                                color: Colors.grey[400],
-                                              ),
-                                            )),
+                                            ),
+                                          )
+                                        : Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.grey[50],
+                                            ),
+                                            child: Icon(
+                                              Icons.person,
+                                              size: 45,
+                                              color: Colors.grey[400],
+                                            ),
+                                          )),
                               ),
                             ),
                           ),
@@ -861,12 +876,12 @@ class _ProfilePageState extends State<ProfilePage>
                     // Read-only fields
                     _buildReadOnlyField(
                       'Email',
-                      profile.email ?? 'Not provided',
+                      email,
                     ),
                     const SizedBox(height: 16),
                     _buildReadOnlyField(
                       'Phone Number',
-                      profile.phoneNumber ?? 'Not provided',
+                      'Not provided',
                     ),
 
                     const SizedBox(height: 24),
@@ -880,6 +895,7 @@ class _ProfilePageState extends State<ProfilePage>
                           context,
                           nameController.text,
                           selectedImagePath,
+                          email,
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
@@ -1235,6 +1251,7 @@ class _ProfilePageState extends State<ProfilePage>
     BuildContext context,
     String name,
     String? imagePath,
+    String email,
   ) async {
     try {
       if (imagePath != null) {
@@ -1242,7 +1259,7 @@ class _ProfilePageState extends State<ProfilePage>
         context.read<ProfileBloc>().add(UploadProfileImageEvent(imagePath));
       } else {
         // Update profile without image
-        context.read<ProfileBloc>().add(UpdateProfileEvent(name: name));
+        context.read<ProfileBloc>().add(UpdateProfileEvent(displayName: name));
       }
       Navigator.pop(context);
     } catch (e) {
