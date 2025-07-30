@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -19,6 +18,13 @@ import '../../../app/features/agent_profile/presentation/pages/agent_profile_nam
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_categories_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_brands_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_card_created_page.dart';
+
+// New auth flow pages
+import '../../../app/features/auth/presentation/pages/auth_email_page.dart';
+import '../../../app/features/auth/presentation/pages/auth_name_page.dart';
+import '../../../app/features/auth/presentation/pages/auth_categories_page.dart';
+import '../../../app/features/auth/presentation/pages/auth_brands_page.dart';
+import '../../../app/features/auth/presentation/pages/auth_card_created_page.dart';
 
 final sl = GetIt.instance;
 
@@ -63,8 +69,37 @@ class Routes {
           ),
         );
 
+      // New auth flow routes
+      case AppRoutes.authEmail:
+        return MaterialPageRoute(
+          builder: (_) => const AuthEmailPage(),
+        );
 
+      case AppRoutes.authName:
+        final email = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          builder: (_) => AuthNamePage(email: email),
+        );
 
+      case AppRoutes.authCategories:
+        final profileData = settings.arguments as Map<String, dynamic>? ?? {};
+        return MaterialPageRoute(
+          builder: (_) => AuthCategoriesPage(profileData: profileData),
+        );
+
+      case AppRoutes.authBrands:
+        final profileData = settings.arguments as Map<String, dynamic>? ?? {};
+        return MaterialPageRoute(
+          builder: (_) => AuthBrandsPage(profileData: profileData),
+        );
+
+      case AppRoutes.authCardCreated:
+        final profileData = settings.arguments as Map<String, dynamic>? ?? {};
+        return MaterialPageRoute(
+          builder: (_) => AuthCardCreatedPage(profileData: profileData),
+        );
+
+      // Legacy agent profile routes (keeping for backward compatibility)
       case AppRoutes.agentProfileEmail:
         return MaterialPageRoute(
           builder: (_) => const AgentProfileEmailPage(),
@@ -180,7 +215,7 @@ class AgentProductsPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              lookbookId != null 
+              lookbookId != null
                   ? 'Lookbook Products Page\n(Lookbook ID: $lookbookId)'
                   : 'All Products Page',
               textAlign: TextAlign.center,

@@ -71,9 +71,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         body: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is OtpVerifiedState) {
-              // New user - Navigate to agent profile flow after successful verification
+              // New user - Navigate to auth profile flow after successful verification
               Navigator.of(context).pushNamedAndRemoveUntil(
-                AppRoutes.agentProfileEmail,
+                AppRoutes.authEmail,
                 (route) => false,
               );
             } else if (state is ExistingUserVerifiedState) {
@@ -92,7 +92,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               } else {
                 // User has incomplete profile - go to profile creation flow
                 Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.agentProfileEmail,
+                  AppRoutes.authEmail,
                   (route) => false,
                 );
               }
