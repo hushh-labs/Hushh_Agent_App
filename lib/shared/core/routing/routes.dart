@@ -13,6 +13,8 @@ import '../../../app/Home/presentation/pages/home_page.dart';
 
 import '../../../app/features/inventory/presentation/bloc/lookbook_bloc.dart';
 import '../../../app/features/inventory/presentation/pages/agent_lookbook_page.dart';
+import '../../../app/features/inventory/presentation/components/product_tile.dart';
+import '../../../app/features/inventory/domain/entities/product.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_email_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_name_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_categories_page.dart';
@@ -192,7 +194,7 @@ class CreateLookbookPage extends StatelessWidget {
   }
 }
 
-class AgentProductsPage extends StatelessWidget {
+class AgentProductsPage extends StatefulWidget {
   final String? lookbookId;
   final String mode;
 
@@ -203,31 +205,205 @@ class AgentProductsPage extends StatelessWidget {
   });
 
   @override
+  State<AgentProductsPage> createState() => _AgentProductsPageState();
+}
+
+class _AgentProductsPageState extends State<AgentProductsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch products when page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LookbookBloc>().add(const FetchProductsEvent());
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(lookbookId != null ? 'Lookbook Products' : 'All Products'),
+        title: Text(
+            widget.lookbookId != null ? 'Lookbook Products' : 'All Products'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              lookbookId != null
-                  ? 'Lookbook Products Page\n(Lookbook ID: $lookbookId)'
-                  : 'All Products Page',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              '(To be implemented)',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          ],
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // TODO: Implement search functionality
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              // TODO: Implement filter functionality
+            },
+          ),
+        ],
+      ),
+      body: BlocBuilder<LookbookBloc, LookbookState>(
+        builder: (context, state) {
+          if (state is LookbookLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (state is ProductsLoaded) {
+            if (state.products.isEmpty) {
+              return _buildEmptyState();
+            }
+            return _buildProductsGrid(state.products);
+          } else if (state is LookbookError) {
+            return _buildErrorState(state.message);
+          } else {
+            return _buildEmptyState();
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildProductsGrid(List<Product> products) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.65,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: products.length,
+      itemBuilder: (context, index) {
+        final product = products[index];
+        return ProductTile(
+          product: product,
+          onProductClicked: (productId) {
+            // TODO: Navigate to product detail page
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Product: ${product.productName}'),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
+          onUpdateStock: (productId, newStock) async {
+            final lookbookBloc = context.read<LookbookBloc>();
+            lookbookBloc.add(UpdateProductStockEvent(
+              productId: productId,
+              newStock: newStock,
+            ));
+          },
+          onDeleteProduct: (productId) async {
+            final lookbookBloc = context.read<LookbookBloc>();
+            lookbookBloc.add(DeleteProductEvent(productId));
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.inventory_2_outlined,
+            size: 80,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            widget.lookbookId != null
+                ? 'No Products in Lookbook'
+                : 'No Products Found',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              widget.lookbookId != null
+                  ? 'This lookbook doesn\'t have any products yet'
+                  : 'You haven\'t added any products to your inventory yet',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Navigate back to lookbook page to add products
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.add),
+            label: Text(
+                widget.lookbookId != null ? 'Add Products' : 'Create Products'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 80,
+            color: Colors.red[400],
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Error Loading Products',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              context.read<LookbookBloc>().add(const FetchProductsEvent());
+            },
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

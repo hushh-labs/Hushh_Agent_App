@@ -10,6 +10,7 @@ import 'app/features/splash/domain/dependency/splash_injection.dart'
     as splash_di;
 import 'app/Home/di/home_injection.dart' as home_di;
 import 'app/features/profile/di/profile_injection.dart' as profile_di;
+import 'app/features/inventory/di/inventory_injection.dart' as inventory_di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,7 @@ void main() async {
   splash_di.initializeSplashFeature();
   await home_di.initializeHomeFeature();
   profile_di.initializeProfileFeature();
+  inventory_di.initializeInventoryFeature();
 
   runApp(const MyApp());
 }

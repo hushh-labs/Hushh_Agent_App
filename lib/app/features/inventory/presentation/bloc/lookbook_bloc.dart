@@ -76,6 +76,28 @@ class AddBulkProductsEvent extends LookbookEvent {
   List<Object> get props => [products];
 }
 
+class UpdateProductStockEvent extends LookbookEvent {
+  final String productId;
+  final int newStock;
+
+  const UpdateProductStockEvent({
+    required this.productId,
+    required this.newStock,
+  });
+
+  @override
+  List<Object> get props => [productId, newStock];
+}
+
+class DeleteProductEvent extends LookbookEvent {
+  final String productId;
+
+  const DeleteProductEvent(this.productId);
+
+  @override
+  List<Object> get props => [productId];
+}
+
 // States
 abstract class LookbookState extends Equatable {
   const LookbookState();
@@ -146,6 +168,8 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     on<FetchProductsEvent>(_onFetchProducts);
     on<AddProductEvent>(_onAddProduct);
     on<AddBulkProductsEvent>(_onAddBulkProducts);
+    on<UpdateProductStockEvent>(_onUpdateProductStock);
+    on<DeleteProductEvent>(_onDeleteProduct);
   }
 
   Future<void> _onFetchLookbooks(
@@ -297,6 +321,74 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
       add(const FetchProductsEvent());
     } catch (e) {
       emit(LookbookError('Failed to add products: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onUpdateProductStock(
+    UpdateProductStockEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    try {
+      emit(LookbookLoading());
+
+      // Get current user's hushhId from Firebase Auth
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        emit(LookbookError('User not authenticated'));
+        return;
+      }
+
+      // Get the current product from Firestore to ensure we have the latest data
+      final products = await _firestoreService.getProducts(
+        hushhId: currentUser.uid,
+      );
+
+      final product = products.firstWhere(
+        (product) => product.productId == event.productId,
+        orElse: () => throw Exception('Product not found'),
+      );
+
+      final updatedProduct = product.copyWith(stockQuantity: event.newStock);
+
+      // Update in Firestore
+      await _firestoreService.updateProduct(updatedProduct);
+
+      // Refresh the products list
+      final updatedProducts = await _firestoreService.getProducts(
+        hushhId: currentUser.uid,
+      );
+
+      emit(ProductsLoaded(updatedProducts));
+    } catch (e) {
+      emit(LookbookError('Failed to update product stock: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onDeleteProduct(
+    DeleteProductEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    try {
+      emit(LookbookLoading());
+
+      // Get current user's hushhId from Firebase Auth
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        emit(LookbookError('User not authenticated'));
+        return;
+      }
+
+      // Delete from Firestore
+      await _firestoreService.deleteProduct(event.productId);
+
+      // Refresh the products list
+      final updatedProducts = await _firestoreService.getProducts(
+        hushhId: currentUser.uid,
+      );
+
+      emit(ProductsLoaded(updatedProducts));
+    } catch (e) {
+      emit(LookbookError('Failed to delete product: ${e.toString()}'));
     }
   }
 }

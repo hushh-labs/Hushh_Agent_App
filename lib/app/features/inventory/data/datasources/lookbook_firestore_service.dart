@@ -129,23 +129,29 @@ class LookbookFirestoreService {
     String? lookbookId,
   }) async {
     try {
-      Query query = _productsCollection
-          .where('hushhId', isEqualTo: hushhId)
-          .where('isAvailable', isEqualTo: true);
+      // Simple query without complex filters to avoid index requirements
+      final querySnapshot = await _productsCollection
+          .where('createdBy', isEqualTo: hushhId)
+          .get();
 
-      if (lookbookId != null) {
-        query = query.where('lookbookId', isEqualTo: lookbookId);
-      }
-
-      final querySnapshot =
-          await query.orderBy('addedAt', descending: true).get();
-
-      return querySnapshot.docs
+      List<Product> products = querySnapshot.docs
           .map((doc) => ProductModel.fromJson({
                 'productId': doc.id,
                 ...doc.data() as Map<String, dynamic>,
               }).toEntity())
           .toList();
+
+      // Filter by lookbookId on client side if needed
+      if (lookbookId != null) {
+        products = products
+            .where((product) => product.lookbookIds.contains(lookbookId))
+            .toList();
+      }
+
+      // Sort by createdAt on client side
+      products.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return products;
     } catch (e) {
       throw Exception('Failed to fetch products: $e');
     }
@@ -160,24 +166,23 @@ class LookbookFirestoreService {
 
       final productData = ProductModel(
         productId: productId,
-        hushhId: product.hushhId,
-        lookbookId: product.lookbookId,
         productName: product.productName,
         productDescription: product.productDescription,
         productImage: product.productImage,
         productPrice: product.productPrice,
         productCurrency: product.productCurrency,
         productSkuUniqueId: product.productSkuUniqueId,
-        addedAt: now,
+        createdAt: now,
         stockQuantity: product.stockQuantity,
         category: product.category,
-        isAvailable: product.isAvailable,
+        lookbookIds: product.lookbookIds,
+        createdBy: product.createdBy,
       ).toJson();
 
       // 1. Store in main AgentProducts collection with user reference
       await _productsCollection.doc(productId).set({
         ...productData,
-        'createdBy': product.hushhId, // Add user reference
+        'createdBy': product.createdBy, // Add user reference
         'createdAt': now.toIso8601String(),
         'updatedAt': now.toIso8601String(),
       });
@@ -185,7 +190,7 @@ class LookbookFirestoreService {
       // 2. Store in user's subcollection (Hushhagents/{userId}/agentProducts/{productId})
       await _firestore
           .collection('Hushhagents')
-          .doc(product.hushhId)
+          .doc(product.createdBy)
           .collection('agentProducts')
           .doc(productId)
           .set({
@@ -195,7 +200,7 @@ class LookbookFirestoreService {
       });
 
       print(
-          '✅ [Product] Stored in both locations: AgentProducts/$productId and Hushhagents/${product.hushhId}/agentProducts/$productId');
+          '✅ [Product] Stored in both locations: AgentProducts/$productId and Hushhagents/${product.createdBy}/agentProducts/$productId');
 
       return ProductModel.fromJson({
         'productId': productId,
@@ -218,25 +223,23 @@ class LookbookFirestoreService {
 
         final productData = ProductModel(
           productId: productId,
-          hushhId: product.hushhId,
-          lookbookId: product.lookbookId,
           productName: product.productName,
           productDescription: product.productDescription,
           productImage: product.productImage,
           productPrice: product.productPrice,
           productCurrency: product.productCurrency,
           productSkuUniqueId: product.productSkuUniqueId,
-          addedAt: now,
+          createdAt: now,
           stockQuantity: product.stockQuantity,
           category: product.category,
-          isAvailable: product.isAvailable,
+          lookbookIds: product.lookbookIds,
+          createdBy: product.createdBy,
         ).toJson();
 
         // 1. Store in main AgentProducts collection with user reference
         final mainProductRef = _productsCollection.doc(productId);
         batch.set(mainProductRef, {
           ...productData,
-          'createdBy': product.hushhId, // Add user reference
           'createdAt': now.toIso8601String(),
           'updatedAt': now.toIso8601String(),
         });
@@ -244,7 +247,7 @@ class LookbookFirestoreService {
         // 2. Store in user's subcollection (Hushhagents/{userId}/agentProducts/{productId})
         final userProductRef = _firestore
             .collection('Hushhagents')
-            .doc(product.hushhId)
+            .doc(product.createdBy)
             .collection('agentProducts')
             .doc(productId);
         batch.set(userProductRef, {
@@ -255,7 +258,8 @@ class LookbookFirestoreService {
       }
 
       await batch.commit();
-      print('✅ [Bulk Products] Stored ${products.length} products in both locations');
+      print(
+          '✅ [Bulk Products] Stored ${products.length} products in both locations');
     } catch (e) {
       throw Exception('Failed to add bulk products: $e');
     }
@@ -270,8 +274,7 @@ class LookbookFirestoreService {
       // Note: Firestore doesn't support case-insensitive text search natively
       // For production, consider using Algolia or similar search service
       final querySnapshot = await _productsCollection
-          .where('hushhId', isEqualTo: hushhId)
-          .where('isAvailable', isEqualTo: true)
+          .where('createdBy', isEqualTo: hushhId)
           .get();
 
       final allProducts = querySnapshot.docs
@@ -300,10 +303,28 @@ class LookbookFirestoreService {
   // Delete a product
   Future<void> deleteProduct(String productId) async {
     try {
-      await _productsCollection.doc(productId).update({
-        'isAvailable': false,
-        'updatedAt': DateTime.now().toIso8601String(),
-      });
+      // First, get the product to find the createdBy field
+      final productDoc = await _productsCollection.doc(productId).get();
+      if (!productDoc.exists) {
+        throw Exception('Product not found');
+      }
+
+      final productData = productDoc.data() as Map<String, dynamic>;
+      final createdBy = productData['createdBy'] as String;
+
+      // Delete from both locations
+      await Future.wait([
+        _productsCollection.doc(productId).delete(),
+        _firestore
+            .collection('Hushhagents')
+            .doc(createdBy)
+            .collection('agentProducts')
+            .doc(productId)
+            .delete(),
+      ]);
+
+      print(
+          '✅ [Product] Deleted from both locations: AgentProducts/$productId and Hushhagents/$createdBy/agentProducts/$productId');
     } catch (e) {
       throw Exception('Failed to delete product: $e');
     }
@@ -312,10 +333,23 @@ class LookbookFirestoreService {
   // Update a product
   Future<Product> updateProduct(Product product) async {
     try {
+      final now = DateTime.now();
       final updateData = ProductModel.fromEntity(product).toJson();
-      updateData['updatedAt'] = DateTime.now().toIso8601String();
+      updateData['updatedAt'] = now.toIso8601String();
 
-      await _productsCollection.doc(product.productId).update(updateData);
+      // Update in both locations
+      await Future.wait([
+        _productsCollection.doc(product.productId).update(updateData),
+        _firestore
+            .collection('Hushhagents')
+            .doc(product.createdBy)
+            .collection('agentProducts')
+            .doc(product.productId)
+            .update(updateData),
+      ]);
+
+      print(
+          '✅ [Product] Updated in both locations: AgentProducts/${product.productId} and Hushhagents/${product.createdBy}/agentProducts/${product.productId}');
 
       return product;
     } catch (e) {

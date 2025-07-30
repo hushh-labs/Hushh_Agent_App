@@ -335,7 +335,6 @@ class _AddGoogleSheetsBottomSheetState
 
           final product = Product(
             productId: const Uuid().v4(),
-            hushhId: currentUser.uid,
             productName: productData['productname'] ?? '',
             productDescription:
                 productData['productdescription']?.isEmpty == true
@@ -349,10 +348,11 @@ class _AddGoogleSheetsBottomSheetState
                 0.0,
             productCurrency: productData['productcurrency'] ?? 'USD',
             productSkuUniqueId: productData['productskuuniqueid'] ?? '',
-            addedAt: DateTime.now(),
+            createdAt: DateTime.now(),
             stockQuantity:
                 int.tryParse(productData['stockquantity']?.toString() ?? '0') ??
                     0,
+            createdBy: currentUser.uid,
           );
 
           products.add(product);

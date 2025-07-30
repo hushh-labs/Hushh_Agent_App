@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'add_manual_entry_bottom_sheet.dart';
 import 'add_google_sheets_bottom_sheet.dart';
+import '../bloc/lookbook_bloc.dart';
 
 class CreateInventoryBottomSheet extends StatelessWidget {
   const CreateInventoryBottomSheet({super.key});
@@ -28,9 +30,9 @@ class CreateInventoryBottomSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Title
           const Text(
             'Choose your Inventory Solution',
@@ -40,9 +42,9 @@ class CreateInventoryBottomSheet extends StatelessWidget {
               color: Colors.black87,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Subtitle
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
@@ -56,9 +58,9 @@ class CreateInventoryBottomSheet extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Options Grid
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -105,7 +107,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
         ],
       ),
@@ -146,9 +148,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isEnabled 
-                    ? color.withOpacity(0.1) 
-                    : Colors.grey[200],
+                color: isEnabled ? color.withOpacity(0.1) : Colors.grey[200],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -157,9 +157,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
                 color: isEnabled ? color : Colors.grey[500],
               ),
             ),
-            
             const SizedBox(height: 12),
-            
             Text(
               title,
               style: TextStyle(
@@ -169,7 +167,6 @@ class CreateInventoryBottomSheet extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            
             if (!isEnabled) ...[
               const SizedBox(height: 4),
               Container(
@@ -195,24 +192,32 @@ class CreateInventoryBottomSheet extends StatelessWidget {
   }
 
   void _openGoogleSheetsModal(BuildContext context) {
+    final lookbookBloc = context.read<LookbookBloc>();
     Navigator.pop(context); // Close current modal
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const AddGoogleSheetsBottomSheet(),
+      builder: (context) => BlocProvider.value(
+        value: lookbookBloc,
+        child: const AddGoogleSheetsBottomSheet(),
+      ),
     );
   }
 
   void _openManualEntryModal(BuildContext context) {
+    final lookbookBloc = context.read<LookbookBloc>();
     Navigator.pop(context); // Close current modal
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const AddManualEntryBottomSheet(),
+      builder: (context) => BlocProvider.value(
+        value: lookbookBloc,
+        child: const AddManualEntryBottomSheet(),
+      ),
     );
   }
 
@@ -228,4 +233,4 @@ class CreateInventoryBottomSheet extends StatelessWidget {
       ),
     );
   }
-} 
+}

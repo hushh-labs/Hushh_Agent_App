@@ -293,7 +293,6 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
 
       final product = Product(
         productId: const Uuid().v4(),
-        hushhId: currentUser.uid,
         productName: _nameController.text.trim(),
         productDescription: _descriptionController.text.trim().isEmpty
             ? null
@@ -304,8 +303,9 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
         productPrice: double.parse(_priceController.text.trim()),
         productCurrency: _currencyController.text.trim(),
         productSkuUniqueId: _skuController.text.trim(),
-        addedAt: DateTime.now(),
+        createdAt: DateTime.now(),
         stockQuantity: int.tryParse(_quantityController.text.trim()) ?? 0,
+        createdBy: currentUser.uid,
       );
 
       if (context.mounted) {

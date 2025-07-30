@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../../shared/constants/app_routes.dart';
 import '../bloc/lookbook_bloc.dart';
 import '../components/lookbooks_grid_view.dart';
@@ -21,13 +22,13 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animations
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -49,7 +50,8 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => LookbookBloc()..add(FetchLookbooksEvent()),
+      create: (context) =>
+          GetIt.instance<LookbookBloc>()..add(FetchLookbooksEvent()),
       child: Scaffold(
         backgroundColor: Colors.white,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -289,7 +291,8 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => context.read<LookbookBloc>().add(FetchLookbooksEvent()),
+              onPressed: () =>
+                  context.read<LookbookBloc>().add(FetchLookbooksEvent()),
               child: const Text('Retry'),
             ),
           ],
@@ -364,12 +367,16 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
   }
 
   void _showInventoryOptions() {
+    final lookbookBloc = context.read<LookbookBloc>();
     showModalBottomSheet(
       isDismissible: true,
       enableDrag: true,
       backgroundColor: Colors.transparent,
       context: context,
-      builder: (BuildContext context) => const CreateInventoryBottomSheet(),
+      builder: (BuildContext context) => BlocProvider.value(
+        value: lookbookBloc,
+        child: const CreateInventoryBottomSheet(),
+      ),
     );
   }
 
@@ -392,4 +399,4 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
   void _onLookbookDelete(String lookbookId) {
     context.read<LookbookBloc>().add(DeleteLookbookEvent(lookbookId));
   }
-} 
+}
