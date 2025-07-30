@@ -22,11 +22,18 @@ class AuthRepositoryImpl implements AuthRepository {
   // Store current agent data
   HushhAgentModel? _currentAgent;
 
+  AuthRepositoryImpl() {
+    print('🔧 [AUTH] AuthRepositoryImpl instance created: ${this.hashCode}');
+  }
+
   @override
   Future<void> sendPhoneOtp(
     String phoneNumber, {
     Function(String phoneNumber)? onOtpSent,
   }) async {
+    print('📱 [AUTH] Send phone OTP - Repository instance: ${this.hashCode}');
+    print('📱 [AUTH] Current verification ID: $_verificationId');
+
     try {
       // Ensure phone number has proper format for Firebase
       String formattedPhone = phoneNumber.trim();
@@ -101,6 +108,7 @@ class AuthRepositoryImpl implements AuthRepository {
         codeSent: (String verificationId, int? resendToken) {
           // Store verification ID for later use
           _verificationId = verificationId;
+          print('✅ [AUTH] Verification ID stored: $verificationId');
 
           // Complete successfully
           if (!completer.isCompleted) {
@@ -139,9 +147,17 @@ class AuthRepositoryImpl implements AuthRepository {
     String otp,
   ) async {
     try {
+      print('🔍 [AUTH] Verifying phone OTP');
+      print('🔍 [AUTH] Phone number: $phoneNumber');
+      print('🔍 [AUTH] OTP: $otp');
+      print('🔍 [AUTH] Verification ID: $_verificationId');
+
       if (_verificationId == null) {
+        print('❌ [AUTH] No verification ID found');
         throw Exception('No verification ID found. Please send OTP first.');
       }
+
+      print('✅ [AUTH] Verification ID found, proceeding with verification');
 
       // Create credential with verification ID and OTP
       firebase_auth.PhoneAuthCredential credential =
@@ -149,6 +165,8 @@ class AuthRepositoryImpl implements AuthRepository {
         verificationId: _verificationId!,
         smsCode: otp,
       );
+
+      print('✅ [AUTH] Credential created, signing in...');
 
       // Sign in with credential
       final userCredential = await _auth.signInWithCredential(credential);
@@ -172,6 +190,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return userCredential;
     } catch (e) {
+      print('❌ [AUTH] Phone OTP verification failed: $e');
       rethrow;
     }
   }
@@ -181,31 +200,35 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Generate 6-digit OTP
       final otp = (100000 + Random().nextInt(900000)).toString();
-      
+
       // Store OTP in Firestore for verification
-      await FirebaseFirestore.instance
-          .collection('email_otps')
-          .doc(email)
-          .set({
+      await FirebaseFirestore.instance.collection('email_otps').doc(email).set({
         'email': email,
         'otp': otp,
         'createdAt': FieldValue.serverTimestamp(),
-        'expiresAt': DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch,
+        'expiresAt': DateTime.now()
+            .add(const Duration(minutes: 10))
+            .millisecondsSinceEpoch,
         'isUsed': false,
         'method': 'email_otp',
       });
 
       // Display OTP in console for development
       print('');
-      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
-      print('🎯 [EMAIL_OTP]                    VERIFICATION CODE                         ');  
-      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print(
+          '🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print(
+          '🎯 [EMAIL_OTP]                    VERIFICATION CODE                         ');
+      print(
+          '🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
       print('🎯 [EMAIL_OTP]   📧 Email: $email');
       print('🎯 [EMAIL_OTP]   📱 YOUR OTP CODE: $otp');
       print('🎯 [EMAIL_OTP]   ⏰ Valid for: 10 minutes');
-      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print(
+          '🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
       print('🎯 [EMAIL_OTP]   👆 COPY THIS CODE AND ENTER IN YOUR APP 👆');
-      print('🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
+      print(
+          '🎯 [EMAIL_OTP] ════════════════════════════════════════════════════════════');
       print('');
       print('✅ [AUTH] ★ OTP ready for immediate verification ★');
       print('📧 [AUTH] Email OTP generated successfully!');
@@ -216,11 +239,11 @@ class AuthRepositoryImpl implements AuthRepository {
       // await _sendEmailViaResend(email, otp);
       // await _sendEmailViaEmailJS(email, otp);
       // await _sendEmailViaMailgun(email, otp);
-      
+
       // For development, console OTP is reliable and always works
       print('📱 [INFO] Use the OTP code displayed above for verification');
-      print('📧 [INFO] Integrate your working email API above to send real emails');
-
+      print(
+          '📧 [INFO] Integrate your working email API above to send real emails');
     } catch (e) {
       // Handle specific Firebase error codes
       String errorMessage;
@@ -230,10 +253,12 @@ class AuthRepositoryImpl implements AuthRepository {
             errorMessage = 'Invalid email address format.';
             break;
           case 'too-many-requests':
-            errorMessage = 'Too many requests. Please wait before trying again.';
+            errorMessage =
+                'Too many requests. Please wait before trying again.';
             break;
           case 'network-request-failed':
-            errorMessage = 'Network error. Please check your internet connection.';
+            errorMessage =
+                'Network error. Please check your internet connection.';
             break;
           default:
             errorMessage = 'Failed to send email OTP: ${e.message}';
@@ -246,7 +271,12 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<firebase_auth.UserCredential> verifyEmailOtp(String email, String otp) async {
+  Future<firebase_auth.UserCredential> verifyEmailOtp(
+      String email, String otp) async {
+    print('📧 [AUTH] Verifying email OTP');
+    print('📧 [AUTH] Email: $email');
+    print('📧 [AUTH] OTP: $otp');
+
     try {
       // Get OTP from Firestore
       final otpDoc = await FirebaseFirestore.instance
@@ -254,8 +284,12 @@ class AuthRepositoryImpl implements AuthRepository {
           .doc(email)
           .get();
 
+      print('📧 [AUTH] OTP document exists: ${otpDoc.exists}');
+
       if (!otpDoc.exists) {
-        throw Exception('No OTP found for this email. Please request a new OTP.');
+        print('❌ [AUTH] No OTP found for email: $email');
+        throw Exception(
+            'No OTP found for this email. Please request a new OTP.');
       }
 
       final otpData = otpDoc.data()!;
@@ -263,20 +297,29 @@ class AuthRepositoryImpl implements AuthRepository {
       final expiresAt = otpData['expiresAt'] as int;
       final isUsed = otpData['isUsed'] as bool;
 
+      print('📧 [AUTH] Stored OTP: $storedOtp');
+      print('📧 [AUTH] Expires at: $expiresAt');
+      print('📧 [AUTH] Is used: $isUsed');
+
       // Check if OTP is expired
       if (DateTime.now().millisecondsSinceEpoch > expiresAt) {
+        print('❌ [AUTH] OTP expired');
         throw Exception('OTP has expired. Please request a new OTP.');
       }
 
       // Check if OTP is already used
       if (isUsed) {
+        print('❌ [AUTH] OTP already used');
         throw Exception('OTP has already been used. Please request a new OTP.');
       }
 
       // Verify OTP
       if (storedOtp != otp) {
+        print('❌ [AUTH] Invalid OTP. Expected: $storedOtp, Got: $otp');
         throw Exception('Invalid OTP. Please check and try again.');
       }
+
+      print('✅ [AUTH] OTP verified successfully');
 
       // Mark OTP as used
       await FirebaseFirestore.instance
@@ -286,16 +329,18 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Create user credential after successful OTP verification
       firebase_auth.UserCredential userCredential;
-      
+
       // Check if user already exists
       final signInMethods = await _auth.fetchSignInMethodsForEmail(email);
-      
+
       if (signInMethods.isNotEmpty) {
         // User exists - sign in anonymously and update profile
+        print('📧 [AUTH] User exists, signing in anonymously');
         userCredential = await _auth.signInAnonymously();
         await userCredential.user!.updateEmail(email);
       } else {
         // New user - create anonymous account and link email
+        print('📧 [AUTH] New user, creating anonymous account');
         userCredential = await _auth.signInAnonymously();
         await userCredential.user!.updateEmail(email);
       }
@@ -306,13 +351,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return userCredential;
     } catch (e) {
+      print('❌ [AUTH] Email OTP verification failed: $e');
       throw Exception('Failed to verify email OTP: $e');
     }
   }
 
-
   /// UNUSED: Send email OTP via working Webhook.site - guaranteed to work
-  
+
   @override
   firebase_auth.User? getCurrentUser() {
     return _auth.currentUser;
@@ -428,7 +473,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<AgentCard?> getAgentCard(String agentId) async {
     try {
-      final doc = await _firestore.collection('agents').doc(agentId).get();
+      final doc = await _firestore.collection('Hushhagents').doc(agentId).get();
 
       if (doc.exists) {
         final data = doc.data()!;
@@ -449,7 +494,7 @@ class AuthRepositoryImpl implements AuthRepository {
         ..['updatedAt'] = now.toIso8601String();
 
       await _firestore
-          .collection('agents')
+          .collection('Hushhagents')
           .doc(agentCard.agentId)
           .set(cardData, SetOptions(merge: true));
     } catch (e) {
@@ -465,9 +510,9 @@ class AuthRepositoryImpl implements AuthRepository {
         ..['updatedAt'] = now.toIso8601String();
 
       await _firestore
-          .collection('agents')
+          .collection('Hushhagents')
           .doc(agentCard.agentId)
-          .update(cardData);
+          .set(cardData, SetOptions(merge: true));
     } catch (e) {
       throw Exception('Failed to update agent card: $e');
     }
@@ -476,11 +521,43 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<bool> doesAgentCardExist(String agentId) async {
     try {
-      final doc = await _firestore.collection('agents').doc(agentId).get();
+      final doc = await _firestore.collection('Hushhagents').doc(agentId).get();
 
       return doc.exists;
     } catch (e) {
       throw Exception('Failed to check agent card existence: $e');
+    }
+  }
+
+  @override
+  Future<bool> doesUserHaveCompleteProfile(String agentId) async {
+    try {
+      final doc = await _firestore.collection('Hushhagents').doc(agentId).get();
+
+      if (!doc.exists) {
+        return false;
+      }
+
+      final data = doc.data();
+      if (data == null) {
+        return false;
+      }
+
+      // Check if all required fields are present and not empty
+      final requiredFields = ['name', 'email', 'brand', 'categories'];
+      for (final field in requiredFields) {
+        if (data[field] == null ||
+            (data[field] is String && data[field].toString().trim().isEmpty) ||
+            (data[field] is List && data[field].isEmpty)) {
+          print('❌ Missing or empty field: $field = ${data[field]}');
+          return false;
+        }
+      }
+      print('✅ All required fields are present and complete');
+
+      return true;
+    } catch (e) {
+      throw Exception('Failed to check user profile completeness: $e');
     }
   }
 

@@ -118,16 +118,12 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                                       // Handle button tap based on type
                                       if (socialMethods[index]['type'] ==
                                           'Phone') {
-                                        _showAuthBottomSheet(
-                                          context,
-                                          LoginMode.phone,
-                                        );
+                                        _navigateToAuth(
+                                            context, LoginMode.phone);
                                       } else if (socialMethods[index]['type'] ==
                                           'Email') {
-                                        _showAuthBottomSheet(
-                                          context,
-                                          LoginMode.email,
-                                        );
+                                        _navigateToAuth(
+                                            context, LoginMode.email);
                                       } else if (socialMethods[index]['type'] ==
                                           'Guest') {
                                         // Handle guest login
@@ -194,14 +190,14 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
     );
   }
 
-  void _showAuthBottomSheet(BuildContext context, LoginMode loginMode) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => BlocProvider(
-        create: (context) => auth_di.sl<AuthBloc>(),
-        child: AuthPage(loginMode: loginMode),
+  void _navigateToAuth(BuildContext context, LoginMode loginMode) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => auth_di.sl<AuthBloc>(),
+          child: AuthPage(loginMode: loginMode),
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../../domain/usecases/verify_phone_otp_usecase.dart';
 import '../../domain/usecases/send_email_otp_usecase.dart';
 import '../../domain/usecases/verify_email_otp_usecase.dart';
 import '../../domain/usecases/check_agent_card_exists_usecase.dart';
+import '../../domain/usecases/check_user_profile_completeness_usecase.dart';
 import '../../domain/usecases/create_agent_card_usecase.dart';
 import '../../domain/entities/agent_card.dart';
 import '../../../../../shared/domain/usecases/base_usecase.dart';
@@ -62,6 +63,11 @@ class VerifyEmailOtpEvent extends AuthEvent {
 class CheckAgentCardEvent extends AuthEvent {
   final String agentId;
   CheckAgentCardEvent(this.agentId);
+}
+
+class CheckUserProfileCompletenessEvent extends AuthEvent {
+  final String agentId;
+  CheckUserProfileCompletenessEvent(this.agentId);
 }
 
 class CreateAgentCardEvent extends AuthEvent {
@@ -133,6 +139,18 @@ class AgentCardCheckFailureState extends AuthState {
   AgentCardCheckFailureState(this.message);
 }
 
+class CheckingUserProfileCompletenessState extends AuthState {}
+
+class UserProfileCompleteState extends AuthState {
+  final bool isComplete;
+  UserProfileCompleteState(this.isComplete);
+}
+
+class UserProfileCompletenessCheckFailureState extends AuthState {
+  final String message;
+  UserProfileCompletenessCheckFailureState(this.message);
+}
+
 class CreatingAgentCardState extends AuthState {}
 
 class AgentCardCreatedState extends AuthState {}
@@ -195,6 +213,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SendEmailOtpUseCase _sendEmailOtpUseCase;
   final VerifyEmailOtpUseCase _verifyEmailOtpUseCase;
   final CheckAgentCardExistsUseCase _checkAgentCardExistsUseCase;
+  final CheckUserProfileCompletenessUseCase
+      _checkUserProfileCompletenessUseCase;
   final CreateAgentCardUseCase _createAgentCardUseCase;
   final SignOutUseCase _signOutUseCase;
 
@@ -204,16 +224,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required SendEmailOtpUseCase sendEmailOtpUseCase,
     required VerifyEmailOtpUseCase verifyEmailOtpUseCase,
     required CheckAgentCardExistsUseCase checkAgentCardExistsUseCase,
+    required CheckUserProfileCompletenessUseCase
+        checkUserProfileCompletenessUseCase,
     required CreateAgentCardUseCase createAgentCardUseCase,
     required SignOutUseCase signOutUseCase,
-  }) : _sendPhoneOtpUseCase = sendPhoneOtpUseCase,
-       _verifyPhoneOtpUseCase = verifyPhoneOtpUseCase,
-       _sendEmailOtpUseCase = sendEmailOtpUseCase,
-       _verifyEmailOtpUseCase = verifyEmailOtpUseCase,
-       _checkAgentCardExistsUseCase = checkAgentCardExistsUseCase,
-       _createAgentCardUseCase = createAgentCardUseCase,
-       _signOutUseCase = signOutUseCase,
-       super(AuthInitialState()) {
+  })  : _sendPhoneOtpUseCase = sendPhoneOtpUseCase,
+        _verifyPhoneOtpUseCase = verifyPhoneOtpUseCase,
+        _sendEmailOtpUseCase = sendEmailOtpUseCase,
+        _verifyEmailOtpUseCase = verifyEmailOtpUseCase,
+        _checkAgentCardExistsUseCase = checkAgentCardExistsUseCase,
+        _checkUserProfileCompletenessUseCase =
+            checkUserProfileCompletenessUseCase,
+        _createAgentCardUseCase = createAgentCardUseCase,
+        _signOutUseCase = signOutUseCase,
+        super(AuthInitialState()) {
     on<InitializeEvent>(onInitializeEvent);
     on<OnCountryUpdateEvent>(onCountryUpdateEvent);
     on<OnPhoneUpdateEvent>(onPhoneUpdateEvent);
@@ -222,6 +246,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<SendEmailOtpEvent>(onSendEmailOtpEvent);
     on<VerifyEmailOtpEvent>(onVerifyEmailOtpEvent);
     on<CheckAgentCardEvent>(onCheckAgentCardEvent);
+    on<CheckUserProfileCompletenessEvent>(onCheckUserProfileCompletenessEvent);
     on<CreateAgentCardEvent>(onCreateAgentCardEvent);
     on<SignOutEvent>(onSignOutEvent);
     on<CheckAuthStateEvent>(onCheckAuthStateEvent);
@@ -338,6 +363,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     VerifyPhoneOtpEvent event,
     Emitter<AuthState> emit,
   ) async {
+    print('Phone OTP verification started');
+    print('Phone number: ${event.phoneNumber}');
+    print('OTP: ${event.otp}');
+
     emit(VerifyingOtpState());
 
     try {
@@ -347,28 +376,49 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         otp: event.otp,
       );
 
+      print('Calling verifyPhoneOtpUseCase');
       final result = await _verifyPhoneOtpUseCase(params);
+      print('Phone OTP verification result: $result');
 
       if (result is Success<firebase_auth.UserCredential>) {
         final userCredential = result.data;
         final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? true;
-        
+
+        print('User credential obtained');
+        print('Is new user: $isNewUser');
+
         if (isNewUser) {
           // New user - go through profile creation flow
+          print('New user - emitting OtpVerifiedState');
           emit(OtpVerifiedState(userCredential));
           final user = userCredential.user;
           if (user != null) {
-            add(CheckAgentCardEvent(user.uid));
+            print(
+                'Adding CheckUserProfileCompletenessEvent for user: ${user.uid}');
+            add(CheckUserProfileCompletenessEvent(user.uid));
           }
         } else {
-          // Existing user - go directly to main page
-          emit(ExistingUserVerifiedState(userCredential));
+          // Existing user - check if they have complete profile
+          print('Existing user - checking profile completeness');
+          final user = userCredential.user;
+          if (user != null) {
+            print(
+                'Adding CheckUserProfileCompletenessEvent for existing user: ${user.uid}');
+            add(CheckUserProfileCompletenessEvent(user.uid));
+          } else {
+            // Fallback to profile creation flow
+            print('No user found, falling back to profile creation');
+            emit(OtpVerifiedState(userCredential));
+          }
         }
       } else if (result is Failed<firebase_auth.UserCredential>) {
+        print('Phone OTP verification failed: ${result.failure.message}');
         emit(OtpVerificationFailureState(result.failure.message));
       }
     } catch (e) {
-      emit(OtpVerificationFailureState('OTP verification failed: ${e.toString()}'));
+      print('Phone OTP verification exception: $e');
+      emit(OtpVerificationFailureState(
+          'OTP verification failed: ${e.toString()}'));
     }
   }
 
@@ -406,23 +456,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (result is Success<firebase_auth.UserCredential>) {
         final userCredential = result.data;
         final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? true;
-        
+
         if (isNewUser) {
           // New user - go through profile creation flow
           emit(OtpVerifiedState(userCredential));
           final user = userCredential.user;
           if (user != null) {
-            add(CheckAgentCardEvent(user.uid));
+            add(CheckUserProfileCompletenessEvent(user.uid));
           }
         } else {
-          // Existing user - go directly to main page
-          emit(ExistingUserVerifiedState(userCredential));
+          // Existing user - check if they have complete profile
+          final user = userCredential.user;
+          if (user != null) {
+            add(CheckUserProfileCompletenessEvent(user.uid));
+          } else {
+            // Fallback to profile creation flow
+            emit(OtpVerifiedState(userCredential));
+          }
         }
       } else if (result is Failed<firebase_auth.UserCredential>) {
         emit(OtpVerificationFailureState(result.failure.message));
       }
     } catch (e) {
-      emit(OtpVerificationFailureState('Email OTP verification failed: ${e.toString()}'));
+      emit(OtpVerificationFailureState(
+          'Email OTP verification failed: ${e.toString()}'));
     }
   }
 
@@ -440,6 +497,28 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AgentCardExistsState(result.data));
     } else if (result is Failed<bool>) {
       emit(AgentCardCheckFailureState(result.failure.message));
+    }
+  }
+
+  FutureOr<void> onCheckUserProfileCompletenessEvent(
+    CheckUserProfileCompletenessEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('Checking user profile completeness for agent ID: ${event.agentId}');
+    emit(CheckingUserProfileCompletenessState());
+
+    final result = await _checkUserProfileCompletenessUseCase(
+      CheckUserProfileCompletenessParams(agentId: event.agentId),
+    );
+
+    print('Profile completeness check result: $result');
+
+    if (result is Success<bool>) {
+      print('Profile completeness: ${result.data}');
+      emit(UserProfileCompleteState(result.data));
+    } else if (result is Failed<bool>) {
+      print('Profile completeness check failed: ${result.failure.message}');
+      emit(UserProfileCompletenessCheckFailureState(result.failure.message));
     }
   }
 
@@ -526,17 +605,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
                   onChanged: (value) {
                     filteredCountries = isNumeric(value)
                         ? _countryList
-                              .where(
-                                (country) => country.dialCode.contains(value),
-                              )
-                              .toList()
+                            .where(
+                              (country) => country.dialCode.contains(value),
+                            )
+                            .toList()
                         : _countryList
-                              .where(
-                                (country) => country.name
-                                    .toLowerCase()
-                                    .contains(value.toLowerCase()),
-                              )
-                              .toList();
+                            .where(
+                              (country) => country.name
+                                  .toLowerCase()
+                                  .contains(value.toLowerCase()),
+                            )
+                            .toList();
                     setStateCountry(() {});
                   },
                   decoration: InputDecoration(
@@ -574,8 +653,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
                         onTap: () {
                           selectedCountry = filteredCountries[index];
                           formatter = MaskTextInputFormatter(
-                            mask:
-                                countryMasks[selectedCountry!.code] ??
+                            mask: countryMasks[selectedCountry!.code] ??
                                 '+# ### ### ####',
                             filter: {"#": RegExp(r'[0-9]')},
                           );

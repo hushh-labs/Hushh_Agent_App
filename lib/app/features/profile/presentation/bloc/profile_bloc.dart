@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Events
 abstract class ProfileEvent extends Equatable {
@@ -124,15 +126,41 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     emit(const ProfileLoadingState());
     
     try {
-      // TODO: Implement actual profile loading from repository
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Mock data for now
-      emit(const ProfileLoadedState(
-        displayName: 'Update your name',
-        email: 'Add email',
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        emit(const ProfileErrorState('User not authenticated'));
+        return;
+      }
+
+      // Fetch profile data from Hushhagents collection
+      final doc = await FirebaseFirestore.instance
+          .collection('Hushhagents')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) {
+        emit(const ProfileLoadedState(
+          displayName: 'Update your name',
+          email: 'Add email',
+        ));
+        return;
+      }
+
+      final data = doc.data()!;
+      final displayName = data['name'] ?? 'Update your name';
+      final email = data['email'] ?? 'Add email';
+      final avatarUrl = data['profilePictureUrl'] as String?;
+
+      print('✅ [Profile] Loaded profile data: name=$displayName, email=$email');
+
+      emit(ProfileLoadedState(
+        displayName: displayName,
+        email: email,
+        avatarUrl: avatarUrl,
       ));
     } catch (e) {
+      print('❌ [Profile] Error loading profile: $e');
       emit(ProfileErrorState('Failed to load profile: ${e.toString()}'));
     }
   }
@@ -141,11 +169,41 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     emit(const ProfileUpdatingState());
     
     try {
-      // TODO: Implement actual profile update logic
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        emit(const ProfileErrorState('User not authenticated'));
+        return;
+      }
+
+      // Update profile data in Hushhagents collection
+      final updateData = <String, dynamic>{};
       
+      if (event.displayName != null) {
+        updateData['name'] = event.displayName;
+        updateData['fullName'] = event.displayName;
+      }
+      
+      if (event.email != null) {
+        updateData['email'] = event.email;
+      }
+      
+      if (event.avatarUrl != null) {
+        updateData['profilePictureUrl'] = event.avatarUrl;
+      }
+      
+      updateData['updatedAt'] = FieldValue.serverTimestamp();
+
+      await FirebaseFirestore.instance
+          .collection('Hushhagents')
+          .doc(user.uid)
+          .update(updateData);
+
+      print('✅ [Profile] Updated profile data: $updateData');
+
       emit(const ProfileUpdatedState('Profile updated successfully'));
     } catch (e) {
+      print('❌ [Profile] Error updating profile: $e');
       emit(ProfileErrorState('Failed to update profile: ${e.toString()}'));
     }
   }

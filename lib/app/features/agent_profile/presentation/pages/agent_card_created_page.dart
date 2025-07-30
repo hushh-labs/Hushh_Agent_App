@@ -73,10 +73,8 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
       }
 
       // Create or update agent profile in Firestore
-      await FirebaseFirestore.instance
-          .collection('HushhAgents')
-          .doc(user.uid)
-          .set({
+      await FirebaseFirestore.instance.collection('Hushhagents').doc(user.uid).set({
+        'agentId': user.uid, // Link Firebase Auth UID
         'email': widget.profileData['email'],
         'name': widget.profileData['name'],
         'fullName': widget.profileData['name'],
@@ -84,6 +82,7 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
         'brand': widget.profileData['brand'],
         'brandName': widget.profileData['brandName'],
         'isProfileComplete': true,
+        'isActive': true,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
@@ -98,7 +97,6 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
       // Start animations
       _cardController.forward();
       _confettiController.forward();
-
     } catch (e) {
       print('Error creating agent profile: $e');
       setState(() {
@@ -288,7 +286,7 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
               ],
             ),
           ),
-          
+
           // Main card
           Container(
             height: 300,
@@ -331,7 +329,7 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
                     ),
                   ),
                 ),
-                
+
                 // Card content
                 Padding(
                   padding: const EdgeInsets.all(24),
@@ -372,9 +370,9 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
                           ),
                         ],
                       ),
-                      
+
                       const Spacer(),
-                      
+
                       // Agent details
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,9 +407,9 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
                           ),
                         ],
                       ),
-                      
+
                       const Spacer(),
-                      
+
                       // Footer
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -462,4 +460,4 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
       ),
     );
   }
-} 
+}

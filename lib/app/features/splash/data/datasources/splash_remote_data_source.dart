@@ -68,7 +68,7 @@ class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
       }
 
       // Get agent profile from Firestore
-      final doc = await FirestoreService.getAgentProfile(user.uid);
+      final doc = await _firestore.collection('Hushhagents').doc(user.uid).get();
       
       if (!doc.exists) {
         print('⚠️ [Remote] Agent profile not found, creating basic profile');
@@ -80,17 +80,17 @@ class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
           displayName: user.displayName ?? 'Agent',
           profilePictureUrl: user.photoURL,
           phoneNumber: user.phoneNumber,
-        verificationStatus: AgentVerificationStatus.pending,
-        isActive: true,
-        isOnline: false,
-        createdAt: DateTime.now(),
+          verificationStatus: AgentVerificationStatus.pending,
+          isActive: true,
+          isOnline: false,
+          createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-        hasCompletedOnboarding: false,
-        hasCompletedBusinessSetup: false,
-      );
+          hasCompletedOnboarding: false,
+          hasCompletedBusinessSetup: false,
+        );
         
         // Save to Firestore
-        await FirestoreService.setAgentProfile(user.uid, basicProfile.toFirestore());
+        await _firestore.collection('Hushhagents').doc(user.uid).set(basicProfile.toFirestore(), SetOptions(merge: true));
         
         return basicProfile;
       }
