@@ -73,7 +73,10 @@ class _AgentCardCreatedPageState extends State<AgentCardCreatedPage>
       }
 
       // Create or update agent profile in Firestore
-      await FirebaseFirestore.instance.collection('Hushhagents').doc(user.uid).set({
+      await FirebaseFirestore.instance
+          .collection('Hushhagents')
+          .doc(user.uid)
+          .set({
         'agentId': user.uid, // Link Firebase Auth UID
         'email': widget.profileData['email'],
         'name': widget.profileData['name'],

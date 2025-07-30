@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../../shared/constants/app_routes.dart';
 import '../bloc/profile_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../../../shared/services/auth_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -504,7 +505,7 @@ class _ProfilePageState extends State<ProfilePage>
           if (!kIsWeb) ...[
             _MenuItemData('Delete Account', Icons.delete_outline, () {
               try {
-                Navigator.pushNamed(context, AppRoutes.home);
+                AuthService.showDeleteAccountDialog(context);
               } catch (e) {
                 _showErrorSnackBar('Unable to open Delete Account');
               }
@@ -1268,30 +1269,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _showLogoutDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            CupertinoDialogAction(
-              onPressed: () {
-                Navigator.pop(context);
-                // Trigger logout through AuthBloc
-                context.read<AuthBloc>().add(SignOutEvent());
-              },
-              isDestructiveAction: true,
-              child: const Text('Logout'),
-            ),
-          ],
-        );
-      },
-    );
+    AuthService.showLogoutDialog(context);
   }
 
   void _showErrorSnackBar(String message) {
