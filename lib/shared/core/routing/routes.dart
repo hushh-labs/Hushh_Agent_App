@@ -12,8 +12,8 @@ import '../../../app/features/auth/domain/enum.dart';
 import '../../../app/Home/presentation/bloc/home_bloc.dart';
 import '../../../app/Home/presentation/pages/home_page.dart';
 
-import '../../../app/features/lookbooks_products/presentation/bloc/lookbook_bloc.dart';
-import '../../../app/features/lookbooks_products/presentation/pages/agent_lookbook_page.dart';
+import '../../../app/features/inventory/presentation/bloc/lookbook_bloc.dart';
+import '../../../app/features/inventory/presentation/pages/agent_lookbook_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_email_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_name_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_categories_page.dart';

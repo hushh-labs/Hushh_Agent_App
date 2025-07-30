@@ -139,7 +139,7 @@ class _DashboardView extends StatelessWidget {
 
   void _completeProfile(BuildContext context) {
     // Navigate to profile completion flow
-    Navigator.pushNamed(context, AppRoutes.completeProfileEmail);
+    Navigator.pushNamed(context, AppRoutes.agentProfileEmail);
   }
 
   void _dismissCongrats(BuildContext context) {

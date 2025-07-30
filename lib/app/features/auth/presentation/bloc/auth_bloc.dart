@@ -111,6 +111,11 @@ class OtpVerifiedState extends AuthState {
   OtpVerifiedState(this.userCredential);
 }
 
+class ExistingUserVerifiedState extends AuthState {
+  final firebase_auth.UserCredential userCredential;
+  ExistingUserVerifiedState(this.userCredential);
+}
+
 class OtpVerificationFailureState extends AuthState {
   final String message;
   OtpVerificationFailureState(this.message);
@@ -345,13 +350,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final result = await _verifyPhoneOtpUseCase(params);
 
       if (result is Success<firebase_auth.UserCredential>) {
-        // Emit success state with Firebase user credential
-        emit(OtpVerifiedState(result.data));
+        final userCredential = result.data;
+        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? true;
         
-        // Check if agent card exists and handle accordingly
-        final user = result.data.user;
-        if (user != null) {
-          add(CheckAgentCardEvent(user.uid));
+        if (isNewUser) {
+          // New user - go through profile creation flow
+          emit(OtpVerifiedState(userCredential));
+          final user = userCredential.user;
+          if (user != null) {
+            add(CheckAgentCardEvent(user.uid));
+          }
+        } else {
+          // Existing user - go directly to main page
+          emit(ExistingUserVerifiedState(userCredential));
         }
       } else if (result is Failed<firebase_auth.UserCredential>) {
         emit(OtpVerificationFailureState(result.failure.message));
@@ -393,13 +404,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final result = await _verifyEmailOtpUseCase(params);
 
       if (result is Success<firebase_auth.UserCredential>) {
-        // Emit success state with Firebase user credential
-        emit(OtpVerifiedState(result.data));
+        final userCredential = result.data;
+        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? true;
         
-        // Check if agent card exists and handle accordingly
-        final user = result.data.user;
-        if (user != null) {
-          add(CheckAgentCardEvent(user.uid));
+        if (isNewUser) {
+          // New user - go through profile creation flow
+          emit(OtpVerifiedState(userCredential));
+          final user = userCredential.user;
+          if (user != null) {
+            add(CheckAgentCardEvent(user.uid));
+          }
+        } else {
+          // Existing user - go directly to main page
+          emit(ExistingUserVerifiedState(userCredential));
         }
       } else if (result is Failed<firebase_auth.UserCredential>) {
         emit(OtpVerificationFailureState(result.failure.message));
