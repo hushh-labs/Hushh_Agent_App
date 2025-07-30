@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/product.dart';
 import '../bloc/lookbook_bloc.dart';
 
@@ -8,7 +9,8 @@ class AddManualEntryBottomSheet extends StatefulWidget {
   const AddManualEntryBottomSheet({super.key});
 
   @override
-  State<AddManualEntryBottomSheet> createState() => _AddManualEntryBottomSheetState();
+  State<AddManualEntryBottomSheet> createState() =>
+      _AddManualEntryBottomSheetState();
 }
 
 class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
@@ -58,7 +60,7 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           // Header
           Padding(
             padding: const EdgeInsets.all(20),
@@ -82,7 +84,7 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
               ],
             ),
           ),
-          
+
           // Form
           Expanded(
             child: Form(
@@ -96,27 +98,21 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
                     hint: 'Enter product name',
                     isRequired: true,
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _buildTextField(
                     controller: _descriptionController,
                     label: 'Product Description',
                     hint: 'Enter product description (optional)',
                     maxLines: 3,
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _buildTextField(
                     controller: _imageController,
                     label: 'Product Image URL',
                     hint: 'https://example.com/image.jpg (optional)',
                     keyboardType: TextInputType.url,
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   Row(
                     children: [
                       Expanded(
@@ -126,7 +122,8 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
                           label: 'Product Price',
                           hint: '0.00',
                           isRequired: true,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -140,31 +137,26 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
                       ),
                     ],
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _buildTextField(
                     controller: _skuController,
                     label: 'Product SKU/ID',
                     hint: 'Unique product identifier',
                     isRequired: true,
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _buildTextField(
                     controller: _quantityController,
                     label: 'Stock Quantity',
                     hint: '0',
                     keyboardType: TextInputType.number,
                   ),
-                  
                   const SizedBox(height: 32),
                 ],
               ),
             ),
           ),
-          
+
           // Submit Button
           Container(
             padding: EdgeInsets.only(
@@ -293,9 +285,15 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
     });
 
     try {
+      // Get current user ID from Firebase Auth
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not authenticated');
+      }
+
       final product = Product(
         productId: const Uuid().v4(),
-        hushhId: 'current_user_id', // TODO: Get actual user ID
+        hushhId: currentUser.uid,
         productName: _nameController.text.trim(),
         productDescription: _descriptionController.text.trim().isEmpty
             ? null
@@ -313,7 +311,7 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
       if (context.mounted) {
         context.read<LookbookBloc>().add(AddProductEvent(product));
         Navigator.pop(context);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Product added successfully!'),
@@ -340,4 +338,4 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
       }
     }
   }
-} 
+}

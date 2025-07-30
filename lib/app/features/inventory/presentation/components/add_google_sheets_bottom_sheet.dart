@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 // Simple CSV parser helper
 import 'package:uuid/uuid.dart';
 import '../../domain/entities/product.dart';
@@ -11,10 +12,12 @@ class AddGoogleSheetsBottomSheet extends StatefulWidget {
   const AddGoogleSheetsBottomSheet({super.key});
 
   @override
-  State<AddGoogleSheetsBottomSheet> createState() => _AddGoogleSheetsBottomSheetState();
+  State<AddGoogleSheetsBottomSheet> createState() =>
+      _AddGoogleSheetsBottomSheetState();
 }
 
-class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet> {
+class _AddGoogleSheetsBottomSheetState
+    extends State<AddGoogleSheetsBottomSheet> {
   File? _selectedFile;
   bool _isUploading = false;
   List<Product> _parsedProducts = [];
@@ -42,7 +45,7 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           // Header
           Padding(
             padding: const EdgeInsets.all(20),
@@ -66,7 +69,7 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
               ],
             ),
           ),
-          
+
           // Content
           Expanded(
             child: Padding(
@@ -86,7 +89,8 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                            Icon(Icons.info_outline,
+                                color: Colors.blue[700], size: 20),
                             const SizedBox(width: 8),
                             Text(
                               'CSV Format Requirements',
@@ -110,9 +114,9 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // File Selection
                   GestureDetector(
                     onTap: _pickFile,
@@ -121,29 +125,39 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: _selectedFile != null ? Colors.green : Colors.grey[300]!,
+                          color: _selectedFile != null
+                              ? Colors.green
+                              : Colors.grey[300]!,
                           width: 2,
                           style: BorderStyle.solid,
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        color: _selectedFile != null ? Colors.green[50] : Colors.grey[50],
+                        color: _selectedFile != null
+                            ? Colors.green[50]
+                            : Colors.grey[50],
                       ),
                       child: Column(
                         children: [
                           Icon(
-                            _selectedFile != null ? Icons.check_circle : Icons.upload_file,
+                            _selectedFile != null
+                                ? Icons.check_circle
+                                : Icons.upload_file,
                             size: 48,
-                            color: _selectedFile != null ? Colors.green : Colors.grey[400],
+                            color: _selectedFile != null
+                                ? Colors.green
+                                : Colors.grey[400],
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            _selectedFile != null 
+                            _selectedFile != null
                                 ? 'File Selected: ${_selectedFile!.path.split('/').last}'
                                 : 'Tap to select CSV file',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: _selectedFile != null ? Colors.green[700] : Colors.grey[700],
+                              color: _selectedFile != null
+                                  ? Colors.green[700]
+                                  : Colors.grey[700],
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -161,7 +175,7 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
                       ),
                     ),
                   ),
-                  
+
                   if (_parsedProducts.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Container(
@@ -173,7 +187,8 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+                          Icon(Icons.check_circle,
+                              color: Colors.green[700], size: 20),
                           const SizedBox(width: 8),
                           Text(
                             '${_parsedProducts.length} products parsed successfully',
@@ -186,13 +201,13 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
                       ),
                     ),
                   ],
-                  
+
                   const Spacer(),
                 ],
               ),
             ),
           ),
-          
+
           // Upload Button
           Container(
             padding: EdgeInsets.only(
@@ -215,7 +230,9 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: (_selectedFile != null && !_isUploading) ? _uploadProducts : null,
+                onPressed: (_selectedFile != null && !_isUploading)
+                    ? _uploadProducts
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
@@ -251,7 +268,7 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
 
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
-        
+
         // Check file size (10MB limit)
         final fileSize = await file.length();
         if (fileSize > 10 * 1024 * 1024) {
@@ -275,7 +292,7 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
     try {
       final input = await file.readAsString();
       final List<List<String>> rows = _parseCSVString(input);
-      
+
       if (rows.isEmpty) {
         _showError('CSV file is empty');
         return;
@@ -283,9 +300,14 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
 
       // Get headers
       final headers = rows[0].map((e) => e.toLowerCase()).toList();
-      
+
       // Validate required columns
-      final requiredColumns = ['productname', 'productprice', 'productcurrency', 'productskuuniqueid'];
+      final requiredColumns = [
+        'productname',
+        'productprice',
+        'productcurrency',
+        'productskuuniqueid'
+      ];
       for (final required in requiredColumns) {
         if (!headers.contains(required)) {
           _showError('Missing required column: $required');
@@ -305,21 +327,32 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
             productData[headers[j]] = row[j];
           }
 
+          // Get current user ID from Firebase Auth
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser == null) {
+            throw Exception('User not authenticated');
+          }
+
           final product = Product(
             productId: const Uuid().v4(),
-            hushhId: 'current_user_id', // TODO: Get actual user ID
+            hushhId: currentUser.uid,
             productName: productData['productname'] ?? '',
-            productDescription: productData['productdescription']?.isEmpty == true 
-                ? null 
-                : productData['productdescription'],
-            productImage: productData['productimage']?.isEmpty == true 
-                ? null 
+            productDescription:
+                productData['productdescription']?.isEmpty == true
+                    ? null
+                    : productData['productdescription'],
+            productImage: productData['productimage']?.isEmpty == true
+                ? null
                 : productData['productimage'],
-            productPrice: double.tryParse(productData['productprice']?.toString() ?? '0') ?? 0.0,
+            productPrice: double.tryParse(
+                    productData['productprice']?.toString() ?? '0') ??
+                0.0,
             productCurrency: productData['productcurrency'] ?? 'USD',
             productSkuUniqueId: productData['productskuuniqueid'] ?? '',
             addedAt: DateTime.now(),
-            stockQuantity: int.tryParse(productData['stockquantity']?.toString() ?? '0') ?? 0,
+            stockQuantity:
+                int.tryParse(productData['stockquantity']?.toString() ?? '0') ??
+                    0,
           );
 
           products.add(product);
@@ -351,10 +384,11 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
       if (context.mounted) {
         context.read<LookbookBloc>().add(AddBulkProductsEvent(_parsedProducts));
         Navigator.pop(context);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_parsedProducts.length} products uploaded successfully!'),
+            content: Text(
+                '${_parsedProducts.length} products uploaded successfully!'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -387,17 +421,17 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
   List<List<String>> _parseCSVString(String csvString) {
     final List<List<String>> result = [];
     final List<String> lines = csvString.split('\n');
-    
+
     for (String line in lines) {
       if (line.trim().isEmpty) continue;
-      
+
       final List<String> row = [];
       bool inQuotes = false;
       String currentField = '';
-      
+
       for (int i = 0; i < line.length; i++) {
         final char = line[i];
-        
+
         if (char == '"') {
           inQuotes = !inQuotes;
         } else if (char == ',' && !inQuotes) {
@@ -407,12 +441,12 @@ class _AddGoogleSheetsBottomSheetState extends State<AddGoogleSheetsBottomSheet>
           currentField += char;
         }
       }
-      
+
       // Add the last field
       row.add(currentField.trim());
       result.add(row);
     }
-    
+
     return result;
   }
-} 
+}

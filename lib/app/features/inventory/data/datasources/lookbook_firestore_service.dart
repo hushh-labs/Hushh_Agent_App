@@ -10,8 +10,10 @@ class LookbookFirestoreService {
   final _uuid = const Uuid();
 
   // Collection references
-  CollectionReference get _lookbooksCollection => _firestore.collection('lookbooks');
-  CollectionReference get _productsCollection => _firestore.collection('products');
+  CollectionReference get _lookbooksCollection =>
+      _firestore.collection('lookbooks');
+  CollectionReference get _productsCollection =>
+      _firestore.collection('AgentProducts');
 
   // Fetch lookbooks for a specific user
   Future<List<Lookbook>> getLookbooks(String hushhId) async {
@@ -135,9 +137,8 @@ class LookbookFirestoreService {
         query = query.where('lookbookId', isEqualTo: lookbookId);
       }
 
-      final querySnapshot = await query
-          .orderBy('addedAt', descending: true)
-          .get();
+      final querySnapshot =
+          await query.orderBy('addedAt', descending: true).get();
 
       return querySnapshot.docs
           .map((doc) => ProductModel.fromJson({
@@ -153,7 +154,8 @@ class LookbookFirestoreService {
   // Add a single product
   Future<Product> addProduct(Product product) async {
     try {
-      final productId = product.productId.isEmpty ? _uuid.v4() : product.productId;
+      final productId =
+          product.productId.isEmpty ? _uuid.v4() : product.productId;
       final now = DateTime.now();
 
       final productData = ProductModel(
@@ -172,7 +174,28 @@ class LookbookFirestoreService {
         isAvailable: product.isAvailable,
       ).toJson();
 
-      await _productsCollection.doc(productId).set(productData);
+      // 1. Store in main AgentProducts collection with user reference
+      await _productsCollection.doc(productId).set({
+        ...productData,
+        'createdBy': product.hushhId, // Add user reference
+        'createdAt': now.toIso8601String(),
+        'updatedAt': now.toIso8601String(),
+      });
+
+      // 2. Store in user's subcollection (Hushhagents/{userId}/agentProducts/{productId})
+      await _firestore
+          .collection('Hushhagents')
+          .doc(product.hushhId)
+          .collection('agentProducts')
+          .doc(productId)
+          .set({
+        ...productData,
+        'createdAt': now.toIso8601String(),
+        'updatedAt': now.toIso8601String(),
+      });
+
+      print(
+          '✅ [Product] Stored in both locations: AgentProducts/$productId and Hushhagents/${product.hushhId}/agentProducts/$productId');
 
       return ProductModel.fromJson({
         'productId': productId,
@@ -190,8 +213,9 @@ class LookbookFirestoreService {
       final now = DateTime.now();
 
       for (final product in products) {
-        final productId = product.productId.isEmpty ? _uuid.v4() : product.productId;
-        
+        final productId =
+            product.productId.isEmpty ? _uuid.v4() : product.productId;
+
         final productData = ProductModel(
           productId: productId,
           hushhId: product.hushhId,
@@ -208,11 +232,30 @@ class LookbookFirestoreService {
           isAvailable: product.isAvailable,
         ).toJson();
 
-        final productRef = _productsCollection.doc(productId);
-        batch.set(productRef, productData);
+        // 1. Store in main AgentProducts collection with user reference
+        final mainProductRef = _productsCollection.doc(productId);
+        batch.set(mainProductRef, {
+          ...productData,
+          'createdBy': product.hushhId, // Add user reference
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        });
+
+        // 2. Store in user's subcollection (Hushhagents/{userId}/agentProducts/{productId})
+        final userProductRef = _firestore
+            .collection('Hushhagents')
+            .doc(product.hushhId)
+            .collection('agentProducts')
+            .doc(productId);
+        batch.set(userProductRef, {
+          ...productData,
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        });
       }
 
       await batch.commit();
+      print('✅ [Bulk Products] Stored ${products.length} products in both locations');
     } catch (e) {
       throw Exception('Failed to add bulk products: $e');
     }
@@ -242,8 +285,12 @@ class LookbookFirestoreService {
       return allProducts
           .where((product) =>
               product.productName.toLowerCase().contains(query.toLowerCase()) ||
-              (product.productDescription?.toLowerCase().contains(query.toLowerCase()) ?? false) ||
-              (product.category?.toLowerCase().contains(query.toLowerCase()) ?? false))
+              (product.productDescription
+                      ?.toLowerCase()
+                      .contains(query.toLowerCase()) ??
+                  false) ||
+              (product.category?.toLowerCase().contains(query.toLowerCase()) ??
+                  false))
           .toList();
     } catch (e) {
       throw Exception('Failed to search products: $e');
@@ -275,4 +322,4 @@ class LookbookFirestoreService {
       throw Exception('Failed to update product: $e');
     }
   }
-} 
+}
