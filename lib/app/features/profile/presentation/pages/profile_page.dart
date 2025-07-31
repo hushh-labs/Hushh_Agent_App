@@ -414,7 +414,7 @@ class _ProfilePageState extends State<ProfilePage>
                   onTap: isLoading
                       ? null
                       : () => _showEditProfileBottomSheet(
-                          context, displayName, email, avatarUrl),
+                          context, displayName, email, phoneNumber, avatarUrl),
                   borderRadius: BorderRadius.circular(10),
                   child: Padding(
                     padding: const EdgeInsets.all(10),
@@ -688,7 +688,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _showEditProfileBottomSheet(BuildContext context, String displayName,
-      String email, String? avatarUrl) {
+      String email, String phoneNumber, String? avatarUrl) {
     final nameController = TextEditingController(text: displayName);
     String? selectedImagePath;
 
@@ -882,7 +882,10 @@ class _ProfilePageState extends State<ProfilePage>
                     const SizedBox(height: 16),
                     _buildReadOnlyField(
                       'Phone Number',
-                      'Not provided',
+                      phoneNumber.isNotEmpty &&
+                              phoneNumber != 'Add phone number'
+                          ? phoneNumber
+                          : 'Not provided',
                     ),
 
                     const SizedBox(height: 24),
