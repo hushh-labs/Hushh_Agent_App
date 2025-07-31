@@ -20,6 +20,7 @@ class AppRoutes {
   static const String agentProfileCategories = '/agent-profile-categories';
   static const String agentProfileBrands = '/agent-profile-brands';
   static const String agentCardCreated = '/agent-card-created';
+  static const String agentCardDemo = '/agent-card-demo';
 
   // Lookbooks & Products routes
   static const String agentLookbook = '/agent-lookbook';

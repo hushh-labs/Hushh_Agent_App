@@ -71,6 +71,7 @@ class AuthService {
   }
 
   /// Direct delete account functionality
+  /// This removes all user data from Firestore and signs the user out
   static Future<bool> deleteAccount(BuildContext context) async {
     try {
       final currentUser = _auth.currentUser;
@@ -88,7 +89,7 @@ class AuthService {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Deleting account...'),
+              Text('Deleting account data...'),
             ],
           ),
         ),
@@ -99,8 +100,10 @@ class AuthService {
       // Delete user data from Firestore collections
       await _deleteUserData(userId);
 
-      // Delete the Firebase Auth account
-      await currentUser.delete();
+      // Sign out the user (this avoids the requires-recent-login error)
+      await _auth.signOut();
+
+      print('✅ Account data deleted and user signed out successfully');
 
       // Close loading dialog
       if (context.mounted) {
@@ -118,7 +121,7 @@ class AuthService {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account deleted successfully'),
+            content: Text('Account data deleted successfully'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -128,6 +131,96 @@ class AuthService {
       return true;
     } catch (e) {
       print('❌ Delete account error: $e');
+
+      // Close loading dialog if it's showing
+      if (context.mounted) {
+        Navigator.pop(context);
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete account: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      return false;
+    }
+  }
+
+  /// Alternative method to fully delete Firebase Auth account with re-authentication
+  /// This method handles the requires-recent-login error by re-authenticating the user
+  static Future<bool> deleteAccountWithReauth(BuildContext context, {
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Re-authenticating and deleting account...'),
+            ],
+          ),
+        ),
+      );
+
+      final userId = currentUser.uid;
+
+      // Re-authenticate the user
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+      await currentUser.reauthenticateWithCredential(credential);
+      print('✅ User re-authenticated successfully');
+
+      // Delete user data from Firestore collections
+      await _deleteUserData(userId);
+
+      // Now delete the Firebase Auth account (this should work after re-auth)
+      await currentUser.delete();
+      print('✅ Firebase Auth account deleted successfully');
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      // Navigate to auth page and clear all previous routes
+      if (context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.mainAuth,
+          (route) => false,
+        );
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account completely deleted successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      return true;
+    } catch (e) {
+      print('❌ Delete account with re-auth error: $e');
 
       // Close loading dialog if it's showing
       if (context.mounted) {
@@ -274,7 +367,11 @@ class AuthService {
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
         content: const Text(
-          'Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data.',
+          'Are you sure you want to delete your account? This will:\n\n'
+          '• Remove all your data from our servers\n'
+          '• Sign you out of the app\n'
+          '• Cannot be undone\n\n'
+          'Your account data will be permanently deleted.',
         ),
         actions: [
           TextButton(
@@ -290,7 +387,81 @@ class AuthService {
               await deleteAccount(context);
             },
             child: const Text(
-              'Delete Account',
+              'Delete My Data',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show delete account dialog with re-authentication option
+  static void showDeleteAccountWithReauthDialog(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account Completely'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'To completely delete your Firebase account, please confirm your credentials:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () async {
+              if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter both email and password'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              
+              Navigator.pop(context); // Close dialog
+              await deleteAccountWithReauth(
+                context,
+                email: emailController.text.trim(),
+                password: passwordController.text,
+              );
+            },
+            child: const Text(
+              'Delete Account Completely',
               style: TextStyle(color: Colors.white),
             ),
           ),

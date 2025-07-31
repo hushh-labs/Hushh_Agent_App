@@ -20,6 +20,7 @@ import '../../../app/features/agent_profile/presentation/pages/agent_profile_nam
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_categories_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_brands_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_card_created_page.dart';
+import '../../../app/features/agent_profile/presentation/pages/agent_card_demo_page.dart';
 
 // New auth flow pages
 import '../../../app/features/auth/presentation/pages/auth_email_page.dart';
@@ -129,6 +130,11 @@ class Routes {
         final profileData = settings.arguments as Map<String, dynamic>? ?? {};
         return MaterialPageRoute(
           builder: (_) => AgentCardCreatedPage(profileData: profileData),
+        );
+
+      case AppRoutes.agentCardDemo:
+        return MaterialPageRoute(
+          builder: (_) => const AgentCardDemoPage(),
         );
 
       case AppRoutes.agentLookbook:
