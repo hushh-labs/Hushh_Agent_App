@@ -4,6 +4,7 @@ import '../bloc/chat_bloc.dart' as chat;
 import '../components/chat_search_bar.dart';
 import '../components/chat_list_item.dart';
 import '../components/empty_chat_state.dart';
+import '../../../../../shared/utils/guest_utils.dart';
 import 'hushh_bot_chat_page.dart';
 
 class ChatPage extends StatelessWidget {
@@ -88,7 +89,7 @@ class _ChatViewState extends State<_ChatView> {
           }
 
           List<chat.ChatItem> chats = [];
-          
+
           if (state is chat.ChatsLoadedState) {
             chats = state.filteredChats;
           }
@@ -99,10 +100,16 @@ class _ChatViewState extends State<_ChatView> {
               ChatSearchBar(
                 controller: _searchController,
                 onChanged: (query) {
-                  context.read<chat.ChatBloc>().add(chat.SearchChatsEvent(query));
+                  GuestUtils.executeWithGuestCheck(
+                    context,
+                    'Chat Search',
+                    () => context
+                        .read<chat.ChatBloc>()
+                        .add(chat.SearchChatsEvent(query)),
+                  );
                 },
               ),
-              
+
               // Chat List
               Expanded(
                 child: chats.isEmpty
@@ -117,7 +124,11 @@ class _ChatViewState extends State<_ChatView> {
                           final chat = chats[index];
                           return ChatListItem(
                             chatItem: chat,
-                            onTap: () => _openChat(context, chat),
+                            onTap: () => GuestUtils.executeWithGuestCheck(
+                              context,
+                              'Chat Messages',
+                              () => _openChat(context, chat),
+                            ),
                           );
                         },
                       ),
@@ -146,4 +157,4 @@ class _ChatViewState extends State<_ChatView> {
       );
     }
   }
-} 
+}

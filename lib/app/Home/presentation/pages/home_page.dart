@@ -243,11 +243,11 @@ class _HomePageState extends State<HomePage> {
   bool _isRestrictedSection(String sectionId) {
     switch (sectionId) {
       case 'chat':
-        return true; // Chat requires authentication
+        return false; // Allow chat access - individual features are locked inside
       case 'dashboard':
-        return true; // Dashboard requires authentication
+        return false; // Allow dashboard access - individual features are locked inside
       case 'profile':
-        return true; // Profile requires authentication
+        return false; // Allow profile access - guest can see profile page with Sign In button
       default:
         return false;
     }
