@@ -10,6 +10,9 @@ class CreateInventoryBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -31,84 +34,93 @@ class CreateInventoryBottomSheet extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
 
-          // Title
-          const Text(
-            'Choose your Inventory Solution',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
-          ),
+                  // Title
+                  const Text(
+                    'Choose your Inventory Solution',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
 
-          const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-          // Subtitle
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Choose any of these Inventory Solution that works for you!',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-                height: 1.4,
+                  // Subtitle
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Choose any of these Inventory Solution that works for you!',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Options Grid
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.2,
+                      children: [
+                        _buildOptionCard(
+                          context,
+                          title: 'SAP S/4HANA',
+                          icon: Icons.business,
+                          color: Colors.blue,
+                          isEnabled: false,
+                          onTap: () => _showComingSoon(context, 'SAP S/4HANA'),
+                        ),
+                        _buildOptionCard(
+                          context,
+                          title: 'Google Sheets',
+                          icon: Icons.table_chart,
+                          color: Colors.green,
+                          isEnabled: true,
+                          onTap: () => _openGoogleSheetsModal(context),
+                        ),
+                        _buildOptionCard(
+                          context,
+                          title: 'Manual Entry',
+                          icon: Icons.edit,
+                          color: Colors.orange,
+                          isEnabled: true,
+                          onTap: () => _openManualEntryModal(context),
+                        ),
+                        _buildOptionCard(
+                          context,
+                          title: 'Zoho',
+                          icon: Icons.inventory,
+                          color: Colors.purple,
+                          isEnabled: false,
+                          onTap: () => _showComingSoon(context, 'Zoho'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+                ],
               ),
-              textAlign: TextAlign.center,
             ),
           ),
-
-          const SizedBox(height: 32),
-
-          // Options Grid
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-              children: [
-                _buildOptionCard(
-                  context,
-                  title: 'SAP S/4HANA',
-                  icon: Icons.business,
-                  color: Colors.blue,
-                  isEnabled: false,
-                  onTap: () => _showComingSoon(context, 'SAP S/4HANA'),
-                ),
-                _buildOptionCard(
-                  context,
-                  title: 'Google Sheets',
-                  icon: Icons.table_chart,
-                  color: Colors.green,
-                  isEnabled: true,
-                  onTap: () => _openGoogleSheetsModal(context),
-                ),
-                _buildOptionCard(
-                  context,
-                  title: 'Manual Entry',
-                  icon: Icons.edit,
-                  color: Colors.orange,
-                  isEnabled: true,
-                  onTap: () => _openManualEntryModal(context),
-                ),
-                _buildOptionCard(
-                  context,
-                  title: 'Zoho',
-                  icon: Icons.inventory,
-                  color: Colors.purple,
-                  isEnabled: false,
-                  onTap: () => _showComingSoon(context, 'Zoho'),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
         ],
       ),
     );

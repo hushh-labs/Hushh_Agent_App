@@ -27,6 +27,7 @@ import '../../../app/features/auth/presentation/pages/auth_name_page.dart';
 import '../../../app/features/auth/presentation/pages/auth_categories_page.dart';
 import '../../../app/features/auth/presentation/pages/auth_brands_page.dart';
 import '../../../app/features/auth/presentation/pages/auth_card_created_page.dart';
+import '../../../app/features/profile/presentation/pages/permissions_page.dart';
 
 final sl = GetIt.instance;
 
@@ -157,6 +158,11 @@ class Routes {
               mode: args?['mode'] ?? 'view',
             ),
           ),
+        );
+
+      case AppRoutes.permissions:
+        return MaterialPageRoute(
+          builder: (_) => const PermissionsPage(),
         );
 
       default:

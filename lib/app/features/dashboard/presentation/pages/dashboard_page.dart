@@ -9,14 +9,14 @@ import '../components/dashboard_tab_bar.dart';
 import '../components/dashboard_content.dart';
 import '../components/dashboard_floating_button.dart';
 
-
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => dashboard.DashboardBloc()..add(const dashboard.LoadDashboardEvent()),
+      create: (context) =>
+          dashboard.DashboardBloc()..add(const dashboard.LoadDashboardEvent()),
       child: const _DashboardView(),
     );
   }
@@ -59,7 +59,8 @@ class _DashboardView extends StatelessWidget {
             double walletBalance = 0.0;
             bool isProfileComplete = false;
             List<dashboard.QuickInsightItem> insights = [];
-            dashboard.DashboardTab selectedTab = dashboard.DashboardTab.services;
+            dashboard.DashboardTab selectedTab =
+                dashboard.DashboardTab.services;
             List<dashboard.ServiceItem> services = [];
             List<dashboard.CustomerItem> customers = [];
 
@@ -78,6 +79,7 @@ class _DashboardView extends StatelessWidget {
                 DashboardHeader(
                   balance: walletBalance,
                   onNotificationTap: () => _showNotifications(context),
+                  onCoinTap: () => _showCoinComingSoon(context),
                 ),
 
                 // Scrollable Content
@@ -91,7 +93,8 @@ class _DashboardView extends StatelessWidget {
                         // Quick Insights Grid
                         QuickInsightsGrid(
                           insights: insights,
-                          onInsightTap: (insightId) => _handleInsightTap(context, insightId),
+                          onInsightTap: (insightId) =>
+                              _handleInsightTap(context, insightId),
                         ),
 
                         const SizedBox(height: 32),
@@ -137,6 +140,17 @@ class _DashboardView extends StatelessWidget {
     );
   }
 
+  void _showCoinComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Coming soon!'),
+        backgroundColor: Color(0xFFA342FF),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
   void _completeProfile(BuildContext context) {
     // Navigate to profile completion flow
     Navigator.pushNamed(context, AppRoutes.agentProfileEmail);
@@ -159,12 +173,21 @@ class _DashboardView extends StatelessWidget {
   }
 
   void _refreshDashboard(BuildContext context) {
-    context.read<dashboard.DashboardBloc>().add(const dashboard.RefreshDashboardEvent());
+    context
+        .read<dashboard.DashboardBloc>()
+        .add(const dashboard.RefreshDashboardEvent());
   }
 
   void _launchQRScanner(BuildContext context) {
-    // Navigate to Lookbooks & Products page
-    Navigator.pushNamed(context, AppRoutes.agentLookbook);
+    // Show coming soon message for QR scanner
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('QR Scanner feature coming soon!'),
+        backgroundColor: Color(0xFFA342FF),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
   void _addService(BuildContext context) {
@@ -221,4 +244,4 @@ class _DashboardView extends StatelessWidget {
         break;
     }
   }
-} 
+}

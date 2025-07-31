@@ -45,18 +45,19 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
           .get();
 
       print('📊 Found ${snapshot.docs.length} brands');
-      
+
       final List<AgentBrand> brands = snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         print('📝 Processing brand: ${data['brand_name']}');
-        
+
         // Map the brand_collections fields to AgentBrandModel fields
         return AgentBrandModel(
           id: doc.id,
           brandName: data['brand_name'] ?? '',
           domain: data['Domain'] ?? '',
           brandLogo: data['brand_logo'] ?? '',
-          description: data['brand_name'] ?? '', // Using brand_name as description for now
+          description: data['brand_name'] ??
+              '', // Using brand_name as description for now
           isClaimed: data['custom_brand'] ?? false,
           isVerified: data['brand_approval_status'] == 'approved' ?? false,
           createdAt: DateTime.now(), // Default value
@@ -65,7 +66,7 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
       }).toList();
 
       print('✅ Successfully processed ${brands.length} brands');
-      
+
       setState(() {
         _allBrands = brands;
         _filteredBrands = brands;

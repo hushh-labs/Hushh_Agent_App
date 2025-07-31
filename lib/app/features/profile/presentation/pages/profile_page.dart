@@ -474,7 +474,7 @@ class _ProfilePageState extends State<ProfilePage>
           }),
           _MenuItemData('Permissions', Icons.security_outlined, () {
             try {
-              Navigator.pushNamed(context, AppRoutes.home);
+              Navigator.pushNamed(context, AppRoutes.permissions);
             } catch (e) {
               _showErrorSnackBar('Unable to open Permissions');
             }

@@ -25,4 +25,7 @@ class AppRoutes {
   static const String agentLookbook = '/agent-lookbook';
   static const String createLookbook = '/create-lookbook';
   static const String agentProducts = '/agent-products';
+
+  // Profile & Settings routes
+  static const String permissions = '/permissions';
 }
