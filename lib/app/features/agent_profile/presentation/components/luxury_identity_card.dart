@@ -60,57 +60,29 @@ class LuxuryIdentityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top section with name/designation and share button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Top section with name/designation (no share button)
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Left side - Name and designation
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 22, // Adjusted font size
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Inter',
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 4), // Adjusted spacing
-                          Text(
-                            designation,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.grey[400],
-                              fontFamily: 'Inter',
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 22, // Adjusted font size
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontFamily: 'Inter',
+                        letterSpacing: -0.5,
                       ),
                     ),
-
-                    // Right side - Share button
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                      child: Icon(
-                        Icons.share,
-                        color: Colors.white.withOpacity(0.8),
-                        size: 20,
+                    const SizedBox(height: 4), // Adjusted spacing
+                    Text(
+                      designation,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[400],
+                        fontFamily: 'Inter',
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
@@ -264,60 +236,29 @@ class ResponsiveLuxuryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // Top section with name and designation (no share button)
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Name and designation
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: TextStyle(
-                                  fontSize:
-                                      cardWidth * 0.065, // Responsive font size
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontFamily: 'Inter',
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              SizedBox(
-                                  height:
-                                      cardHeight * 0.02), // Adjusted spacing
-                              Text(
-                                designation,
-                                style: TextStyle(
-                                  fontSize: cardWidth * 0.04,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.grey[400],
-                                  fontFamily: 'Inter',
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: cardWidth * 0.065, // Responsive font size
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'Inter',
+                            letterSpacing: -0.5,
                           ),
                         ),
-
-                        // Share button
-                        Container(
-                          width: cardWidth * 0.12,
-                          height: cardWidth * 0.12,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
-                            ),
-                            color: Colors.white.withOpacity(0.05),
-                          ),
-                          child: Icon(
-                            Icons.share,
-                            color: Colors.white.withOpacity(0.8),
-                            size: cardWidth * 0.055,
+                        SizedBox(height: cardHeight * 0.02), // Adjusted spacing
+                        Text(
+                          designation,
+                          style: TextStyle(
+                            fontSize: cardWidth * 0.04,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.grey[400],
+                            fontFamily: 'Inter',
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ],
