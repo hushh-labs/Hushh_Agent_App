@@ -29,7 +29,6 @@ class ProductTile extends StatefulWidget {
 }
 
 class _ProductTileState extends State<ProductTile> {
-
   bool get isRecentProduct => DateTime.now()
       .subtract(const Duration(days: 1))
       .isAfter(widget.product.createdAt);
@@ -227,8 +226,6 @@ class _ProductTileState extends State<ProductTile> {
                 ),
               ),
 
-
-
               // NEW/Discount Badge
               Positioned(
                 top: 8,
@@ -257,6 +254,4 @@ class _ProductTileState extends State<ProductTile> {
       ),
     );
   }
-
-
 }

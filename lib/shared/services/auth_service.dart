@@ -152,14 +152,17 @@ class AuthService {
     final batch = _firestore.batch();
 
     try {
-      // List of collections to delete user data from
+      print('🗑️ Starting deletion of user data for: $userId');
+
+      // STEP 1: Delete from Hushhagents collection and its subcollections
+      await _deleteHushhAgentsData(userId, batch);
+
+      // STEP 2: List of other collections to clean
       final collectionsToClean = [
         'HushhAgents',
         'users',
-        'Hushhagents',
-        'AgentProducts',
         'lookbooks',
-        'products',
+        'products', // Old flat structure (for backward compatibility)
         'notifications',
         'chats',
         'feedback',
@@ -184,11 +187,20 @@ class AuthService {
             batch.delete(doc.reference);
           }
 
+          // Also try with 'createdBy' field (for products in old structure)
+          final createdByDocs =
+              await collection.where('createdBy', isEqualTo: userId).get();
+          for (final doc in createdByDocs.docs) {
+            batch.delete(doc.reference);
+          }
+
           // Try direct document with userId as document ID
           final directDoc = await collection.doc(userId).get();
           if (directDoc.exists) {
             batch.delete(directDoc.reference);
           }
+
+          print('✅ Cleaned collection: $collectionName');
         } catch (e) {
           print('⚠️ Could not clean collection $collectionName: $e');
           // Continue with other collections
@@ -204,6 +216,59 @@ class AuthService {
     } catch (e) {
       print('❌ Error deleting user data: $e');
       // Don't throw error here as we still want to delete the auth account
+    }
+  }
+
+  /// Delete from Hushhagents collection and its subcollections
+  static Future<void> _deleteHushhAgentsData(
+      String userId, WriteBatch batch) async {
+    try {
+      print('🗑️ Deleting Hushhagents data for: $userId');
+
+      // Delete the main Hushhagents document
+      final hushhAgentDoc = _firestore.collection('Hushhagents').doc(userId);
+      final hushhAgentSnapshot = await hushhAgentDoc.get();
+
+      if (hushhAgentSnapshot.exists) {
+        batch.delete(hushhAgentDoc);
+
+        // Delete agentProducts subcollection
+        final agentProductsQuery =
+            await hushhAgentDoc.collection('agentProducts').get();
+        int agentProductCount = 0;
+
+        for (final productDoc in agentProductsQuery.docs) {
+          batch.delete(productDoc.reference);
+          agentProductCount++;
+        }
+
+        // Delete other subcollections if they exist
+        final subcollections = [
+          'settings',
+          'analytics',
+          'notifications',
+          'conversations',
+        ];
+
+        for (final subcollectionName in subcollections) {
+          try {
+            final subcollectionQuery =
+                await hushhAgentDoc.collection(subcollectionName).get();
+            for (final doc in subcollectionQuery.docs) {
+              batch.delete(doc.reference);
+            }
+          } catch (e) {
+            print('⚠️ Could not delete subcollection $subcollectionName: $e');
+          }
+        }
+
+        print(
+            '✅ Prepared deletion of Hushhagents/$userId with $agentProductCount agent products');
+      } else {
+        print('ℹ️ Hushhagents/$userId document does not exist');
+      }
+    } catch (e) {
+      print('⚠️ Error deleting Hushhagents data: $e');
     }
   }
 

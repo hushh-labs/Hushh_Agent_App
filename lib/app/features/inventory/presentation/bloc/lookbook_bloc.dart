@@ -98,6 +98,34 @@ class DeleteProductEvent extends LookbookEvent {
   List<Object> get props => [productId];
 }
 
+class FetchAgentProductsEvent extends LookbookEvent {
+  final String agentId;
+  final String? lookbookId;
+  final int? limit;
+
+  const FetchAgentProductsEvent({
+    required this.agentId,
+    this.lookbookId,
+    this.limit,
+  });
+
+  @override
+  List<Object?> get props => [agentId, lookbookId, limit];
+}
+
+class UploadCsvToAgentEvent extends LookbookEvent {
+  final String agentId;
+  final List<Product> products;
+
+  const UploadCsvToAgentEvent({
+    required this.agentId,
+    required this.products,
+  });
+
+  @override
+  List<Object> get props => [agentId, products];
+}
+
 // States
 abstract class LookbookState extends Equatable {
   const LookbookState();
@@ -155,6 +183,28 @@ class ProductAdded extends LookbookState {
   List<Object> get props => [product];
 }
 
+class AgentProductsLoaded extends LookbookState {
+  final List<Product> products;
+  final String agentId;
+
+  const AgentProductsLoaded({
+    required this.products,
+    required this.agentId,
+  });
+
+  @override
+  List<Object> get props => [products, agentId];
+}
+
+class CsvUploadResult extends LookbookState {
+  final Map<String, dynamic> result;
+
+  const CsvUploadResult(this.result);
+
+  @override
+  List<Object> get props => [result];
+}
+
 // BLoC
 class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
   final LookbookFirestoreService _firestoreService = LookbookFirestoreService();
@@ -170,6 +220,8 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     on<AddBulkProductsEvent>(_onAddBulkProducts);
     on<UpdateProductStockEvent>(_onUpdateProductStock);
     on<DeleteProductEvent>(_onDeleteProduct);
+    on<FetchAgentProductsEvent>(_onFetchAgentProducts);
+    on<UploadCsvToAgentEvent>(_onUploadCsvToAgent);
   }
 
   Future<void> _onFetchLookbooks(
@@ -389,6 +441,43 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
       emit(ProductsLoaded(updatedProducts));
     } catch (e) {
       emit(LookbookError('Failed to delete product: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onFetchAgentProducts(
+    FetchAgentProductsEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    try {
+      emit(LookbookLoading());
+
+      final products = await _firestoreService.getAgentProducts(
+        agentId: event.agentId,
+        lookbookId: event.lookbookId,
+        limit: event.limit,
+      );
+
+      emit(AgentProductsLoaded(products: products, agentId: event.agentId));
+    } catch (e) {
+      emit(LookbookError('Failed to fetch agent products: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onUploadCsvToAgent(
+    UploadCsvToAgentEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    try {
+      emit(LookbookLoading());
+
+      final result = await _firestoreService.uploadCsvProductsToAgent(
+        agentId: event.agentId,
+        products: event.products,
+      );
+
+      emit(CsvUploadResult(result));
+    } catch (e) {
+      emit(LookbookError('Failed to upload CSV to agent: ${e.toString()}'));
     }
   }
 }

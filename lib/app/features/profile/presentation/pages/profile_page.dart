@@ -507,23 +507,6 @@ class _ProfilePageState extends State<ProfilePage>
               },
             );
           }),
-          _MenuItemData(
-            'Wallet & Cards',
-            Icons.account_balance_wallet_outlined,
-            () {
-              GuestUtils.executeWithGuestCheck(
-                context,
-                'Wallet & Cards',
-                () {
-                  try {
-                    Navigator.pushNamed(context, AppRoutes.home);
-                  } catch (e) {
-                    _showErrorSnackBar('Unable to open Wallet & Cards');
-                  }
-                },
-              );
-            },
-          ),
         ]),
         const SizedBox(height: 20),
         _buildSectionTitle('More'),
