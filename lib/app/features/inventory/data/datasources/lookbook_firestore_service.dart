@@ -220,8 +220,16 @@ class LookbookFirestoreService {
         'updatedAt': now.toIso8601String(),
       });
 
+      // ALSO store directly in AgentProducts collection: AgentProducts/{productId}
+      await _firestore.collection('AgentProducts').doc(productId).set({
+        ...productData,
+        'agentId': product.createdBy, // Include agentId for reference
+        'createdAt': now.toIso8601String(),
+        'updatedAt': now.toIso8601String(),
+      });
+
       print(
-          '✅ [Product] Stored in: Hushhagents/${product.createdBy}/agentProducts/$productId');
+          '✅ [Product] Stored in: Hushhagents/${product.createdBy}/agentProducts/$productId AND AgentProducts/$productId');
 
       return ProductModel.fromJson({
         'productId': productId,
@@ -431,6 +439,16 @@ class LookbookFirestoreService {
             'updatedAt': now.toIso8601String(),
           });
 
+          // ALSO store directly in AgentProducts collection: AgentProducts/{productId}
+          final agentProductsRef =
+              _firestore.collection('AgentProducts').doc(productId);
+          batch.set(agentProductsRef, {
+            ...productData,
+            'agentId': agentId, // Include agentId for reference
+            'createdAt': now.toIso8601String(),
+            'updatedAt': now.toIso8601String(),
+          });
+
           successful.add(productId);
         } catch (e) {
           failed.add({
@@ -454,7 +472,8 @@ class LookbookFirestoreService {
 
       print(
           '✅ [CSV Upload] Agent: $agentId | Success: ${successful.length} | Failed: ${failed.length}');
-      print('📁 Products stored in: Hushhagents/$agentId/agentProducts/');
+      print(
+          '📁 Products stored in: Hushhagents/$agentId/agentProducts/ AND AgentProducts/{productId}');
       return result;
     } catch (e) {
       throw Exception('Failed to upload CSV products to agent collection: $e');
@@ -499,41 +518,79 @@ class LookbookFirestoreService {
   // Delete a product
   Future<void> deleteProduct(String productId) async {
     try {
-      // We need to find which agent this product belongs to
-      // Since we only use Hushhagents structure now, we'll search there
-
       String? agentId;
 
-      // Try to find the product in old flat structure for backward compatibility
+      // First, try to find the product in AgentProducts collection (new dual storage)
       try {
-        final productDoc = await _productsCollection.doc(productId).get();
-        if (productDoc.exists) {
-          final productData = productDoc.data() as Map<String, dynamic>;
-          agentId = productData['createdBy'] as String?;
+        final agentProductDoc =
+            await _firestore.collection('AgentProducts').doc(productId).get();
 
-          // Delete from old structure
-          await _productsCollection.doc(productId).delete();
-          print(
-              '🗑️ [Product] Deleted from old structure: AgentProducts/$productId');
+        if (agentProductDoc.exists) {
+          final productData = agentProductDoc.data() as Map<String, dynamic>;
+          agentId = productData['agentId'] as String?;
+
+          // Delete from AgentProducts collection
+          await _firestore.collection('AgentProducts').doc(productId).delete();
+          print('🗑️ [Product] Deleted from: AgentProducts/$productId');
         }
       } catch (e) {
-        print('⚠️ [Product] Not found in old structure: $e');
+        print('⚠️ [Product] Not found in AgentProducts collection: $e');
       }
 
-      // If we found the agent ID, delete from Hushhagents structure
-      if (agentId != null) {
-        await _firestore
-            .collection('Hushhagents')
-            .doc(agentId)
-            .collection('agentProducts')
-            .doc(productId)
-            .delete();
+      // Also try to find in old flat structure for backward compatibility
+      if (agentId == null) {
+        try {
+          final productDoc = await _productsCollection.doc(productId).get();
+          if (productDoc.exists) {
+            final productData = productDoc.data() as Map<String, dynamic>;
+            agentId = productData['createdBy'] as String?;
 
-        print(
-            '✅ [Product] Deleted from: Hushhagents/$agentId/agentProducts/$productId');
+            // Delete from old structure
+            await _productsCollection.doc(productId).delete();
+            print(
+                '🗑️ [Product] Deleted from old structure: AgentProducts/$productId');
+          }
+        } catch (e) {
+          print('⚠️ [Product] Not found in old structure: $e');
+        }
+      }
+
+      // If we found the agent ID, also delete from Hushhagents structure
+      if (agentId != null) {
+        try {
+          await _firestore
+              .collection('Hushhagents')
+              .doc(agentId)
+              .collection('agentProducts')
+              .doc(productId)
+              .delete();
+
+          print(
+              '✅ [Product] Deleted from: Hushhagents/$agentId/agentProducts/$productId');
+
+          // Update agent's product count
+          final agentDocRef = _firestore.collection('Hushhagents').doc(agentId);
+          final agentDocSnapshot = await agentDocRef.get();
+
+          if (agentDocSnapshot.exists) {
+            final currentData =
+                agentDocSnapshot.data() as Map<String, dynamic>?;
+            final currentProductCount = currentData?['productCount'] ?? 0;
+            if (currentProductCount > 0) {
+              await agentDocRef.update({
+                'updatedAt': DateTime.now().toIso8601String(),
+                'productCount': currentProductCount - 1,
+              });
+            }
+          }
+        } catch (e) {
+          print('⚠️ [Product] Error deleting from Hushhagents structure: $e');
+        }
       } else {
         throw Exception('Product not found or missing agent information');
       }
+
+      print('✅ [Product] Successfully deleted product: $productId');
     } catch (e) {
       throw Exception('Failed to delete product: $e');
     }
@@ -554,8 +611,17 @@ class LookbookFirestoreService {
           .doc(product.productId)
           .update(updateData);
 
+      // ALSO update in AgentProducts collection
+      await _firestore
+          .collection('AgentProducts')
+          .doc(product.productId)
+          .update({
+        ...updateData,
+        'agentId': product.createdBy, // Include agentId for reference
+      });
+
       print(
-          '✅ [Product] Updated in: Hushhagents/${product.createdBy}/agentProducts/${product.productId}');
+          '✅ [Product] Updated in: Hushhagents/${product.createdBy}/agentProducts/${product.productId} AND AgentProducts/${product.productId}');
 
       return product;
     } catch (e) {

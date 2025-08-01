@@ -157,6 +157,9 @@ class AuthService {
       // STEP 1: Delete from Hushhagents collection and its subcollections
       await _deleteHushhAgentsData(userId, batch);
 
+      // STEP 1.5: Delete from AgentProducts collection and its subcollections
+      await _deleteAgentProductsData(userId, batch);
+
       // STEP 2: List of other collections to clean
       final collectionsToClean = [
         'HushhAgents',
@@ -269,6 +272,32 @@ class AuthService {
       }
     } catch (e) {
       print('⚠️ Error deleting Hushhagents data: $e');
+    }
+  }
+
+  /// Delete from AgentProducts collection (products stored directly by productId)
+  static Future<void> _deleteAgentProductsData(
+      String userId, WriteBatch batch) async {
+    try {
+      print('🗑️ Deleting AgentProducts data for: $userId');
+
+      // Query all products where agentId equals userId
+      final agentProductsQuery = await _firestore
+          .collection('AgentProducts')
+          .where('agentId', isEqualTo: userId)
+          .get();
+
+      int productCount = 0;
+
+      for (final productDoc in agentProductsQuery.docs) {
+        batch.delete(productDoc.reference);
+        productCount++;
+      }
+
+      print(
+          '✅ Prepared deletion of $productCount products from AgentProducts collection for agent: $userId');
+    } catch (e) {
+      print('⚠️ Error deleting AgentProducts data: $e');
     }
   }
 

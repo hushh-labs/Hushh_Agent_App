@@ -126,6 +126,26 @@ class UploadCsvToAgentEvent extends LookbookEvent {
   List<Object> get props => [agentId, products];
 }
 
+class SearchProductsEvent extends LookbookEvent {
+  final String query;
+
+  const SearchProductsEvent(this.query);
+
+  @override
+  List<Object> get props => [query];
+}
+
+class FilterProductsEvent extends LookbookEvent {
+  final ProductSortBy sortBy;
+
+  const FilterProductsEvent(this.sortBy);
+
+  @override
+  List<Object> get props => [sortBy];
+}
+
+enum ProductSortBy { price, stock, name }
+
 // States
 abstract class LookbookState extends Equatable {
   const LookbookState();
@@ -205,10 +225,26 @@ class CsvUploadResult extends LookbookState {
   List<Object> get props => [result];
 }
 
+class ProductsLoadedWithOperation extends LookbookState {
+  final List<Product> products;
+  final String? operationMessage;
+  final bool isSuccess;
+
+  const ProductsLoadedWithOperation({
+    required this.products,
+    this.operationMessage,
+    this.isSuccess = true,
+  });
+
+  @override
+  List<Object?> get props => [products, operationMessage, isSuccess];
+}
+
 // BLoC
 class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
   final LookbookFirestoreService _firestoreService = LookbookFirestoreService();
   List<Lookbook> _allLookbooks = [];
+  List<Product> _allProducts = [];
 
   LookbookBloc() : super(LookbookInitial()) {
     on<FetchLookbooksEvent>(_onFetchLookbooks);
@@ -222,6 +258,8 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     on<DeleteProductEvent>(_onDeleteProduct);
     on<FetchAgentProductsEvent>(_onFetchAgentProducts);
     on<UploadCsvToAgentEvent>(_onUploadCsvToAgent);
+    on<SearchProductsEvent>(_onSearchProducts);
+    on<FilterProductsEvent>(_onFilterProducts);
   }
 
   Future<void> _onFetchLookbooks(
@@ -339,6 +377,9 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
         lookbookId: event.lookbookId,
       );
 
+      // Store all products for filtering and searching
+      _allProducts = products;
+
       emit(ProductsLoaded(products));
     } catch (e) {
       emit(LookbookError('Failed to fetch products: ${e.toString()}'));
@@ -381,8 +422,6 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     Emitter<LookbookState> emit,
   ) async {
     try {
-      emit(LookbookLoading());
-
       // Get current user's hushhId from Firebase Auth
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -390,29 +429,88 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
         return;
       }
 
-      // Get the current product from Firestore to ensure we have the latest data
-      final products = await _firestoreService.getProducts(
-        hushhId: currentUser.uid,
-      );
+      // Get current products from the current state for optimistic update
+      List<Product> currentProducts = [];
+      if (state is ProductsLoaded) {
+        currentProducts = (state as ProductsLoaded).products;
+      } else if (state is ProductsLoadedWithOperation) {
+        currentProducts = (state as ProductsLoadedWithOperation).products;
+      } else {
+        // If no current state, fetch from Firestore
+        currentProducts = await _firestoreService.getProducts(
+          hushhId: currentUser.uid,
+        );
+      }
 
-      final product = products.firstWhere(
+      // Find and update the product optimistically
+      final productIndex = currentProducts.indexWhere(
         (product) => product.productId == event.productId,
-        orElse: () => throw Exception('Product not found'),
       );
 
-      final updatedProduct = product.copyWith(stockQuantity: event.newStock);
+      if (productIndex == -1) {
+        emit(ProductsLoadedWithOperation(
+          products: currentProducts,
+          operationMessage: 'Product not found',
+          isSuccess: false,
+        ));
+        return;
+      }
 
-      // Update in Firestore
+      // Create optimistic update
+      final optimisticProducts = List<Product>.from(currentProducts);
+      optimisticProducts[productIndex] = optimisticProducts[productIndex]
+          .copyWith(stockQuantity: event.newStock);
+
+      // Emit optimistic state immediately
+      emit(ProductsLoadedWithOperation(
+        products: optimisticProducts,
+        operationMessage: 'Updating stock...',
+      ));
+
+      // Perform the actual update in background
+      final updatedProduct = optimisticProducts[productIndex];
       await _firestoreService.updateProduct(updatedProduct);
 
-      // Refresh the products list
-      final updatedProducts = await _firestoreService.getProducts(
-        hushhId: currentUser.uid,
-      );
+      // Emit success state
+      emit(ProductsLoadedWithOperation(
+        products: optimisticProducts,
+        operationMessage: 'Stock updated successfully',
+      ));
 
-      emit(ProductsLoaded(updatedProducts));
+      // Clear message after a delay
+      await Future.delayed(const Duration(seconds: 2));
+      if (state is ProductsLoadedWithOperation) {
+        emit(ProductsLoaded(optimisticProducts));
+      }
     } catch (e) {
-      emit(LookbookError('Failed to update product stock: ${e.toString()}'));
+      // If there was an error, revert to original state and show error
+      List<Product> originalProducts = [];
+      if (state is ProductsLoadedWithOperation) {
+        // Try to get fresh data on error
+        try {
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            originalProducts = await _firestoreService.getProducts(
+              hushhId: currentUser.uid,
+            );
+          }
+        } catch (fetchError) {
+          // If we can't fetch, use current products
+          originalProducts = (state as ProductsLoadedWithOperation).products;
+        }
+      }
+
+      emit(ProductsLoadedWithOperation(
+        products: originalProducts,
+        operationMessage: 'Failed to update stock: ${e.toString()}',
+        isSuccess: false,
+      ));
+
+      // Clear error message after delay
+      await Future.delayed(const Duration(seconds: 3));
+      if (state is ProductsLoadedWithOperation) {
+        emit(ProductsLoaded(originalProducts));
+      }
     }
   }
 
@@ -421,8 +519,6 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     Emitter<LookbookState> emit,
   ) async {
     try {
-      emit(LookbookLoading());
-
       // Get current user's hushhId from Firebase Auth
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -430,17 +526,88 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
         return;
       }
 
-      // Delete from Firestore
-      await _firestoreService.deleteProduct(event.productId);
+      // Get current products from the current state for optimistic update
+      List<Product> currentProducts = [];
+      if (state is ProductsLoaded) {
+        currentProducts = (state as ProductsLoaded).products;
+      } else if (state is ProductsLoadedWithOperation) {
+        currentProducts = (state as ProductsLoadedWithOperation).products;
+      } else {
+        // If no current state, fetch from Firestore
+        currentProducts = await _firestoreService.getProducts(
+          hushhId: currentUser.uid,
+        );
+      }
 
-      // Refresh the products list
-      final updatedProducts = await _firestoreService.getProducts(
-        hushhId: currentUser.uid,
+      // Find the product to delete
+      final productIndex = currentProducts.indexWhere(
+        (product) => product.productId == event.productId,
       );
 
-      emit(ProductsLoaded(updatedProducts));
+      if (productIndex == -1) {
+        emit(ProductsLoadedWithOperation(
+          products: currentProducts,
+          operationMessage: 'Product not found',
+          isSuccess: false,
+        ));
+        return;
+      }
+
+      final productToDelete = currentProducts[productIndex];
+
+      // Create optimistic update (remove the product)
+      final optimisticProducts = List<Product>.from(currentProducts);
+      optimisticProducts.removeAt(productIndex);
+
+      // Emit optimistic state immediately
+      emit(ProductsLoadedWithOperation(
+        products: optimisticProducts,
+        operationMessage: 'Deleting product...',
+      ));
+
+      // Perform the actual deletion in background
+      await _firestoreService.deleteProduct(event.productId);
+
+      // Emit success state
+      emit(ProductsLoadedWithOperation(
+        products: optimisticProducts,
+        operationMessage: 'Product deleted successfully',
+      ));
+
+      // Clear message after a delay
+      await Future.delayed(const Duration(seconds: 2));
+      if (state is ProductsLoadedWithOperation) {
+        emit(ProductsLoaded(optimisticProducts));
+      }
     } catch (e) {
-      emit(LookbookError('Failed to delete product: ${e.toString()}'));
+      // If there was an error, revert to original state and show error
+      List<Product> originalProducts = [];
+      if (state is ProductsLoadedWithOperation) {
+        // Try to get fresh data on error
+        try {
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            originalProducts = await _firestoreService.getProducts(
+              hushhId: currentUser.uid,
+            );
+          }
+        } catch (fetchError) {
+          // If we can't fetch, use current products
+          originalProducts = (state as ProductsLoadedWithOperation).products;
+        }
+      }
+
+      emit(ProductsLoadedWithOperation(
+        products: originalProducts,
+        operationMessage: 'Failed to delete product: ${e.toString()}',
+        isSuccess: false,
+      ));
+
+      // Clear error message after delay
+      await Future.delayed(const Duration(seconds: 3));
+      if (state is ProductsLoadedWithOperation) {
+        emit(ProductsLoaded(originalProducts));
+      }
     }
   }
 
@@ -479,5 +646,61 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     } catch (e) {
       emit(LookbookError('Failed to upload CSV to agent: ${e.toString()}'));
     }
+  }
+
+  Future<void> _onSearchProducts(
+    SearchProductsEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    if (event.query.isEmpty) {
+      emit(ProductsLoaded(_allProducts));
+      return;
+    }
+
+    final filteredProducts = _allProducts
+        .where((product) =>
+            product.productName
+                .toLowerCase()
+                .contains(event.query.toLowerCase()) ||
+            (product.productDescription
+                    ?.toLowerCase()
+                    .contains(event.query.toLowerCase()) ??
+                false) ||
+            (product.category
+                    ?.toLowerCase()
+                    .contains(event.query.toLowerCase()) ??
+                false))
+        .toList();
+
+    emit(ProductsLoaded(filteredProducts));
+  }
+
+  Future<void> _onFilterProducts(
+    FilterProductsEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    print('🎛️ Filter products called with sortBy: ${event.sortBy}');
+    print('📦 Total products to sort: ${_allProducts.length}');
+
+    List<Product> sortedProducts = List.from(_allProducts);
+
+    switch (event.sortBy) {
+      case ProductSortBy.price:
+        print('💰 Sorting by price (low to high)');
+        sortedProducts.sort((a, b) => a.productPrice.compareTo(b.productPrice));
+        break;
+      case ProductSortBy.stock:
+        print('📦 Sorting by stock (high to low)');
+        sortedProducts
+            .sort((a, b) => b.stockQuantity.compareTo(a.stockQuantity));
+        break;
+      case ProductSortBy.name:
+        print('🔤 Sorting by name (A to Z)');
+        sortedProducts.sort((a, b) => a.productName.compareTo(b.productName));
+        break;
+    }
+
+    print('✅ Emitting sorted products: ${sortedProducts.length}');
+    emit(ProductsLoaded(sortedProducts));
   }
 }

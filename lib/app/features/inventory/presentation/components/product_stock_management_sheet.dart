@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../domain/entities/product.dart';
 
 class ProductStockManagementSheet extends StatefulWidget {
@@ -75,8 +76,6 @@ class _ProductStockManagementSheetState
     });
   }
 
-
-
   void _deleteProduct() {
     showDialog(
       context: context,
@@ -120,10 +119,16 @@ class _ProductStockManagementSheetState
 
   @override
   Widget build(BuildContext context) {
+    // App theme colors
+    const Color primaryColor = Color(0xFF2196F3); // Blue
+    const Color textPrimaryColor = Color(0xFF000000); // Black
+    const Color surfaceColor = Color(0xFFFFFFFF); // White
+    const Color textSecondaryColor = Color(0xFF757575); // Gray
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: surfaceColor,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -141,6 +146,7 @@ class _ProductStockManagementSheetState
                   'Manage Stock',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: textPrimaryColor,
                       ),
                 ),
               ),
@@ -156,8 +162,12 @@ class _ProductStockManagementSheetState
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: const Color(0xFFF5F5F5), // App background color
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE0E0E0), // Light border
+                width: 1,
+              ),
             ),
             child: Row(
               children: [
@@ -194,16 +204,17 @@ class _ProductStockManagementSheetState
                     children: [
                       Text(
                         widget.product.productName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: textPrimaryColor,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${widget.product.productCurrency}${widget.product.productPrice.toStringAsFixed(2)}',
                         style: TextStyle(
-                          color: Colors.blue[700],
+                          color: primaryColor,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -211,7 +222,7 @@ class _ProductStockManagementSheetState
                       Text(
                         'Current Stock: $_localStockQuantity',
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: textSecondaryColor,
                           fontSize: 14,
                         ),
                       ),
@@ -260,6 +271,7 @@ class _ProductStockManagementSheetState
             'Set Stock Quantity',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
+                  color: textPrimaryColor,
                 ),
           ),
           const SizedBox(height: 8),
@@ -269,6 +281,9 @@ class _ProductStockManagementSheetState
                 child: TextField(
                   controller: _stockController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly, // Only allow digits
+                  ],
                   onChanged: (value) {
                     final newStock = int.tryParse(value);
                     if (newStock != null && newStock >= 0) {
@@ -277,10 +292,19 @@ class _ProductStockManagementSheetState
                       });
                     }
                   },
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Enter stock quantity',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
+                    hintStyle: TextStyle(color: textSecondaryColor),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: textSecondaryColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: primaryColor, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: textSecondaryColor),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 12,
                     ),
@@ -300,7 +324,7 @@ class _ProductStockManagementSheetState
               icon: const Icon(Icons.save),
               label: const Text('Save Changes'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),

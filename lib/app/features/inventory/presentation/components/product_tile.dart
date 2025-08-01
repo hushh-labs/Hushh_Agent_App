@@ -29,6 +29,9 @@ class ProductTile extends StatefulWidget {
 }
 
 class _ProductTileState extends State<ProductTile> {
+  bool _isIncreaseInProgress = false;
+  bool _isDecreaseInProgress = false;
+  bool _isDeleteInProgress = false;
   bool get isRecentProduct => DateTime.now()
       .subtract(const Duration(days: 1))
       .isAfter(widget.product.createdAt);
@@ -97,11 +100,89 @@ class _ProductTileState extends State<ProductTile> {
     );
   }
 
+  void _updateStock(int newStock) {
+    final isIncrease = newStock > widget.product.stockQuantity;
+    final isDecrease = newStock < widget.product.stockQuantity;
+
+    if ((isIncrease && _isIncreaseInProgress) ||
+        (isDecrease && _isDecreaseInProgress)) return;
+
+    if (widget.onUpdateStock != null) {
+      setState(() {
+        if (isIncrease) {
+          _isIncreaseInProgress = true;
+        } else if (isDecrease) {
+          _isDecreaseInProgress = true;
+        }
+      });
+
+      widget.onUpdateStock!(widget.product.productId, newStock);
+
+      // Reset after a delay
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            if (isIncrease) {
+              _isIncreaseInProgress = false;
+            } else if (isDecrease) {
+              _isDecreaseInProgress = false;
+            }
+          });
+        }
+      });
+    }
+  }
+
+  void _showDeleteConfirmation() {
+    if (_isDeleteInProgress) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Product'),
+          content: Text(
+              'Are you sure you want to delete "${widget.product.productName}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (widget.onDeleteProduct != null) {
+                  setState(() {
+                    _isDeleteInProgress = true;
+                  });
+
+                  widget.onDeleteProduct!(widget.product.productId);
+
+                  // Reset after a delay
+                  Future.delayed(const Duration(seconds: 3), () {
+                    if (mounted) {
+                      setState(() {
+                        _isDeleteInProgress = false;
+                      });
+                    }
+                  });
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => widget.onProductClicked(widget.product.productId),
-      onLongPress: _showStockManagementSheet,
       child: Container(
         height: widget.specifyDimensions ? 300.0 : 280,
         width: widget.specifyDimensions ? 200.0 : 180,
@@ -190,39 +271,177 @@ class _ProductTileState extends State<ProductTile> {
                 ],
               ),
 
-              // Stock Status Badge
+              // Stock Status and Management Section
               Positioned(
                 left: 6,
+                right: 6,
                 bottom: 6,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: widget.product.stockQuantity > 0
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: widget.product.stockQuantity > 0
-                          ? Colors.green
-                          : Colors.red,
-                      width: 1,
+                child: Row(
+                  children: [
+                    // Stock Status Badge (Tappable)
+                    GestureDetector(
+                      onTap: _showStockManagementSheet,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: widget.product.stockQuantity > 0
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: widget.product.stockQuantity > 0
+                                ? Colors.green
+                                : Colors.red,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          widget.product.stockQuantity > 0
+                              ? 'Stock: ${widget.product.stockQuantity}'
+                              : 'Out of Stock',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: widget.product.stockQuantity > 0
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    widget.product.stockQuantity > 0
-                        ? 'Stock: ${widget.product.stockQuantity}'
-                        : 'Out of Stock',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: widget.product.stockQuantity > 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
-                      fontWeight: FontWeight.w500,
+                    const Spacer(),
+                    // Stock Management Buttons
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Decrease Stock Button
+                        GestureDetector(
+                          onTap: (!_isDecreaseInProgress &&
+                                  widget.product.stockQuantity > 0)
+                              ? () =>
+                                  _updateStock(widget.product.stockQuantity - 1)
+                              : null,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: (!_isDecreaseInProgress &&
+                                      widget.product.stockQuantity > 0)
+                                  ? Colors.orange.withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: (!_isDecreaseInProgress &&
+                                        widget.product.stockQuantity > 0)
+                                    ? Colors.orange
+                                    : Colors.grey,
+                                width: 1,
+                              ),
+                            ),
+                            child: _isDecreaseInProgress
+                                ? SizedBox(
+                                    width: 8,
+                                    height: 8,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.remove,
+                                    size: 12,
+                                    color: (!_isDecreaseInProgress &&
+                                            widget.product.stockQuantity > 0)
+                                        ? Colors.orange.shade700
+                                        : Colors.grey.shade400,
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // Increase Stock Button
+                        GestureDetector(
+                          onTap: !_isIncreaseInProgress
+                              ? () =>
+                                  _updateStock(widget.product.stockQuantity + 1)
+                              : null,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: !_isIncreaseInProgress
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: !_isIncreaseInProgress
+                                    ? Colors.green
+                                    : Colors.grey,
+                                width: 1,
+                              ),
+                            ),
+                            child: _isIncreaseInProgress
+                                ? SizedBox(
+                                    width: 8,
+                                    height: 8,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.add,
+                                    size: 12,
+                                    color: !_isIncreaseInProgress
+                                        ? Colors.green.shade700
+                                        : Colors.grey.shade400,
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // Delete Button
+                        GestureDetector(
+                          onTap: !_isDeleteInProgress
+                              ? () => _showDeleteConfirmation()
+                              : null,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: !_isDeleteInProgress
+                                  ? Colors.red.withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: !_isDeleteInProgress
+                                    ? Colors.red
+                                    : Colors.grey,
+                                width: 1,
+                              ),
+                            ),
+                            child: _isDeleteInProgress
+                                ? SizedBox(
+                                    width: 8,
+                                    height: 8,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.delete_outline,
+                                    size: 12,
+                                    color: !_isDeleteInProgress
+                                        ? Colors.red.shade700
+                                        : Colors.grey.shade400,
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  ],
                 ),
               ),
 
