@@ -12,6 +12,9 @@ class ProductTile extends StatefulWidget {
   final Function(String) onProductClicked;
   final Function(String, int)? onUpdateStock;
   final Function(String)? onDeleteProduct;
+  final String? lookbookId; // If provided, shows "Remove from Lookbook" option
+  final Function(String, String)?
+      onRemoveFromLookbook; // (lookbookId, productId)
 
   const ProductTile({
     super.key,
@@ -22,6 +25,8 @@ class ProductTile extends StatefulWidget {
     required this.onProductClicked,
     this.onUpdateStock,
     this.onDeleteProduct,
+    this.lookbookId,
+    this.onRemoveFromLookbook,
   });
 
   @override
@@ -96,6 +101,8 @@ class _ProductTileState extends State<ProductTile> {
         product: widget.product,
         onUpdateStock: widget.onUpdateStock ?? (_, __) async {},
         onDeleteProduct: widget.onDeleteProduct ?? (_) async {},
+        lookbookId: widget.lookbookId,
+        onRemoveFromLookbook: widget.onRemoveFromLookbook,
       ),
     );
   }

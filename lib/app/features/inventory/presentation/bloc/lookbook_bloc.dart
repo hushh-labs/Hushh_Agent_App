@@ -17,18 +17,19 @@ abstract class LookbookEvent extends Equatable {
 class FetchLookbooksEvent extends LookbookEvent {}
 
 class CreateLookbookEvent extends LookbookEvent {
-  final String name;
+  final String lookbookName;
   final String? description;
-  final List<Product> selectedProducts;
+  final List<String>
+      productIds; // Changed to product IDs instead of Product objects
 
   const CreateLookbookEvent({
-    required this.name,
+    required this.lookbookName,
     this.description,
-    required this.selectedProducts,
+    this.productIds = const [],
   });
 
   @override
-  List<Object?> get props => [name, description, selectedProducts];
+  List<Object?> get props => [lookbookName, description, productIds];
 }
 
 class DeleteLookbookEvent extends LookbookEvent {
@@ -124,6 +125,32 @@ class UploadCsvToAgentEvent extends LookbookEvent {
 
   @override
   List<Object> get props => [agentId, products];
+}
+
+class RemoveProductFromLookbookEvent extends LookbookEvent {
+  final String lookbookId;
+  final String productId;
+
+  const RemoveProductFromLookbookEvent({
+    required this.lookbookId,
+    required this.productId,
+  });
+
+  @override
+  List<Object> get props => [lookbookId, productId];
+}
+
+class AddProductToLookbookEvent extends LookbookEvent {
+  final String lookbookId;
+  final String productId;
+
+  const AddProductToLookbookEvent({
+    required this.lookbookId,
+    required this.productId,
+  });
+
+  @override
+  List<Object> get props => [lookbookId, productId];
 }
 
 class SearchProductsEvent extends LookbookEvent {
@@ -260,6 +287,8 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     on<UploadCsvToAgentEvent>(_onUploadCsvToAgent);
     on<SearchProductsEvent>(_onSearchProducts);
     on<FilterProductsEvent>(_onFilterProducts);
+    on<RemoveProductFromLookbookEvent>(_onRemoveProductFromLookbook);
+    on<AddProductToLookbookEvent>(_onAddProductToLookbook);
   }
 
   Future<void> _onFetchLookbooks(
@@ -269,15 +298,15 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     try {
       emit(LookbookLoading());
 
-      // Get current user's hushhId from Firebase Auth
+      // Get current user's agentId from Firebase Auth
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         emit(LookbookError('User not authenticated'));
         return;
       }
-      final hushhId = currentUser.uid;
+      final agentId = currentUser.uid;
 
-      final lookbooks = await _firestoreService.getLookbooks(hushhId);
+      final lookbooks = await _firestoreService.getLookbooks(agentId);
       _allLookbooks = lookbooks;
 
       emit(LookbookLoaded(lookbooks));
@@ -293,26 +322,25 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     try {
       emit(LookbookLoading());
 
-      // Get current user's hushhId from Firebase Auth
+      // Get current user's agentId from Firebase Auth
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         emit(LookbookError('User not authenticated'));
         return;
       }
-      final hushhId = currentUser.uid;
+      final agentId = currentUser.uid;
 
       final lookbook = await _firestoreService.createLookbook(
-        name: event.name,
+        lookbookName: event.lookbookName,
         description: event.description,
-        hushhId: hushhId,
-        selectedProducts: event.selectedProducts,
+        agentId: agentId,
+        productIds: event.productIds,
       );
 
       // Update local list
       _allLookbooks.add(lookbook);
 
       emit(LookbookCreated(lookbook));
-      emit(LookbookLoaded(_allLookbooks));
     } catch (e) {
       emit(LookbookError('Failed to create lookbook: ${e.toString()}'));
     }
@@ -331,6 +359,10 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
       _allLookbooks.removeWhere((lookbook) => lookbook.id == event.lookbookId);
 
       emit(LookbookLoaded(_allLookbooks));
+
+      // You could add success feedback here if needed
+      print(
+          '✅ [BLoC] Lookbook deleted successfully, ${_allLookbooks.length} lookbooks remaining');
     } catch (e) {
       emit(LookbookError('Failed to delete lookbook: ${e.toString()}'));
     }
@@ -347,7 +379,9 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
 
     final filteredLookbooks = _allLookbooks
         .where((lookbook) =>
-            lookbook.name.toLowerCase().contains(event.query.toLowerCase()) ||
+            lookbook.lookbookName
+                .toLowerCase()
+                .contains(event.query.toLowerCase()) ||
             (lookbook.description
                     ?.toLowerCase()
                     .contains(event.query.toLowerCase()) ??
@@ -702,5 +736,60 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
 
     print('✅ Emitting sorted products: ${sortedProducts.length}');
     emit(ProductsLoaded(sortedProducts));
+  }
+
+  Future<void> _onRemoveProductFromLookbook(
+    RemoveProductFromLookbookEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    try {
+      emit(LookbookLoading());
+
+      await _firestoreService.removeProductFromLookbook(
+        lookbookId: event.lookbookId,
+        productId: event.productId,
+      );
+
+      // Refresh the current products view
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final products = await _firestoreService.getProducts(
+          hushhId: currentUser.uid,
+          lookbookId: event.lookbookId,
+        );
+        _allProducts = products;
+        emit(ProductsLoaded(products));
+      }
+    } catch (e) {
+      emit(LookbookError(
+          'Failed to remove product from lookbook: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onAddProductToLookbook(
+    AddProductToLookbookEvent event,
+    Emitter<LookbookState> emit,
+  ) async {
+    try {
+      emit(LookbookLoading());
+
+      await _firestoreService.addProductToLookbook(
+        lookbookId: event.lookbookId,
+        productId: event.productId,
+      );
+
+      // Refresh the current products view
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final products = await _firestoreService.getProducts(
+          hushhId: currentUser.uid,
+          lookbookId: event.lookbookId,
+        );
+        _allProducts = products;
+        emit(ProductsLoaded(products));
+      }
+    } catch (e) {
+      emit(LookbookError('Failed to add product to lookbook: ${e.toString()}'));
+    }
   }
 }

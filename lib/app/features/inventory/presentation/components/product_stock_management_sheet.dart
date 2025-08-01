@@ -6,12 +6,17 @@ class ProductStockManagementSheet extends StatefulWidget {
   final Product product;
   final Function(String, int) onUpdateStock;
   final Function(String) onDeleteProduct;
+  final String? lookbookId;
+  final Function(String, String)?
+      onRemoveFromLookbook; // (lookbookId, productId)
 
   const ProductStockManagementSheet({
     super.key,
     required this.product,
     required this.onUpdateStock,
     required this.onDeleteProduct,
+    this.lookbookId,
+    this.onRemoveFromLookbook,
   });
 
   @override
@@ -111,6 +116,58 @@ class _ProductStockManagementSheetState
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _removeFromLookbook() {
+    if (widget.lookbookId == null || widget.onRemoveFromLookbook == null)
+      return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove from Lookbook'),
+        content: Text(
+          'Are you sure you want to remove "${widget.product.productName}" from this lookbook?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              setState(() {
+                _isLoading = true;
+              });
+              widget.onRemoveFromLookbook!
+                      (widget.lookbookId!, widget.product.productId)
+                  .then((_) {
+                setState(() {
+                  _isLoading = false;
+                });
+                Navigator.pop(context); // Close bottom sheet
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Product removed from lookbook successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }).catchError((error) {
+                setState(() {
+                  _isLoading = false;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error removing product: $error')),
+                );
+              });
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Remove'),
           ),
         ],
       ),
@@ -331,6 +388,25 @@ class _ProductStockManagementSheetState
             ),
           ),
           const SizedBox(height: 20),
+
+          // Remove from Lookbook Button (only shown in lookbook context)
+          if (widget.lookbookId != null &&
+              widget.onRemoveFromLookbook != null) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isLoading ? null : _removeFromLookbook,
+                icon: const Icon(Icons.remove_circle_outline),
+                label: const Text('Remove from Lookbook'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Delete Button
           SizedBox(

@@ -13,6 +13,7 @@ import '../../../app/Home/presentation/pages/home_page.dart';
 
 import '../../../app/features/inventory/presentation/bloc/lookbook_bloc.dart';
 import '../../../app/features/inventory/presentation/pages/agent_lookbook_page.dart';
+import '../../../app/features/inventory/domain/entities/product.dart';
 import '../../../app/features/inventory/presentation/components/product_tile.dart';
 import '../../../app/features/inventory/domain/entities/product.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_email_page.dart';
@@ -177,23 +178,519 @@ class Routes {
   }
 }
 
-// Placeholder pages that need to be implemented
-class CreateLookbookPage extends StatelessWidget {
+// Create Lookbook Page Implementation
+class CreateLookbookPage extends StatefulWidget {
   const CreateLookbookPage({super.key});
+
+  @override
+  State<CreateLookbookPage> createState() => _CreateLookbookPageState();
+}
+
+class _CreateLookbookPageState extends State<CreateLookbookPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  bool _isLoading = false;
+  List<Product> _availableProducts = [];
+  List<String> _selectedProductIds = [];
+  bool _isLoadingProducts = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  void _loadProducts() async {
+    setState(() {
+      _isLoadingProducts = true;
+    });
+
+    // Fetch agent's products
+    context.read<LookbookBloc>().add(const FetchProductsEvent());
+  }
+
+  void _createLookbook() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedProductIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one product for the lookbook'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Dispatch create lookbook event
+    context.read<LookbookBloc>().add(
+          CreateLookbookEvent(
+            lookbookName: _nameController.text.trim(),
+            description: _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
+            productIds: _selectedProductIds, // Use selected products
+          ),
+        );
+  }
+
+  Widget _buildProductSelection() {
+    if (_isLoadingProducts) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8213A5)),
+          ),
+        ),
+      );
+    }
+
+    if (_availableProducts.isEmpty) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.inventory_2_outlined,
+                size: 48,
+                color: Colors.grey,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'No products found',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                'Add products to your inventory first',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      height: 300,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          // Header with selection count
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  '${_selectedProductIds.length} of ${_availableProducts.length} products selected',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (_selectedProductIds.length ==
+                          _availableProducts.length) {
+                        _selectedProductIds.clear();
+                      } else {
+                        _selectedProductIds =
+                            _availableProducts.map((p) => p.productId).toList();
+                      }
+                    });
+                  },
+                  child: Text(
+                    _selectedProductIds.length == _availableProducts.length
+                        ? 'Deselect All'
+                        : 'Select All',
+                    style: const TextStyle(
+                      color: Color(0xFF8213A5),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Product list
+          Expanded(
+            child: ListView.builder(
+              itemCount: _availableProducts.length,
+              itemBuilder: (context, index) {
+                final product = _availableProducts[index];
+                final isSelected =
+                    _selectedProductIds.contains(product.productId);
+
+                return Container(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF8213A5)
+                          : Colors.grey[300]!,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    color: isSelected
+                        ? const Color(0xFF8213A5).withOpacity(0.05)
+                        : Colors.white,
+                  ),
+                  child: ListTile(
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        product.productImage?.isNotEmpty == true
+                            ? product.productImage!
+                            : '',
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.image, color: Colors.grey),
+                          );
+                        },
+                      ),
+                    ),
+                    title: Text(
+                      product.productName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Row(
+                      children: [
+                        Text(
+                          '\$${product.productPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Color(0xFF8213A5),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Stock: ${product.stockQuantity}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Icon(
+                      isSelected ? Icons.check_circle : Icons.circle_outlined,
+                      color: isSelected ? const Color(0xFF8213A5) : Colors.grey,
+                    ),
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          _selectedProductIds.remove(product.productId);
+                        } else {
+                          _selectedProductIds.add(product.productId);
+                        }
+                      });
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Create Lookbook'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: const Center(
-        child: Text(
-          'Create Lookbook Page\n(To be implemented)',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
+      body: BlocListener<LookbookBloc, LookbookState>(
+        listener: (context, state) {
+          if (state is LookbookCreated) {
+            setState(() {
+              _isLoading = false;
+            });
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Lookbook "${state.lookbook.lookbookName}" created successfully!'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            // Navigate back with success result
+            Navigator.pop(context, 'success');
+          } else if (state is LookbookError) {
+            setState(() {
+              _isLoading = false;
+            });
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${state.message}'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          } else if (state is ProductsLoaded) {
+            setState(() {
+              _availableProducts = state.products;
+              _isLoadingProducts = false;
+            });
+          }
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                const Text(
+                  'Create New Lookbook',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Organize your products into curated collections',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Lookbook Name Field
+                const Text(
+                  'Lookbook Name *',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    hintText: 'e.g., Summer Collection, Office Wear',
+                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF2196F3), width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a lookbook name';
+                    }
+                    if (value.trim().length < 3) {
+                      return 'Name must be at least 3 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Description Field
+                const Text(
+                  'Description (Optional)',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Describe your lookbook theme or style...',
+                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF2196F3), width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Product Selection Section
+                const Text(
+                  'Select Products',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildProductSelection(),
+                const SizedBox(height: 32),
+
+                // Info Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F8FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFF2196F3).withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: const Color(0xFF2196F3),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'You can add products to your lookbook after creation.',
+                          style: TextStyle(
+                            color: const Color(0xFF2196F3),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Create Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _createLookbook,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2196F3),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            _selectedProductIds.isEmpty
+                                ? 'Create Lookbook'
+                                : 'Create Lookbook (${_selectedProductIds.length} products)',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -223,7 +720,9 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
     super.initState();
     // Fetch products when page loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LookbookBloc>().add(const FetchProductsEvent());
+      context
+          .read<LookbookBloc>()
+          .add(FetchProductsEvent(lookbookId: widget.lookbookId));
     });
   }
 
@@ -233,10 +732,40 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
     super.dispose();
   }
 
+  void _showAddProductsToLookbookDialog() {
+    if (widget.lookbookId == null) return;
+
+    // Get the BLoC before showing dialog
+    final lookbookBloc = context.read<LookbookBloc>();
+
+    showDialog(
+      context: context,
+      builder: (context) => BlocProvider.value(
+        value: lookbookBloc,
+        child: _AddProductsToLookbookDialog(
+          lookbookId: widget.lookbookId!,
+          onProductsAdded: () {
+            // Refresh the lookbook products
+            lookbookBloc.add(FetchProductsEvent(lookbookId: widget.lookbookId));
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: widget.lookbookId != null
+          ? FloatingActionButton.extended(
+              onPressed: _showAddProductsToLookbookDialog,
+              backgroundColor: const Color(0xFF8213A5),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Products'),
+            )
+          : null,
       appBar: AppBar(
         title: Text(
             widget.lookbookId != null ? 'Lookbook Products' : 'All Products'),
@@ -549,6 +1078,16 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
             final lookbookBloc = context.read<LookbookBloc>();
             lookbookBloc.add(DeleteProductEvent(productId));
           },
+          lookbookId: widget.lookbookId,
+          onRemoveFromLookbook: widget.lookbookId != null
+              ? (lookbookId, productId) async {
+                  final lookbookBloc = context.read<LookbookBloc>();
+                  lookbookBloc.add(RemoveProductFromLookbookEvent(
+                    lookbookId: lookbookId,
+                    productId: productId,
+                  ));
+                }
+              : null,
         );
       },
     );
@@ -646,11 +1185,459 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
-              context.read<LookbookBloc>().add(const FetchProductsEvent());
+              context
+                  .read<LookbookBloc>()
+                  .add(FetchProductsEvent(lookbookId: widget.lookbookId));
             },
             child: const Text('Retry'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AddProductsToLookbookDialog extends StatefulWidget {
+  final String lookbookId;
+  final VoidCallback onProductsAdded;
+
+  const _AddProductsToLookbookDialog({
+    required this.lookbookId,
+    required this.onProductsAdded,
+  });
+
+  @override
+  State<_AddProductsToLookbookDialog> createState() =>
+      _AddProductsToLookbookDialogState();
+}
+
+class _AddProductsToLookbookDialogState
+    extends State<_AddProductsToLookbookDialog> {
+  List<String> _selectedProductIds = [];
+  bool _isAddingProducts = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch all products when dialog opens (use WidgetsBinding to access context safely)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LookbookBloc>().add(const FetchProductsEvent());
+    });
+  }
+
+  Future<void> _addSelectedProducts() async {
+    if (_selectedProductIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one product to add'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isAddingProducts = true;
+    });
+
+    try {
+      final lookbookBloc = context.read<LookbookBloc>();
+
+      // Add each selected product to the lookbook
+      for (final productId in _selectedProductIds) {
+        lookbookBloc.add(AddProductToLookbookEvent(
+          lookbookId: widget.lookbookId,
+          productId: productId,
+        ));
+      }
+
+      // Wait a moment for the operations to complete
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Close dialog
+      Navigator.pop(context);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('${_selectedProductIds.length} products added to lookbook'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Refresh the parent page
+      widget.onProductsAdded();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error adding products: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+
+    setState(() {
+      _isAddingProducts = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Colors.white,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.95,
+        height: MediaQuery.of(context).size.height * 0.85,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Header
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Add Products to Lookbook',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: Colors.black54),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Products List
+            Expanded(
+              child: BlocBuilder<LookbookBloc, LookbookState>(
+                builder: (context, state) {
+                  if (state is LookbookLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFF8213A5)),
+                      ),
+                    );
+                  }
+
+                  if (state is ProductsLoaded) {
+                    // Filter out products that are already in the lookbook
+                    final availableProducts = state.products.where((product) {
+                      return !product.lookbookIds.contains(widget.lookbookId);
+                    }).toList();
+
+                    if (availableProducts.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle,
+                                size: 64, color: Colors.green[600]),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'All products are already\nin this lookbook!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        // Selection count
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8213A5).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF8213A5).withOpacity(0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${_selectedProductIds.length} of ${availableProducts.length} products selected',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (_selectedProductIds.length ==
+                                        availableProducts.length) {
+                                      _selectedProductIds.clear();
+                                    } else {
+                                      _selectedProductIds = availableProducts
+                                          .map((p) => p.productId)
+                                          .toList();
+                                    }
+                                  });
+                                },
+                                child: Text(
+                                  _selectedProductIds.length ==
+                                          availableProducts.length
+                                      ? 'Deselect All'
+                                      : 'Select All',
+                                  style: const TextStyle(
+                                    color: Color(0xFF8213A5),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Products list
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: availableProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = availableProducts[index];
+                              final isSelected = _selectedProductIds
+                                  .contains(product.productId);
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF8213A5)
+                                        : Colors.grey[300]!,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: isSelected
+                                      ? const Color(0xFF8213A5)
+                                          .withOpacity(0.05)
+                                      : Colors.white,
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  leading: ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Image.network(
+                                      product.productImage?.isNotEmpty == true
+                                          ? product.productImage!
+                                          : '',
+                                      width: 45,
+                                      height: 45,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Container(
+                                          width: 45,
+                                          height: 45,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[200],
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: const Icon(Icons.image,
+                                              color: Colors.grey, size: 20),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  title: Text(
+                                    product.productName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            '\$${product.productPrice.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF8213A5),
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 13,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            'Stock: ${product.stockQuantity}',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  trailing: Icon(
+                                    isSelected
+                                        ? Icons.check_circle
+                                        : Icons.circle_outlined,
+                                    color: isSelected
+                                        ? const Color(0xFF8213A5)
+                                        : Colors.grey[400],
+                                    size: 24,
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      if (isSelected) {
+                                        _selectedProductIds
+                                            .remove(product.productId);
+                                      } else {
+                                        _selectedProductIds
+                                            .add(product.productId);
+                                      }
+                                    });
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  if (state is LookbookError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline,
+                                size: 64, color: Colors.red[400]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading products',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              state.message,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Fetch all products (not filtered by lookbook)
+                                context
+                                    .read<LookbookBloc>()
+                                    .add(const FetchProductsEvent());
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF8213A5),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF8213A5)),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Add button
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF8213A5).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _isAddingProducts ? null : _addSelectedProducts,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8213A5),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isAddingProducts
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
+                        _selectedProductIds.isEmpty
+                            ? 'Add Products'
+                            : 'Add ${_selectedProductIds.length} Products',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

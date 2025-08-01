@@ -147,193 +147,390 @@ class AuthService {
     }
   }
 
-  /// Delete all user data from Firestore
+  /// Delete all user data from Firestore - COMPREHENSIVE VERSION
   static Future<void> _deleteUserData(String userId) async {
-    final batch = _firestore.batch();
-
     try {
-      print('🗑️ Starting deletion of user data for: $userId');
+      print('🗑️ Starting COMPREHENSIVE deletion of user data for: $userId');
+      print('═══════════════════════════════════════════════════════');
 
-      // STEP 1: Delete from Hushhagents collection and its subcollections
-      await _deleteHushhAgentsData(userId, batch);
+      // STEP 1: Delete main agent document and its subcollections
+      await _deleteAgentMainDocument(userId);
 
-      // STEP 1.5: Delete from AgentProducts collection and its subcollections
-      await _deleteAgentProductsData(userId, batch);
+      // STEP 2: Delete all agent products from both storage locations
+      await _deleteAllAgentProducts(userId);
 
-      // STEP 2: List of other collections to clean
-      final collectionsToClean = [
-        'HushhAgents',
-        'users',
-        'lookbooks',
-        'products', // Old flat structure (for backward compatibility)
-        'notifications',
-        'chats',
-        'feedback',
-      ];
+      // STEP 3: Delete all agent lookbooks
+      await _deleteAllAgentLookbooks(userId);
 
-      // Delete documents where the user is the owner
-      for (final collectionName in collectionsToClean) {
-        final collection = _firestore.collection(collectionName);
+      // STEP 4: Delete from all other possible collections
+      await _deleteFromOtherCollections(userId);
 
-        try {
-          // Try to find documents with the user ID
-          final userDocs =
-              await collection.where('userId', isEqualTo: userId).get();
-          for (final doc in userDocs.docs) {
-            batch.delete(doc.reference);
-          }
+      // STEP 5: Delete any remaining references
+      await _deleteRemainingReferences(userId);
 
-          // Also try with 'agentId' field
-          final agentDocs =
-              await collection.where('agentId', isEqualTo: userId).get();
-          for (final doc in agentDocs.docs) {
-            batch.delete(doc.reference);
-          }
-
-          // Also try with 'createdBy' field (for products in old structure)
-          final createdByDocs =
-              await collection.where('createdBy', isEqualTo: userId).get();
-          for (final doc in createdByDocs.docs) {
-            batch.delete(doc.reference);
-          }
-
-          // Try direct document with userId as document ID
-          final directDoc = await collection.doc(userId).get();
-          if (directDoc.exists) {
-            batch.delete(directDoc.reference);
-          }
-
-          print('✅ Cleaned collection: $collectionName');
-        } catch (e) {
-          print('⚠️ Could not clean collection $collectionName: $e');
-          // Continue with other collections
-        }
-      }
-
-      // Delete subcollections within user documents
-      await _deleteUserSubcollections(userId, batch);
-
-      // Commit the batch
-      await batch.commit();
-      print('✅ User data deleted successfully');
+      print('═══════════════════════════════════════════════════════');
+      print('✅ COMPREHENSIVE user data deletion completed for: $userId');
     } catch (e) {
-      print('❌ Error deleting user data: $e');
+      print('❌ Error in comprehensive user data deletion: $e');
       // Don't throw error here as we still want to delete the auth account
     }
   }
 
-  /// Delete from Hushhagents collection and its subcollections
-  static Future<void> _deleteHushhAgentsData(
-      String userId, WriteBatch batch) async {
+  /// Delete main agent document and its subcollections
+  static Future<void> _deleteAgentMainDocument(String userId) async {
     try {
-      print('🗑️ Deleting Hushhagents data for: $userId');
+      print('\n🏢 STEP 1: Deleting main agent document...');
 
-      // Delete the main Hushhagents document
-      final hushhAgentDoc = _firestore.collection('Hushhagents').doc(userId);
-      final hushhAgentSnapshot = await hushhAgentDoc.get();
+      // Delete from Hushhagents collection
+      final agentDocRef = _firestore.collection('Hushhagents').doc(userId);
+      final agentDoc = await agentDocRef.get();
 
-      if (hushhAgentSnapshot.exists) {
-        batch.delete(hushhAgentDoc);
-
-        // Delete agentProducts subcollection
-        final agentProductsQuery =
-            await hushhAgentDoc.collection('agentProducts').get();
-        int agentProductCount = 0;
-
-        for (final productDoc in agentProductsQuery.docs) {
-          batch.delete(productDoc.reference);
-          agentProductCount++;
-        }
-
-        // Delete other subcollections if they exist
+      if (agentDoc.exists) {
+        // Delete all subcollections first
         final subcollections = [
+          'agentProducts',
           'settings',
           'analytics',
           'notifications',
           'conversations',
+          'chats',
+          'messages',
+          'logs',
+          'reports',
+          'posts',
+          'followers',
+          'following',
         ];
 
         for (final subcollectionName in subcollections) {
           try {
-            final subcollectionQuery =
-                await hushhAgentDoc.collection(subcollectionName).get();
-            for (final doc in subcollectionQuery.docs) {
-              batch.delete(doc.reference);
+            final subcollectionRef = agentDocRef.collection(subcollectionName);
+            final docs = await subcollectionRef.get();
+
+            if (docs.docs.isNotEmpty) {
+              final batch = _firestore.batch();
+              int count = 0;
+
+              for (final doc in docs.docs) {
+                batch.delete(doc.reference);
+                count++;
+
+                // Firestore batch limit is 500 operations
+                if (count >= 450) {
+                  await batch.commit();
+                  print(
+                      '  ✅ Deleted $count documents from $subcollectionName (batch)');
+                  count = 0;
+                }
+              }
+
+              if (count > 0) {
+                await batch.commit();
+                print('  ✅ Deleted $count documents from $subcollectionName');
+              }
             }
           } catch (e) {
-            print('⚠️ Could not delete subcollection $subcollectionName: $e');
+            print('  ⚠️ Error deleting subcollection $subcollectionName: $e');
           }
         }
 
-        print(
-            '✅ Prepared deletion of Hushhagents/$userId with $agentProductCount agent products');
+        // Delete the main document
+        await agentDocRef.delete();
+        print('  ✅ Deleted main agent document: Hushhagents/$userId');
       } else {
-        print('ℹ️ Hushhagents/$userId document does not exist');
-      }
-    } catch (e) {
-      print('⚠️ Error deleting Hushhagents data: $e');
-    }
-  }
-
-  /// Delete from AgentProducts collection (products stored directly by productId)
-  static Future<void> _deleteAgentProductsData(
-      String userId, WriteBatch batch) async {
-    try {
-      print('🗑️ Deleting AgentProducts data for: $userId');
-
-      // Query all products where agentId equals userId
-      final agentProductsQuery = await _firestore
-          .collection('AgentProducts')
-          .where('agentId', isEqualTo: userId)
-          .get();
-
-      int productCount = 0;
-
-      for (final productDoc in agentProductsQuery.docs) {
-        batch.delete(productDoc.reference);
-        productCount++;
+        print('  ℹ️ Agent document does not exist: Hushhagents/$userId');
       }
 
-      print(
-          '✅ Prepared deletion of $productCount products from AgentProducts collection for agent: $userId');
-    } catch (e) {
-      print('⚠️ Error deleting AgentProducts data: $e');
-    }
-  }
-
-  /// Delete user subcollections
-  static Future<void> _deleteUserSubcollections(
-      String userId, WriteBatch batch) async {
-    try {
-      final userDocRef = _firestore.collection('users').doc(userId);
-
-      // List of subcollections to delete
-      final subcollections = [
-        'posts',
-        'followers',
-        'following',
-        'settings',
-        'notifications',
-        'messages',
-        'chats',
-        'analytics',
-        'agentProducts',
-      ];
-
-      for (final subcollectionName in subcollections) {
+      // Also check and delete from other possible agent collections
+      final otherAgentCollections = ['HushhAgents', 'agents', 'users'];
+      for (final collectionName in otherAgentCollections) {
         try {
-          final subcollection = userDocRef.collection(subcollectionName);
-          final docs = await subcollection.get();
-
-          for (final doc in docs.docs) {
-            batch.delete(doc.reference);
+          final docRef = _firestore.collection(collectionName).doc(userId);
+          final doc = await docRef.get();
+          if (doc.exists) {
+            await docRef.delete();
+            print('  ✅ Deleted agent document: $collectionName/$userId');
           }
         } catch (e) {
-          print('⚠️ Could not delete subcollection $subcollectionName: $e');
+          print('  ⚠️ Error deleting from $collectionName: $e');
         }
       }
     } catch (e) {
-      print('❌ Error deleting subcollections: $e');
+      print('❌ Error deleting main agent document: $e');
+    }
+  }
+
+  /// Delete all agent products from both storage locations
+  static Future<void> _deleteAllAgentProducts(String userId) async {
+    try {
+      print('\n📦 STEP 2: Deleting all agent products...');
+
+      // Delete from AgentProducts collection (top-level documents with agentId field)
+      try {
+        final agentProductsQuery = await _firestore
+            .collection('AgentProducts')
+            .where('agentId', isEqualTo: userId)
+            .get();
+
+        if (agentProductsQuery.docs.isNotEmpty) {
+          final batch = _firestore.batch();
+          for (final doc in agentProductsQuery.docs) {
+            batch.delete(doc.reference);
+          }
+          await batch.commit();
+          print(
+              '  ✅ Deleted ${agentProductsQuery.docs.length} products from AgentProducts collection');
+        } else {
+          print('  ℹ️ No products found in AgentProducts collection');
+        }
+      } catch (e) {
+        print('  ⚠️ Error deleting from AgentProducts: $e');
+      }
+
+      // Delete from old products collection (backward compatibility)
+      try {
+        final oldProductsQuery = await _firestore
+            .collection('products')
+            .where('createdBy', isEqualTo: userId)
+            .get();
+
+        if (oldProductsQuery.docs.isNotEmpty) {
+          final batch = _firestore.batch();
+          for (final doc in oldProductsQuery.docs) {
+            batch.delete(doc.reference);
+          }
+          await batch.commit();
+          print(
+              '  ✅ Deleted ${oldProductsQuery.docs.length} products from old products collection');
+        } else {
+          print('  ℹ️ No products found in old products collection');
+        }
+      } catch (e) {
+        print('  ⚠️ Error deleting from old products collection: $e');
+      }
+
+      // Note: Products in Hushhagents/{agentId}/agentProducts/ are already deleted in step 1
+      print('  ✅ Agent products deletion completed');
+    } catch (e) {
+      print('❌ Error deleting agent products: $e');
+    }
+  }
+
+  /// Delete all agent lookbooks
+  static Future<void> _deleteAllAgentLookbooks(String userId) async {
+    try {
+      print('\n📚 STEP 3: Deleting all agent lookbooks...');
+
+      // Delete from LookBooks collection
+      try {
+        final lookbooksQuery = await _firestore
+            .collection('LookBooks')
+            .where('agentId', isEqualTo: userId)
+            .get();
+
+        if (lookbooksQuery.docs.isNotEmpty) {
+          final batch = _firestore.batch();
+          for (final doc in lookbooksQuery.docs) {
+            batch.delete(doc.reference);
+          }
+          await batch.commit();
+          print(
+              '  ✅ Deleted ${lookbooksQuery.docs.length} lookbooks from LookBooks collection');
+        } else {
+          print('  ℹ️ No lookbooks found for agent');
+        }
+      } catch (e) {
+        print('  ⚠️ Error deleting lookbooks: $e');
+      }
+
+      // Also check old lookbooks collection (if it exists)
+      try {
+        final oldLookbooksQuery = await _firestore
+            .collection('lookbooks')
+            .where('agentId', isEqualTo: userId)
+            .get();
+
+        if (oldLookbooksQuery.docs.isNotEmpty) {
+          final batch = _firestore.batch();
+          for (final doc in oldLookbooksQuery.docs) {
+            batch.delete(doc.reference);
+          }
+          await batch.commit();
+          print(
+              '  ✅ Deleted ${oldLookbooksQuery.docs.length} lookbooks from old lookbooks collection');
+        }
+      } catch (e) {
+        print('  ⚠️ Error deleting from old lookbooks collection: $e');
+      }
+
+      print('  ✅ Agent lookbooks deletion completed');
+    } catch (e) {
+      print('❌ Error deleting agent lookbooks: $e');
+    }
+  }
+
+  /// Delete from all other possible collections
+  static Future<void> _deleteFromOtherCollections(String userId) async {
+    try {
+      print('\n🗂️ STEP 4: Deleting from other collections...');
+
+      // Define all possible collections and field names to check
+      final collectionsToCheck = [
+        {
+          'collection': 'notifications',
+          'fields': ['userId', 'agentId', 'recipientId']
+        },
+        {
+          'collection': 'chats',
+          'fields': ['userId', 'agentId', 'createdBy']
+        },
+        {
+          'collection': 'conversations',
+          'fields': ['userId', 'agentId', 'participantId']
+        },
+        {
+          'collection': 'messages',
+          'fields': ['userId', 'agentId', 'senderId']
+        },
+        {
+          'collection': 'feedback',
+          'fields': ['userId', 'agentId', 'submittedBy']
+        },
+        {
+          'collection': 'reports',
+          'fields': ['userId', 'agentId', 'reportedBy']
+        },
+        {
+          'collection': 'analytics',
+          'fields': ['userId', 'agentId', 'ownerId']
+        },
+        {
+          'collection': 'logs',
+          'fields': ['userId', 'agentId', 'actorId']
+        },
+        {
+          'collection': 'AgentCategories',
+          'fields': ['agentId', 'createdBy']
+        },
+        {
+          'collection': 'BrandDetails',
+          'fields': ['agentId', 'ownerId']
+        },
+      ];
+
+      for (final collectionInfo in collectionsToCheck) {
+        final collectionName = collectionInfo['collection'] as String;
+        final fields = collectionInfo['fields'] as List<String>;
+
+        try {
+          int totalDeleted = 0;
+
+          for (final fieldName in fields) {
+            try {
+              final query = await _firestore
+                  .collection(collectionName)
+                  .where(fieldName, isEqualTo: userId)
+                  .get();
+
+              if (query.docs.isNotEmpty) {
+                final batch = _firestore.batch();
+                for (final doc in query.docs) {
+                  batch.delete(doc.reference);
+                }
+                await batch.commit();
+                totalDeleted += query.docs.length;
+              }
+            } catch (e) {
+              print('    ⚠️ Error querying $collectionName by $fieldName: $e');
+            }
+          }
+
+          // Also try direct document deletion
+          try {
+            final directDoc =
+                await _firestore.collection(collectionName).doc(userId).get();
+            if (directDoc.exists) {
+              await directDoc.reference.delete();
+              totalDeleted += 1;
+            }
+          } catch (e) {
+            print('    ⚠️ Error deleting direct doc from $collectionName: $e');
+          }
+
+          if (totalDeleted > 0) {
+            print('  ✅ Deleted $totalDeleted documents from $collectionName');
+          } else {
+            print('  ℹ️ No documents found in $collectionName');
+          }
+        } catch (e) {
+          print('  ⚠️ Error processing collection $collectionName: $e');
+        }
+      }
+
+      print('  ✅ Other collections cleanup completed');
+    } catch (e) {
+      print('❌ Error deleting from other collections: $e');
+    }
+  }
+
+  /// Delete any remaining references
+  static Future<void> _deleteRemainingReferences(String userId) async {
+    try {
+      print('\n🧹 STEP 5: Cleaning up remaining references...');
+
+      // Look for any remaining documents that might reference this user
+      final collectionsToScan = [
+        'posts',
+        'comments',
+        'likes',
+        'shares',
+        'follows',
+        'blocks',
+        'preferences',
+        'settings',
+        'sessions'
+      ];
+
+      for (final collectionName in collectionsToScan) {
+        try {
+          // Try multiple possible field names
+          final possibleFields = [
+            'userId',
+            'agentId',
+            'ownerId',
+            'createdBy',
+            'authorId'
+          ];
+
+          for (final fieldName in possibleFields) {
+            try {
+              final query = await _firestore
+                  .collection(collectionName)
+                  .where(fieldName, isEqualTo: userId)
+                  .limit(100) // Limit to avoid large queries
+                  .get();
+
+              if (query.docs.isNotEmpty) {
+                final batch = _firestore.batch();
+                for (final doc in query.docs) {
+                  batch.delete(doc.reference);
+                }
+                await batch.commit();
+                print(
+                    '  ✅ Cleaned ${query.docs.length} references from $collectionName.$fieldName');
+              }
+            } catch (e) {
+              // Silently continue if field doesn't exist or query fails
+            }
+          }
+        } catch (e) {
+          print('  ⚠️ Error scanning collection $collectionName: $e');
+        }
+      }
+
+      print('  ✅ Remaining references cleanup completed');
+    } catch (e) {
+      print('❌ Error cleaning remaining references: $e');
     }
   }
 

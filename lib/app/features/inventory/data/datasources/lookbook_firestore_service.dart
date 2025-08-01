@@ -11,25 +11,29 @@ class LookbookFirestoreService {
 
   // Collection references
   CollectionReference get _lookbooksCollection =>
-      _firestore.collection('lookbooks');
+      _firestore.collection('LookBooks'); // Updated to match manual creation
   CollectionReference get _productsCollection =>
       _firestore.collection('AgentProducts');
+  CollectionReference get _agentsCollection =>
+      _firestore.collection('Hushhagents');
 
-  // Fetch lookbooks for a specific user
-  Future<List<Lookbook>> getLookbooks(String hushhId) async {
+  // Fetch lookbooks for a specific agent
+  Future<List<Lookbook>> getLookbooks(String agentId) async {
     try {
-      final querySnapshot = await _lookbooksCollection
-          .where('hushhId', isEqualTo: hushhId)
-          .where('isActive', isEqualTo: true)
-          .orderBy('updatedAt', descending: true)
-          .get();
+      final querySnapshot =
+          await _lookbooksCollection.where('agentId', isEqualTo: agentId).get();
 
-      return querySnapshot.docs
+      final lookbooks = querySnapshot.docs
           .map((doc) => LookbookModel.fromJson({
                 'id': doc.id,
                 ...doc.data() as Map<String, dynamic>,
               }).toEntity())
           .toList();
+
+      // Sort by createdAt descending (client-side)
+      lookbooks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return lookbooks;
     } catch (e) {
       throw Exception('Failed to fetch lookbooks: $e');
     }
@@ -37,46 +41,54 @@ class LookbookFirestoreService {
 
   // Create a new lookbook
   Future<Lookbook> createLookbook({
-    required String name,
+    required String lookbookName,
     String? description,
-    required String hushhId,
-    required List<Product> selectedProducts,
+    required String agentId,
+    List<String> productIds = const [],
   }) async {
     try {
-      final lookbookId = _uuid.v4();
       final now = DateTime.now();
 
-      // Extract first 3 product images for cover
-      final images = selectedProducts
-          .where((p) => p.productImage != null && p.productImage!.isNotEmpty)
-          .take(3)
-          .map((p) => p.productImage!)
-          .toList();
+      // Create lookbook document (let Firestore auto-generate ID)
+      final lookbookRef = _lookbooksCollection.doc();
+      final lookbookId = lookbookRef.id;
 
       final lookbookData = {
-        'name': name,
+        'lookbookName': lookbookName,
         'description': description,
-        'hushhId': hushhId,
-        'numberOfProducts': selectedProducts.length,
-        'images': images,
+        'agentId': agentId,
+        'products': productIds,
         'createdAt': now.toIso8601String(),
-        'updatedAt': now.toIso8601String(),
-        'isActive': true,
       };
 
       // Start batch write
       final batch = _firestore.batch();
 
       // Create lookbook document
-      final lookbookRef = _lookbooksCollection.doc(lookbookId);
       batch.set(lookbookRef, lookbookData);
 
-      // Update products to link them to this lookbook
-      for (final product in selectedProducts) {
-        final productRef = _productsCollection.doc(product.productId);
+      // Update agent's lookbooks array to include this lookbook ID
+      final agentRef = _agentsCollection.doc(agentId);
+      batch.update(agentRef, {
+        'lookbooks': FieldValue.arrayUnion([lookbookId]),
+        'updatedAt': now.toIso8601String(),
+      });
+
+      // Update products to include this lookbook in their lookbookIds
+      for (final productId in productIds) {
+        // Update in Hushhagents subcollection
+        final agentProductRef = _agentsCollection
+            .doc(agentId)
+            .collection('agentProducts')
+            .doc(productId);
+        batch.update(agentProductRef, {
+          'lookbookIds': FieldValue.arrayUnion([lookbookId]),
+        });
+
+        // Also update in AgentProducts collection if it exists
+        final productRef = _productsCollection.doc(productId);
         batch.update(productRef, {
-          'lookbookId': lookbookId,
-          'updatedAt': now.toIso8601String(),
+          'lookbookIds': FieldValue.arrayUnion([lookbookId]),
         });
       }
 
@@ -98,27 +110,49 @@ class LookbookFirestoreService {
     try {
       final batch = _firestore.batch();
 
-      // Mark lookbook as inactive
+      // First, get the lookbook to find its agentId and products
+      final lookbookDoc = await _lookbooksCollection.doc(lookbookId).get();
+      if (!lookbookDoc.exists) {
+        throw Exception('Lookbook not found');
+      }
+
+      final lookbookData = lookbookDoc.data() as Map<String, dynamic>;
+      final agentId = lookbookData['agentId'] as String;
+      final productIds = List<String>.from(lookbookData['products'] ?? []);
+
+      // Delete the lookbook document completely
       final lookbookRef = _lookbooksCollection.doc(lookbookId);
-      batch.update(lookbookRef, {
-        'isActive': false,
+      batch.delete(lookbookRef);
+
+      // Remove lookbook ID from agent's lookbooks array
+      final agentRef = _agentsCollection.doc(agentId);
+      batch.update(agentRef, {
+        'lookbooks': FieldValue.arrayRemove([lookbookId]),
         'updatedAt': DateTime.now().toIso8601String(),
       });
 
-      // Remove lookbook association from products
-      final productsSnapshot = await _productsCollection
-          .where('lookbookId', isEqualTo: lookbookId)
-          .get();
+      // Remove lookbook ID from all associated products' lookbookIds arrays
+      for (final productId in productIds) {
+        // Remove from Hushhagents subcollection
+        final agentProductRef = _agentsCollection
+            .doc(agentId)
+            .collection('agentProducts')
+            .doc(productId);
+        batch.update(agentProductRef, {
+          'lookbookIds': FieldValue.arrayRemove([lookbookId]),
+        });
 
-      for (final doc in productsSnapshot.docs) {
-        batch.update(doc.reference, {
-          'lookbookId': null,
-          'updatedAt': DateTime.now().toIso8601String(),
+        // Also remove from AgentProducts collection if it exists
+        final productRef = _productsCollection.doc(productId);
+        batch.update(productRef, {
+          'lookbookIds': FieldValue.arrayRemove([lookbookId]),
         });
       }
 
       await batch.commit();
+      print('✅ [Lookbook] Successfully deleted lookbook: $lookbookId');
     } catch (e) {
+      print('❌ [Lookbook] Failed to delete lookbook: $lookbookId - $e');
       throw Exception('Failed to delete lookbook: $e');
     }
   }
@@ -593,6 +627,97 @@ class LookbookFirestoreService {
       print('✅ [Product] Successfully deleted product: $productId');
     } catch (e) {
       throw Exception('Failed to delete product: $e');
+    }
+  }
+
+  // Remove product from lookbook (don't delete the product)
+  Future<void> removeProductFromLookbook({
+    required String lookbookId,
+    required String productId,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Get lookbook to find agentId
+      final lookbookDoc = await _lookbooksCollection.doc(lookbookId).get();
+      if (!lookbookDoc.exists) {
+        throw Exception('Lookbook not found');
+      }
+
+      final lookbookData = lookbookDoc.data() as Map<String, dynamic>;
+      final agentId = lookbookData['agentId'] as String;
+
+      // Remove product ID from lookbook's products array
+      final lookbookRef = _lookbooksCollection.doc(lookbookId);
+      batch.update(lookbookRef, {
+        'products': FieldValue.arrayRemove([productId]),
+      });
+
+      // Remove lookbook ID from product's lookbookIds array in Hushhagents
+      final agentProductRef = _agentsCollection
+          .doc(agentId)
+          .collection('agentProducts')
+          .doc(productId);
+      batch.update(agentProductRef, {
+        'lookbookIds': FieldValue.arrayRemove([lookbookId]),
+      });
+
+      // Also remove from AgentProducts collection if it exists
+      final productRef = _productsCollection.doc(productId);
+      batch.update(productRef, {
+        'lookbookIds': FieldValue.arrayRemove([lookbookId]),
+      });
+
+      await batch.commit();
+      print(
+          '✅ [Lookbook] Product $productId removed from lookbook $lookbookId');
+    } catch (e) {
+      throw Exception('Failed to remove product from lookbook: $e');
+    }
+  }
+
+  // Add product to lookbook
+  Future<void> addProductToLookbook({
+    required String lookbookId,
+    required String productId,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Get lookbook to find agentId
+      final lookbookDoc = await _lookbooksCollection.doc(lookbookId).get();
+      if (!lookbookDoc.exists) {
+        throw Exception('Lookbook not found');
+      }
+
+      final lookbookData = lookbookDoc.data() as Map<String, dynamic>;
+      final agentId = lookbookData['agentId'] as String;
+
+      // Add product ID to lookbook's products array
+      final lookbookRef = _lookbooksCollection.doc(lookbookId);
+      batch.update(lookbookRef, {
+        'products': FieldValue.arrayUnion([productId]),
+      });
+
+      // Add lookbook ID to product's lookbookIds array in Hushhagents
+      final agentProductRef = _agentsCollection
+          .doc(agentId)
+          .collection('agentProducts')
+          .doc(productId);
+      batch.update(agentProductRef, {
+        'lookbookIds': FieldValue.arrayUnion([lookbookId]),
+      });
+
+      // Also add to AgentProducts collection if it exists
+      final productRef = _productsCollection.doc(productId);
+      batch.update(productRef, {
+        'lookbookIds': FieldValue.arrayUnion([lookbookId]),
+      });
+
+      await batch.commit();
+      print('✅ [Lookbook] Product $productId added to lookbook $lookbookId');
+    } catch (e) {
+      throw Exception('Failed to add product to lookbook: $e');
     }
   }
 

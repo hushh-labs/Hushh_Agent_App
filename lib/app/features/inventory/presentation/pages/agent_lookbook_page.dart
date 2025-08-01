@@ -18,10 +18,14 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
   final TextEditingController _searchController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late LookbookBloc _lookbookBloc;
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize the BLoC instance
+    _lookbookBloc = GetIt.instance<LookbookBloc>();
 
     // Initialize animations
     _animationController = AnimationController(
@@ -38,6 +42,12 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
     ));
 
     _animationController.forward();
+
+    // Fetch lookbooks on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🚀 Initial fetch of lookbooks');
+      _lookbookBloc.add(FetchLookbooksEvent());
+    });
   }
 
   @override
@@ -49,9 +59,8 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          GetIt.instance<LookbookBloc>()..add(FetchLookbooksEvent()),
+    return BlocProvider.value(
+      value: _lookbookBloc,
       child: Scaffold(
         backgroundColor: Colors.white,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -61,14 +70,29 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
           opacity: _fadeAnimation,
           child: RefreshIndicator(
             onRefresh: () async {
-              context.read<LookbookBloc>().add(FetchLookbooksEvent());
+              print('🔄 Manual refresh triggered');
+              _lookbookBloc.add(FetchLookbooksEvent());
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: BlocBuilder<LookbookBloc, LookbookState>(
+                child: BlocConsumer<LookbookBloc, LookbookState>(
+                  listener: (context, state) {
+                    print('📱 BLoC State Changed: ${state.runtimeType}');
+                    if (state is LookbookError &&
+                        state.message.contains('delete')) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
                   builder: (context, state) {
+                    print('🏗️ Building UI with state: ${state.runtimeType}');
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -169,7 +193,7 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
       child: TextField(
         controller: _searchController,
         onChanged: (value) {
-          context.read<LookbookBloc>().add(SearchLookbooksEvent(value));
+          _lookbookBloc.add(SearchLookbooksEvent(value));
         },
         decoration: InputDecoration(
           hintText: 'Search lookbooks...',
@@ -291,8 +315,7 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () =>
-                  context.read<LookbookBloc>().add(FetchLookbooksEvent()),
+              onPressed: () => _lookbookBloc.add(FetchLookbooksEvent()),
               child: const Text('Retry'),
             ),
           ],
@@ -367,21 +390,41 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
   }
 
   void _showInventoryOptions() {
-    final lookbookBloc = context.read<LookbookBloc>();
     showModalBottomSheet(
       isDismissible: true,
       enableDrag: true,
       backgroundColor: Colors.transparent,
       context: context,
       builder: (BuildContext context) => BlocProvider.value(
-        value: lookbookBloc,
+        value: _lookbookBloc,
         child: const CreateInventoryBottomSheet(),
       ),
     );
   }
 
-  void _navigateToCreateLookbook() {
-    Navigator.pushNamed(context, AppRoutes.createLookbook);
+  void _navigateToCreateLookbook() async {
+    print('🧭 Navigating to create lookbook page...');
+
+    // Navigate to create lookbook page and wait for result
+    final result = await Navigator.pushNamed(context, AppRoutes.createLookbook);
+
+    print('🔙 Returned from create lookbook page. Result: $result');
+
+    // When user returns, refresh the lookbooks list
+    if (mounted) {
+      print(
+          '🔄 Page still mounted, refreshing lookbooks after returning from create page');
+      print(
+          '🎯 Current BLoC state before refresh: ${_lookbookBloc.state.runtimeType}');
+
+      // Add a small delay to ensure any Firebase operations are complete
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      _lookbookBloc.add(FetchLookbooksEvent());
+      print('✅ Refresh event dispatched to BLoC');
+    } else {
+      print('⚠️ Page no longer mounted, skipping refresh');
+    }
   }
 
   void _navigateToAllProducts() {
@@ -397,6 +440,16 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
   }
 
   void _onLookbookDelete(String lookbookId) {
-    context.read<LookbookBloc>().add(DeleteLookbookEvent(lookbookId));
+    _lookbookBloc.add(DeleteLookbookEvent(lookbookId));
+
+    // Show immediate feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Deleting lookbook...'),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 }
