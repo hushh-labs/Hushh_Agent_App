@@ -82,6 +82,7 @@ class _AuthCardCreatedPageState extends State<AuthCardCreatedPage>
         'email': widget.profileData['email'],
         'name': widget.profileData['name'],
         'fullName': widget.profileData['name'],
+        'phone': user.phoneNumber ?? '', // Add phone number from Firebase Auth
         'categories': widget.profileData['categories'] ?? [],
         'brand': widget.profileData['brand'],
         'brandName': widget.profileData['brandName'],
