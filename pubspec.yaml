@@ -171,6 +171,8 @@ flutter:
     - assets/splash-anim.json
     - assets/splash.gif
     - assets/app-logo.png
+    - assets/dashboard_bottom_bar_icon.svg
+    - assets/profile_bottom_bar_icon.svg
   
   fonts:
     - family: Inter

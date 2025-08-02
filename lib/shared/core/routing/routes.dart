@@ -28,6 +28,8 @@ import '../../../app/features/auth/presentation/pages/auth_categories_page.dart'
 import '../../../app/features/auth/presentation/pages/auth_brands_page.dart';
 import '../../../app/features/auth/presentation/pages/auth_card_created_page.dart';
 import '../../../app/features/profile/presentation/pages/permissions_page.dart';
+import '../../../app/features/notification_bidding/presentation/bloc/notification_bidding_bloc.dart';
+import '../../../app/features/notification_bidding/presentation/pages/notification_bidding_page.dart';
 
 final sl = GetIt.instance;
 
@@ -163,6 +165,14 @@ class Routes {
       case AppRoutes.permissions:
         return MaterialPageRoute(
           builder: (_) => const PermissionsPage(),
+        );
+
+      case AppRoutes.notificationBidding:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => sl<NotificationBiddingBloc>(),
+            child: const NotificationBiddingPage(),
+          ),
         );
 
       default:

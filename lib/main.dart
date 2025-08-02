@@ -11,6 +11,8 @@ import 'app/features/splash/domain/dependency/splash_injection.dart'
 import 'app/Home/di/home_injection.dart' as home_di;
 import 'app/features/profile/di/profile_injection.dart' as profile_di;
 import 'app/features/inventory/di/inventory_injection.dart' as inventory_di;
+import 'app/features/notification_bidding/di/notification_bidding_injection.dart'
+    as notification_di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +28,7 @@ void main() async {
   await home_di.initializeHomeFeature();
   profile_di.initializeProfileFeature();
   inventory_di.initializeInventoryFeature();
+  notification_di.initializeNotificationBiddingFeature();
 
   runApp(const MyApp());
 }
