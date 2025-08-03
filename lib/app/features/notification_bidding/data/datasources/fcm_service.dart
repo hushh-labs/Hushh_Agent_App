@@ -153,7 +153,11 @@ class FcmService {
       print('🔍 [FCM] Message sent time: ${message.sentTime}');
       print('🔍 [FCM] Message ttl: ${message.ttl}');
 
-      // TODO: Handle the message (show notification, update UI, etc.)
+      // Check if this is a cart_item_added notification
+      if (message.data['type'] == 'cart_item_added') {
+        print('🛒 [FCM] Cart item added notification detected');
+        // The notification handler service will handle this
+      }
     });
 
     // Handle when app is opened from notification
@@ -162,7 +166,11 @@ class FcmService {
       print('📱 [FCM] Message data: ${message.data}');
       print('🔍 [FCM] Opened message from: ${message.from}');
 
-      // TODO: Navigate to specific screen based on message data
+      // Check if this is a cart_item_added notification
+      if (message.data['type'] == 'cart_item_added') {
+        print('🛒 [FCM] Cart item added notification opened');
+        // The notification handler service will handle this
+      }
     });
 
     // Handle initial message when app is launched from notification
@@ -172,7 +180,11 @@ class FcmService {
         print('📱 [FCM] Message data: ${message.data}');
         print('🔍 [FCM] Initial message from: ${message.from}');
 
-        // TODO: Navigate to specific screen based on message data
+        // Check if this is a cart_item_added notification
+        if (message.data['type'] == 'cart_item_added') {
+          print('🛒 [FCM] Cart item added notification launched app');
+          // The notification handler service will handle this
+        }
       } else {
         print('🔍 [FCM] No initial message found');
       }

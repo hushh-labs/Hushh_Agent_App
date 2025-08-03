@@ -112,19 +112,29 @@ import UserNotifications
     print("Notification Body: \(notification.request.content.body)")
     print("Notification User Info: \(notification.request.content.userInfo)")
     
-    // Show the notification even when app is in foreground
-    completionHandler([.alert, .badge, .sound])
+    // Check if this is a cart_item_added notification
+    let userInfo = notification.request.content.userInfo
+    if let type = userInfo["type"] as? String, type == "cart_item_added" {
+      print("=== CART ITEM NOTIFICATION IN FOREGROUND ===")
+      print("Manually triggering Flutter handler for cart notification")
+      
+      // Manually trigger Flutter's notification handler
+      if let controller = window?.rootViewController as? FlutterViewController {
+        let channel = FlutterMethodChannel(name: "notification_handler", binaryMessenger: controller.binaryMessenger)
+        channel.invokeMethod("handleForegroundNotification", arguments: userInfo)
+        print("=== FLUTTER HANDLER TRIGGERED ===")
+      }
+      
+      // Don't show the notification banner
+      completionHandler([])
+    } else {
+      // Show the notification for other types
+      if #available(iOS 14.0, *) {
+        completionHandler([.banner, .badge, .sound])
+      } else {
+        completionHandler([.alert, .badge, .sound])
+      }
+    }
   }
   
-  // Handle notification tap
-  override func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                     didReceive response: UNNotificationResponse,
-                                     withCompletionHandler completionHandler: @escaping () -> Void) {
-    print("=== NOTIFICATION TAPPED ===")
-    print("Notification Title: \(response.notification.request.content.title)")
-    print("Notification Body: \(response.notification.request.content.body)")
-    print("Notification User Info: \(response.notification.request.content.userInfo)")
-    
-    completionHandler()
-  }
 }

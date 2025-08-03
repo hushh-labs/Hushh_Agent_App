@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:io';
 import '../bloc/notification_bidding_bloc.dart';
 import '../../data/datasources/fcm_service.dart';
+import '../../data/datasources/notification_handler_service.dart';
 
 class NotificationBiddingPage extends StatefulWidget {
   const NotificationBiddingPage({Key? key}) : super(key: key);
@@ -216,6 +217,242 @@ class _NotificationBiddingPageState extends State<NotificationBiddingPage> {
                               child: state is FcmTokenDeletingState
                                   ? const CircularProgressIndicator()
                                   : const Text('Delete FCM Token'),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Test the bidding interface
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                notificationHandler
+                                    .testCartItemAddedNotification();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.purple,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Test Bidding Interface'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Test Firebase Cloud Function notification format
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                notificationHandler
+                                    .testFirebaseCloudFunctionNotification();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text(
+                                  'Test Firebase Cloud Function Notification'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Test real notification data format
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                notificationHandler.testRealNotificationData();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Test Real Notification Data'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Show bidding overlay immediately
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                notificationHandler.showBiddingOverlayNow();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Show Bidding Overlay Now'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Test different dialog approach
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                notificationHandler
+                                    .testDialogWithDifferentApproach();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.pink,
+                                foregroundColor: Colors.white,
+                              ),
+                              child:
+                                  const Text('Test Different Dialog Approach'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Test real scenario with different UIDs
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                notificationHandler
+                                    .testRealScenarioNotification();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.indigo,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text(
+                                  'Test Real Scenario (Different UIDs)'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Debug current user UID
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                notificationHandler.debugCurrentUserUID();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Debug Current User UID'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Test Firebase Functions connectivity
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                await notificationHandler
+                                    .testFirebaseFunctionsConnectivity();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.teal,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text(
+                                  'Test Firebase Functions Connectivity'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Test Firebase Functions deployment
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                await notificationHandler
+                                    .testFunctionsDeployment();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.brown,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text(
+                                  'Test Firebase Functions Deployment'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Test basic Firebase connectivity
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                await notificationHandler
+                                    .testBasicFirebaseConnectivity();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.deepPurple,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text(
+                                  'Test Basic Firebase Connectivity'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Test iOS-specific Firebase Functions
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                await notificationHandler
+                                    .testIOSFirebaseFunctions();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Test iOS Firebase Functions'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Test simple Firebase Functions call
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                await notificationHandler
+                                    .testSimpleFunctionCall();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.cyan,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Test Simple Function Call'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Test the new saveAgentBid function
+                                final notificationHandler =
+                                    NotificationHandlerService();
+                                await notificationHandler.testSaveAgentBid();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.deepOrange,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Test Save Agent Bid'),
                             ),
                           ),
                         ],
