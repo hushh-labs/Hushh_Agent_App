@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../constants/app_routes.dart';
-import '../../../app/Home/domain/entities/home_section.dart';
 import '../../utils/app_local_storage.dart';
 
 /// Google-style bottom navigation bar component with complete animation system

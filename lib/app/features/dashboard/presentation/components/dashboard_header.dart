@@ -57,7 +57,14 @@ class DashboardHeader extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: const BoxDecoration(
-                color: Color(0xFF007AFF),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFA342FF), // Purple
+                    Color(0xFFE54D60), // Pink-Red
+                  ],
+                ),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

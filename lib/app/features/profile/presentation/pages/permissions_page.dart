@@ -166,8 +166,26 @@ class _PermissionsPageState extends State<PermissionsPage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFA342FF).withOpacity(0.1),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color(0xFFA342FF).withOpacity(0.2),
+                                  const Color(0xFFE54D60).withOpacity(0.1),
+                                ],
+                              ),
                               borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFFA342FF).withOpacity(0.3),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFA342FF).withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: const Icon(
                               Icons.security,
@@ -269,8 +287,19 @@ class _PermissionsPageState extends State<PermissionsPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFA342FF).withOpacity(0.1),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFA342FF).withOpacity(0.15),
+                      const Color(0xFFE54D60).withOpacity(0.08),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFA342FF).withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
                 child: Icon(
                   permissionInfo.icon,
@@ -332,8 +361,19 @@ class _PermissionsPageState extends State<PermissionsPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFA342FF).withOpacity(0.1),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFFA342FF).withOpacity(0.15),
+                        const Color(0xFFE54D60).withOpacity(0.08),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: const Color(0xFFA342FF).withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
                   child: Text(
                     isPermanentlyDenied ? 'Settings' : 'Grant',

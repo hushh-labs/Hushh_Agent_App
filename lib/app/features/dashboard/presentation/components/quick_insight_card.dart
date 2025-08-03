@@ -18,17 +18,17 @@ class QuickInsightCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFCE4EC), // Light pink background
+          gradient: _getGradientForInsight(insight.id),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFFF8BBD9).withOpacity(0.3),
+            color: Colors.white.withOpacity(0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFF8BBD9).withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -40,11 +40,11 @@ class QuickInsightCard extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   ),
@@ -53,7 +53,7 @@ class QuickInsightCard extends StatelessWidget {
               child: Icon(
                 _getIconFromName(insight.iconName),
                 size: 18,
-                color: const Color(0xFF8B5A7C), // Darker pink for icons
+                color: Colors.white.withOpacity(0.9),
               ),
             ),
             
@@ -65,7 +65,7 @@ class QuickInsightCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2D2D2D), // Dark text
+                color: Colors.white,
                 height: 1.2,
               ),
             ),
@@ -76,9 +76,9 @@ class QuickInsightCard extends StatelessWidget {
             if (insight.value.isNotEmpty)
               Text(
                 insight.value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF666666), // Medium gray
+                  color: Colors.white.withOpacity(0.8),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -86,6 +86,56 @@ class QuickInsightCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Returns different gradient combinations based on insight ID for visual variety
+  LinearGradient _getGradientForInsight(String insightId) {
+    final int index = insightId.hashCode % 4; // Create 4 different gradient options
+    
+    switch (index) {
+      case 0:
+        // Primary app gradient (Purple to Pink-Red)
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFA342FF), // Purple
+            Color(0xFFE54D60), // Pink-Red
+          ],
+        );
+      case 1:
+        // Blue-Purple gradient
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF3C29E1), // Blue-Purple
+            Color(0xFF603ED9), // Purple
+          ],
+        );
+      case 2:
+        // Multi-tone purple gradient
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF6725F2), // Deep Purple
+            Color(0xFF8A52FF), // Mid Purple
+            Color(0xFFE51A5E), // Pink-Red
+          ],
+        );
+      case 3:
+      default:
+        // Reverse of primary gradient
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFE54D60), // Pink-Red
+            Color(0xFFA342FF), // Purple
+          ],
+        );
+    }
   }
 
   IconData _getIconFromName(String iconName) {

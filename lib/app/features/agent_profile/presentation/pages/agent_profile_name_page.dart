@@ -13,30 +13,97 @@ class AgentProfileNamePage extends StatefulWidget {
   State<AgentProfileNamePage> createState() => _AgentProfileNamePageState();
 }
 
-class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
+class _AgentProfileNamePageState extends State<AgentProfileNamePage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   bool _isNameValid = false;
+  double _nameProgress = 0.0;
+  late AnimationController _progressAnimationController;
+  late Animation<double> _progressAnimation;
 
   @override
   void initState() {
     super.initState();
     _nameController.addListener(_validateName);
+    
+    // Initialize animation controller for smooth progress transitions
+    _progressAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressAnimationController, curve: Curves.easeOutCubic),
+    );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _progressAnimationController.dispose();
     super.dispose();
   }
 
   void _validateName() {
     final name = _nameController.text.trim();
+    final progress = _calculateNameProgress(name);
     final isValid = name.isNotEmpty && name.length >= 2;
-    if (isValid != _isNameValid) {
+    
+    if (isValid != _isNameValid || progress != _nameProgress) {
       setState(() {
         _isNameValid = isValid;
+        _nameProgress = progress;
       });
+      
+      // Animate progress bar
+      _progressAnimationController.animateTo(_nameProgress);
+    }
+  }
+
+  /// Calculate name completion progress based on various criteria
+  double _calculateNameProgress(String name) {
+    if (name.isEmpty) return 0.0;
+    
+    double progress = 0.0;
+    
+    // Basic length check (40% progress)
+    if (name.length >= 1) progress += 0.4;
+    
+    // Minimum valid length (30% progress)
+    if (name.length >= 2) progress += 0.3;
+    
+    // Good length (20% progress)
+    if (name.length >= 3) progress += 0.2;
+    
+    // No numbers or special characters (10% progress)
+    if (!RegExp(r'[0-9!@#$%^&*(),.?":{}|<>]').hasMatch(name)) {
+      progress += 0.1;
+    }
+    
+    return progress.clamp(0.0, 1.0);
+  }
+
+  /// Get dynamic gradient colors based on progress
+  List<Color> _getProgressGradientColors(double progress) {
+    if (progress == 0.0) {
+      // Start with subtle purple/pink gradients when empty (attractive disabled state)
+      return [
+        const Color(0xFFA342FF).withOpacity(0.3),
+        const Color(0xFFE54D60).withOpacity(0.2),
+      ];
+    } else if (progress < 1.0) {
+      // Transition from pink/purple to blue as user types
+      final t = progress;
+      return [
+        Color.lerp(const Color(0xFFA342FF), const Color(0xFF2196F3), t)!,
+        Color.lerp(const Color(0xFFE54D60), const Color(0xFF1976D2), t)!,
+      ];
+    } else {
+      // Complete - beautiful blue gradient
+      return [
+        const Color(0xFF2196F3),
+        const Color(0xFF1976D2),
+      ];
     }
   }
 
@@ -52,16 +119,16 @@ class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
         title: Text(
           'Complete profile',
           style: TextStyle(
-            color: const Color(0xFF797979).withOpacity(0.8),
+            color: Colors.black,
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 20,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF797979),
+              foregroundColor: Colors.black,
             ),
             child: const Text('BACK'),
           ),
@@ -111,13 +178,21 @@ class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
 
             const SizedBox(height: 8),
 
-            // Subtitle
-            const Text(
-              "This will be visible on your profile",
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-                letterSpacing: 0.4,
+            // Subtitle with gradient
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ).createShader(bounds),
+              child: const Text(
+                "This will be visible on your profile",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  letterSpacing: 0.4,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
 
@@ -130,14 +205,23 @@ class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
                 child: Column(
                   children: [
                     Container(
-                      height: 56,
+                      height: 58,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFF8391a1).withOpacity(0.5),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
                         ),
                       ),
-                      child: TextFormField(
+                      child: Container(
+                        margin: const EdgeInsets.all(2),
+                        height: 54,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white,
+                        ),
+                        child: TextFormField(
                         controller: _nameController,
                         keyboardType: TextInputType.name,
                         textCapitalization: TextCapitalization.words,
@@ -148,7 +232,7 @@ class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
                         decoration: InputDecoration(
                           hintText: 'Enter your full name',
                           hintStyle: TextStyle(
-                            color: Colors.grey[400],
+                            color: const Color(0xFFA342FF).withOpacity(0.4),
                             fontSize: 16,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
@@ -156,9 +240,14 @@ class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
                             vertical: 16,
                           ),
                           border: InputBorder.none,
-                          prefixIcon: const Icon(
-                            Icons.person_outline,
-                            color: Color(0xFF8391a1),
+                          prefixIcon: ShaderMask(
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+                            ).createShader(bounds),
+                            child: const Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -170,8 +259,12 @@ class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
                           }
                           return null;
                         },
-                        onChanged: (value) => setState(() {}),
-                        textInputAction: TextInputAction.next,
+                        onChanged: (value) {
+                          _validateName();
+                          setState(() {});
+                        },
+                        textInputAction: TextInputAction.done,
+                      ),
                       ),
                     ),
                   ],
@@ -179,58 +272,110 @@ class _AgentProfileNamePageState extends State<AgentProfileNamePage> {
               ),
             ),
 
-            // Continue button
+            // Progress indicator
+            const SizedBox(height: 12),
+            AnimatedBuilder(
+              animation: _progressAnimation,
+              builder: (context, child) {
+                return Container(
+                  width: double.infinity,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(2),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFA342FF).withOpacity(0.1),
+                        const Color(0xFFE54D60).withOpacity(0.1),
+                      ],
+                    ),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: _progressAnimation.value,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(2),
+                        gradient: LinearGradient(
+                          colors: _getProgressGradientColors(_nameProgress),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            
+            // Continue button with static gradient
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(43),
-                  gradient: _isNameValid
-                      ? const LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            Color(0xFFA342FF),
-                            Color(0xFFE54D60),
-                          ],
-                        )
-                      : null,
-                  color: !_isNameValid ? Colors.grey : null,
-                ),
-                child: ElevatedButton(
-                  onPressed: _isNameValid
-                      ? () {
-                          if (_formKey.currentState?.validate() ?? false) {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.agentProfileCategories,
-                              arguments: {
-                                'email': widget.email,
-                                'name': _nameController.text.trim(),
-                              },
-                            );
-                          }
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
+            AnimatedBuilder(
+              animation: _progressAnimation,
+              builder: (context, child) {
+                return SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: Container(
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(43),
+                      gradient: const LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFA342FF).withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isNameValid
+                          ? () {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.agentProfileCategories,
+                                  arguments: {
+                                    'email': widget.email,
+                                    'name': _nameController.text.trim(),
+                                  },
+                                );
+                              }
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(43),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Continue',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (_isNameValid) ...[
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+                );
+              },
             ),
             const SizedBox(height: 32),
           ],

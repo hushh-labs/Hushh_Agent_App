@@ -56,8 +56,22 @@ class _HushhBotChatViewState extends State<_HushhBotChatView> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFA342FF),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFA342FF), // Purple
+                    Color(0xFFE54D60), // Pink-Red
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFA342FF).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.smart_toy,
@@ -70,7 +84,7 @@ class _HushhBotChatViewState extends State<_HushhBotChatView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hushh Bot',
+                  'Hushh Chat',
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 16,
@@ -173,7 +187,26 @@ class _HushhBotChatViewState extends State<_HushhBotChatView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFFA342FF)),
+              leading: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFA342FF), // Purple
+                      Color(0xFFE54D60), // Pink-Red
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(
+                  Icons.photo_library,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
               title: const Text('Upload Bill Image'),
               onTap: () {
                 Navigator.pop(context);
@@ -181,7 +214,26 @@ class _HushhBotChatViewState extends State<_HushhBotChatView> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.description, color: Color(0xFFA342FF)),
+              leading: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFA342FF), // Purple
+                      Color(0xFFE54D60), // Pink-Red
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(
+                  Icons.description,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
               title: const Text('Upload Bill PDF'),
               onTap: () {
                 Navigator.pop(context);

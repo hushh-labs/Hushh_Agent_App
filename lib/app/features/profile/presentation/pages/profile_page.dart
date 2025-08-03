@@ -526,6 +526,19 @@ class _ProfilePageState extends State<ProfilePage>
             );
           }),
           if (!kIsWeb) ...[
+            _MenuItemData('Clean Agent Data', Icons.cleaning_services_outlined, () {
+              GuestUtils.executeWithGuestCheck(
+                context,
+                'Data Management',
+                () {
+                  try {
+                    AuthService.showDeleteAgentDataDialog(context);
+                  } catch (e) {
+                    _showErrorSnackBar('Unable to clean agent data');
+                  }
+                },
+              );
+            }),
             _MenuItemData('Delete Account', Icons.delete_outline, () {
               GuestUtils.executeWithGuestCheck(
                 context,

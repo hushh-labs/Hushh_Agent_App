@@ -234,16 +234,16 @@ class _AuthCategoriesPageState extends State<AuthCategoriesPage> {
         title: Text(
           'Complete profile',
           style: TextStyle(
-            color: const Color(0xFF797979).withOpacity(0.8),
+            color: Colors.black,
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 20,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF797979),
+              foregroundColor: Colors.black,
             ),
             child: const Text('BACK'),
           ),
@@ -471,10 +471,19 @@ class _CategoryChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.black : Colors.white,
+          gradient: isSelected 
+              ? const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
           borderRadius: BorderRadius.circular(25),
           border: Border.all(
-            color: isSelected ? Colors.black : const Color(0xFFA2A09D),
+            color: isSelected 
+                ? Colors.transparent 
+                : const Color(0xFFA2A09D),
             width: 1.5,
           ),
         ),

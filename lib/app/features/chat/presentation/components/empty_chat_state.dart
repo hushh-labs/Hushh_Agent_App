@@ -8,7 +8,7 @@ class EmptyChatState extends StatelessWidget {
   const EmptyChatState({
     super.key,
     this.title = 'No conversations yet',
-    this.subtitle = 'Start a conversation with Hushh Bot\nor search for contacts above',
+    this.subtitle = 'Start a conversation with Hushh Chat\nor search for contacts above',
     this.icon = Icons.chat_bubble_outline,
   });
 

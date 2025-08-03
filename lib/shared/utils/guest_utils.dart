@@ -33,8 +33,19 @@ class GuestUtils {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFA342FF).withOpacity(0.1),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFA342FF).withOpacity(0.2),
+                      const Color(0xFFE54D60).withOpacity(0.1),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFA342FF).withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
                 child: const Icon(
                   Icons.lock_outline,
@@ -72,15 +83,30 @@ class GuestUtils {
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(
-                      Icons.star_outline,
-                      color: Color(0xFFA342FF),
-                      size: 20,
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFA342FF),
+                            Color(0xFFE54D60),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.star_outline,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                     ),
-                    SizedBox(width: 8),
-                    Expanded(
+                    const SizedBox(width: 8),
+                    const Expanded(
                       child: Text(
                         'Get full access to all premium features',
                         style: TextStyle(

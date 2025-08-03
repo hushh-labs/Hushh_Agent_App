@@ -206,16 +206,16 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
         title: Text(
           'Complete profile',
           style: TextStyle(
-            color: const Color(0xFF797979).withOpacity(0.8),
+            color: Colors.black,
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 20,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF797979),
+              foregroundColor: Colors.black,
             ),
             child: const Text('BACK'),
           ),
@@ -382,15 +382,31 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
-                                  ? const Color(0xFFE51A5E)
+                                  ? Colors.transparent
                                   : const Color(0xFFE5E5E5),
                               width: isSelected ? 2 : 1,
                             ),
-                            color: isSelected
-                                ? const Color(0xFFE51A5E).withOpacity(0.05)
-                                : Colors.white,
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: [
+                                      Color(0xFFA342FF),
+                                      Color(0xFFE54D60),
+                                    ],
+                                  )
+                                : null,
+                            color: isSelected ? null : Colors.white,
                           ),
-                          child: ListTile(
+                          child: Container(
+                            margin: isSelected ? const EdgeInsets.all(2) : EdgeInsets.zero,
+                            decoration: isSelected 
+                                ? BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.white,
+                                  )
+                                : null,
+                            child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 8),
                             onTap: () {
@@ -486,7 +502,11 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
                                         horizontal: 16, vertical: 8),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(6),
-                                      color: const Color(0xFFE51A5E),
+                                      gradient: const LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+                                      ),
                                     ),
                                     child: const Text(
                                       'Claim',
@@ -498,12 +518,18 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
                                     ),
                                   )
                                 : isSelected
-                                    ? const Icon(
-                                        Icons.check_circle,
-                                        color: Color(0xFFE51A5E),
-                                        size: 24,
+                                    ? ShaderMask(
+                                        shaderCallback: (bounds) => const LinearGradient(
+                                          colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+                                        ).createShader(bounds),
+                                        child: const Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
                                       )
                                     : null,
+                            ),
                           ),
                         );
                       },

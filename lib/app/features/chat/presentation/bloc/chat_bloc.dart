@@ -195,19 +195,19 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _allChats = [
         const ChatItem(
           id: 'hushh_bot',
-          title: 'Hushh Bot',
-          subtitle: 'Talk to Hushh Bot / upload bills for\nInsights',
+          title: 'Hushh Chat',
+          subtitle: 'Talk to Hushh Chat / upload bills for\nInsights',
           avatarIcon: 'smart_toy',
           avatarColor: '#A342FF',
           isBot: true,
         ),
       ];
 
-      // Initialize Hushh Bot with welcome message
+      // Initialize Hushh Chat with welcome message
       _chatMessages['hushh_bot'] = [
         ChatMessage(
           id: 'welcome_1',
-          text: 'Hello! I\'m Hushh Bot. How can I help you today? You can upload bills for insights or ask me anything!',
+          text: 'Hello! I\'m Hushh Chat. How can I help you today? You can upload bills for insights or ask me anything!',
           isBot: true,
           timestamp: DateTime.now(),
         ),

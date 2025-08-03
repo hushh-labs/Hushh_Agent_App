@@ -54,7 +54,14 @@ class MessageInput extends StatelessWidget {
           const SizedBox(width: 8),
           Container(
             decoration: const BoxDecoration(
-              color: Color(0xFFA342FF),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFA342FF), // Purple
+                  Color(0xFFE54D60), // Pink-Red
+                ],
+              ),
               shape: BoxShape.circle,
             ),
             child: IconButton(
