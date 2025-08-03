@@ -28,4 +28,7 @@ class AppRoutes {
 
   // Profile & Settings routes
   static const String permissions = '/permissions';
+
+  // Notification Bidding routes
+  static const String notificationBidding = '/notification-bidding';
 }
