@@ -5,6 +5,8 @@ import '../../domain/entities/home_section.dart';
 import '../../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../../features/chat/presentation/pages/chat_page.dart';
 import '../../../features/profile/presentation/pages/profile_page.dart';
+import '../../../features/profile/di/profile_injection.dart' as profile_di;
+import '../../../features/profile/presentation/bloc/profile_bloc.dart';
 
 import '../../../../shared/constants/colors.dart';
 import '../../../../shared/core/routing/routes.dart';
@@ -132,7 +134,9 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          context.read<HomeBloc>().add(const InitializeHomeEvent());
+                          context
+                              .read<HomeBloc>()
+                              .add(const InitializeHomeEvent());
                         },
                         child: const Text('Retry'),
                       ),
@@ -157,10 +161,13 @@ class _HomePageState extends State<HomePage> {
           return Scaffold(
             body: IndexedStack(
               index: state.currentTabIndex,
-              children: const [
-                DashboardPage(),
-                ChatPage(),
-                ProfilePage(),
+              children: [
+                const DashboardPage(),
+                const ChatPage(),
+                BlocProvider<ProfileBloc>(
+                  create: (context) => profile_di.sl<ProfileBloc>(),
+                  child: const ProfilePage(),
+                ),
               ],
             ),
             bottomNavigationBar: _buildBottomNavigationBar(state),
@@ -171,7 +178,8 @@ class _HomePageState extends State<HomePage> {
         return const Scaffold(
           backgroundColor: Colors.white,
           body: Center(
-            child: SizedBox.shrink(), // Minimal loading - authentication check is instant
+            child: SizedBox
+                .shrink(), // Minimal loading - authentication check is instant
           ),
         );
       },
@@ -196,7 +204,8 @@ class _HomePageState extends State<HomePage> {
       return BottomNavItem.agent(
         label: section.title,
         icon: _getIconForSection(section.id),
-        iconPath: _getSvgPathForSection(section.id), // For SVG icons if you have them
+        iconPath:
+            _getSvgPathForSection(section.id), // For SVG icons if you have them
         isRestrictedForGuest: _isRestrictedSection(section.id),
       );
     }).toList();
@@ -234,13 +243,13 @@ class _HomePageState extends State<HomePage> {
   bool _isRestrictedSection(String sectionId) {
     switch (sectionId) {
       case 'chat':
-        return true; // Chat requires authentication
+        return false; // Allow chat access - individual features are locked inside
       case 'dashboard':
-        return true; // Dashboard requires authentication
+        return false; // Allow dashboard access - individual features are locked inside
       case 'profile':
-        return true; // Profile requires authentication
+        return false; // Allow profile access - guest can see profile page with Sign In button
       default:
         return false;
     }
   }
-} 
+}

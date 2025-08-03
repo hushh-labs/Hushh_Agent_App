@@ -6,22 +6,27 @@ import 'shared/constants/colors.dart';
 import 'shared/config/theme/text_theme.dart';
 import 'shared/core/routing/routes.dart';
 import 'app/features/auth/di/auth_injection.dart' as auth_di;
-import 'app/features/splash/domain/dependency/splash_injection.dart' as splash_di;
+import 'app/features/splash/domain/dependency/splash_injection.dart'
+    as splash_di;
 import 'app/Home/di/home_injection.dart' as home_di;
+import 'app/features/profile/di/profile_injection.dart' as profile_di;
+import 'app/features/inventory/di/inventory_injection.dart' as inventory_di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   // Initialize dependencies
   auth_di.initializeAuthFeature();
   splash_di.initializeSplashFeature();
   await home_di.initializeHomeFeature();
-  
+  profile_di.initializeProfileFeature();
+  inventory_di.initializeInventoryFeature();
+
   runApp(const MyApp());
 }
 
@@ -43,4 +48,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

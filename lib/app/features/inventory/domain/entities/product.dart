@@ -2,81 +2,76 @@ import 'package:equatable/equatable.dart';
 
 class Product extends Equatable {
   final String productId;
-  final String hushhId;
-  final String? lookbookId;
   final String productName;
   final String? productDescription;
   final String? productImage;
   final double productPrice;
   final String productCurrency;
   final String productSkuUniqueId;
-  final DateTime addedAt;
+  final DateTime createdAt;
   final int stockQuantity;
   final String? category;
-  final bool isAvailable;
+  final List<String> lookbookIds;
+  final String createdBy;
 
   const Product({
     required this.productId,
-    required this.hushhId,
-    this.lookbookId,
     required this.productName,
     this.productDescription,
     this.productImage,
     required this.productPrice,
     this.productCurrency = 'USD',
     required this.productSkuUniqueId,
-    required this.addedAt,
+    required this.createdAt,
     this.stockQuantity = 0,
     this.category,
-    this.isAvailable = true,
+    this.lookbookIds = const [],
+    required this.createdBy,
   });
 
   Product copyWith({
     String? productId,
-    String? hushhId,
-    String? lookbookId,
     String? productName,
     String? productDescription,
     String? productImage,
     double? productPrice,
     String? productCurrency,
     String? productSkuUniqueId,
-    DateTime? addedAt,
+    DateTime? createdAt,
     int? stockQuantity,
     String? category,
-    bool? isAvailable,
+    List<String>? lookbookIds,
+    String? createdBy,
   }) {
     return Product(
       productId: productId ?? this.productId,
-      hushhId: hushhId ?? this.hushhId,
-      lookbookId: lookbookId ?? this.lookbookId,
       productName: productName ?? this.productName,
       productDescription: productDescription ?? this.productDescription,
       productImage: productImage ?? this.productImage,
       productPrice: productPrice ?? this.productPrice,
       productCurrency: productCurrency ?? this.productCurrency,
       productSkuUniqueId: productSkuUniqueId ?? this.productSkuUniqueId,
-      addedAt: addedAt ?? this.addedAt,
+      createdAt: createdAt ?? this.createdAt,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       category: category ?? this.category,
-      isAvailable: isAvailable ?? this.isAvailable,
+      lookbookIds: lookbookIds ?? this.lookbookIds,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 
   @override
   List<Object?> get props => [
         productId,
-        hushhId,
-        lookbookId,
         productName,
         productDescription,
         productImage,
         productPrice,
         productCurrency,
         productSkuUniqueId,
-        addedAt,
+        createdAt,
         stockQuantity,
         category,
-        isAvailable,
+        lookbookIds,
+        createdBy,
       ];
-} 
+}

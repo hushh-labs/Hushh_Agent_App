@@ -70,7 +70,7 @@ class HushhAgentModel extends HushhAgent {
   }) {
     final now = DateTime.now();
     final agentId = 'AGENT_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     return HushhAgentModel(
       id: '', // Will be set by Firestore
       agentId: agentId,
@@ -107,4 +107,4 @@ class HushhAgentModel extends HushhAgent {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
-} 
+}

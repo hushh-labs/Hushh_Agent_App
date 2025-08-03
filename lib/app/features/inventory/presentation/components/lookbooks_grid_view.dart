@@ -84,59 +84,27 @@ class LookbooksGridView extends StatelessWidget {
   }
 
   Widget _buildImageGrid(Lookbook lookbook) {
-    if (lookbook.images.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.collections_bookmark_outlined,
-              size: 32,
-              color: Colors.grey[400],
+    // Since we now store product IDs instead of images, show a lookbook icon
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.collections_bookmark,
+            size: 32,
+            color: Colors.purple,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${lookbook.products.length} Products',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.purple,
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(height: 4),
-            Text(
-              'No Images',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (lookbook.images.length == 1) {
-      return Image.network(
-        lookbook.images[0],
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-      );
-    }
-
-    // Grid layout for multiple images
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
+          ),
+        ],
       ),
-      itemCount: lookbook.images.length > 4 ? 4 : lookbook.images.length,
-      itemBuilder: (context, index) {
-        if (index == 3 && lookbook.images.length > 4) {
-          return _buildMoreImagesOverlay(lookbook.images.length - 3);
-        }
-        
-        return Image.network(
-          lookbook.images[index],
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-        );
-      },
     );
   }
 
@@ -192,7 +160,7 @@ class LookbooksGridView extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    lookbook.name,
+                    lookbook.lookbookName,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -203,28 +171,30 @@ class LookbooksGridView extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: Colors.purple[50],
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
+                    border: Border.all(color: Colors.purple[200]!),
                   ),
                   child: Text(
-                    '${lookbook.numberOfProducts}',
+                    '${lookbook.products.length}',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.blue[700],
+                      color: Colors.purple[700],
                     ),
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 4),
-            
+
             // Description (if available)
-            if (lookbook.description != null && lookbook.description!.isNotEmpty) ...[
+            if (lookbook.description != null &&
+                lookbook.description!.isNotEmpty) ...[
               Text(
                 lookbook.description!,
                 style: TextStyle(
@@ -237,9 +207,9 @@ class LookbooksGridView extends StatelessWidget {
               ),
               const SizedBox(height: 4),
             ],
-            
+
             const Spacer(),
-            
+
             // Updated time
             Row(
               children: [
@@ -249,15 +219,15 @@ class LookbooksGridView extends StatelessWidget {
                   color: Colors.grey[500],
                 ),
                 const SizedBox(width: 2),
-                                 Expanded(
-                   child: Text(
-                     _formatRelativeTime(lookbook.updatedAt),
-                     style: TextStyle(
-                       fontSize: 10,
-                       color: Colors.grey[500],
-                     ),
-                   ),
-                 ),
+                Expanded(
+                  child: Text(
+                    _formatRelativeTime(lookbook.createdAt),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ),
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 10,
@@ -291,45 +261,24 @@ class LookbooksGridView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            
             Text(
-              lookbook.name,
+              lookbook.lookbookName,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 20),
-            
             ListTile(
-              leading: const Icon(Icons.open_in_new, color: Colors.blue),
+              leading: const Icon(Icons.open_in_new, color: Colors.purple),
               title: const Text('Open'),
               onTap: () {
                 Navigator.pop(context);
                 onLookbookTap(lookbook.id);
               },
             ),
-            
             ListTile(
-              leading: const Icon(Icons.share, color: Colors.green),
-              title: const Text('Share'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareLookbook(lookbook);
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.edit, color: Colors.orange),
-              title: const Text('Edit'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement edit functionality
-              },
-            ),
-            
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
+              leading: const Icon(Icons.delete, color: Colors.purple),
               title: const Text('Delete'),
               onTap: () {
                 Navigator.pop(context);
@@ -348,32 +297,36 @@ class LookbooksGridView extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Delete Lookbook'),
         content: Text(
-          'Are you sure you want to delete "${lookbook.name}"? This action cannot be undone.',
+          'Are you sure you want to delete "${lookbook.lookbookName}"? This action cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onLookbookDelete(lookbook.id);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
             ),
-            child: const Text('Delete'),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                onLookbookDelete(lookbook.id);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
+              child: const Text('Delete'),
+            ),
           ),
         ],
       ),
     );
-  }
-
-  void _shareLookbook(Lookbook lookbook) {
-    // TODO: Implement share functionality
-    print('Sharing lookbook: ${lookbook.name}');
   }
 
   String _formatRelativeTime(DateTime dateTime) {
@@ -390,4 +343,4 @@ class LookbooksGridView extends StatelessWidget {
       return 'Just now';
     }
   }
-} 
+}

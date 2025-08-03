@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/hushh_agent_model.dart';
 
 class HushhAgentFirestoreService {
@@ -6,11 +7,8 @@ class HushhAgentFirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Get collection reference
-  CollectionReference<HushhAgentModel> get _collection {
-    return _firestore.collection(_collectionName).withConverter<HushhAgentModel>(
-      fromFirestore: (snapshot, options) => HushhAgentModel.fromFirestore(snapshot, options),
-      toFirestore: (agent, options) => agent.toFirestore(),
-    );
+  CollectionReference<Map<String, dynamic>> get _collection {
+    return _firestore.collection(_collectionName);
   }
 
   /// Create or update agent record
@@ -23,23 +21,26 @@ class HushhAgentFirestoreService {
     try {
       print('🔄 [Firestore] Creating or updating agent...');
 
-      // Try to find existing agent by phone or email
-      Query<HushhAgentModel> query = _collection;
-      if (phone != null && phone.isNotEmpty) {
-        query = query.where('phone', isEqualTo: phone);
-      } else if (email != null && email.isNotEmpty) {
-        query = query.where('email', isEqualTo: email);
-      } else {
-        throw Exception('Either phone or email must be provided');
+      // Get current Firebase Auth user
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('No authenticated user found');
       }
 
-      final existingDocs = await query.limit(1).get();
+      final uid = currentUser.uid;
+      print('🔑 [Firestore] Using Firebase Auth UID: $uid');
 
-      if (existingDocs.docs.isNotEmpty) {
+      // Try to get existing agent by UID first
+      final existingDoc = await _collection.doc(uid).get();
+
+      if (existingDoc.exists) {
         // Update existing agent
-        final existingDoc = existingDocs.docs.first;
-        final existingAgent = existingDoc.data();
-        
+        final existingData = existingDoc.data()!;
+        final existingAgent = HushhAgentModel.fromJson({
+          ...existingData,
+          'id': existingDoc.id,
+        });
+
         final updatedAgent = existingAgent.copyWith(
           phone: phone ?? existingAgent.phone,
           email: email ?? existingAgent.email,
@@ -49,11 +50,11 @@ class HushhAgentFirestoreService {
         );
 
         await existingDoc.reference.update(updatedAgent.toFirestore());
-        
-        print('✅ [Firestore] Agent updated successfully: ${existingDoc.id}');
-        return updatedAgent.copyWith(id: existingDoc.id);
+
+        print('✅ [Firestore] Agent updated successfully: $uid');
+        return updatedAgent.copyWith(id: uid);
       } else {
-        // Create new agent
+        // Create new agent with UID as document ID
         final newAgent = HushhAgentModel.create(
           phone: phone ?? '',
           email: email,
@@ -61,10 +62,10 @@ class HushhAgentFirestoreService {
           fullName: fullName,
         );
 
-        final docRef = await _collection.add(newAgent);
-        
-        print('✅ [Firestore] New agent created successfully: ${docRef.id}');
-        return newAgent.copyWith(id: docRef.id);
+        await _collection.doc(uid).set(newAgent.toFirestore());
+
+        print('✅ [Firestore] New agent created successfully: $uid');
+        return newAgent.copyWith(id: uid);
       }
     } catch (e) {
       print('❌ [Firestore] Error creating/updating agent: $e');
@@ -77,14 +78,16 @@ class HushhAgentFirestoreService {
     try {
       print('🔍 [Firestore] Searching for agent with phone: $phone');
 
-      final querySnapshot = await _collection
-          .where('phone', isEqualTo: phone)
-          .limit(1)
-          .get();
+      final querySnapshot =
+          await _collection.where('phone', isEqualTo: phone).limit(1).get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
-        final agent = doc.data().copyWith(id: doc.id);
+        final data = doc.data();
+        final agent = HushhAgentModel.fromJson({
+          ...data,
+          'id': doc.id,
+        });
         print('✅ [Firestore] Agent found: ${agent.agentId}');
         return agent;
       } else {
@@ -105,7 +108,11 @@ class HushhAgentFirestoreService {
       final docSnapshot = await _collection.doc(id).get();
 
       if (docSnapshot.exists) {
-        final agent = docSnapshot.data()!.copyWith(id: docSnapshot.id);
+        final data = docSnapshot.data()!;
+        final agent = HushhAgentModel.fromJson({
+          ...data,
+          'id': docSnapshot.id,
+        });
         print('✅ [Firestore] Agent found: ${agent.agentId}');
         return agent;
       } else {
@@ -123,10 +130,8 @@ class HushhAgentFirestoreService {
     try {
       print('🔄 [Firestore] Updating login status for agent: $agentId');
 
-      final querySnapshot = await _collection
-          .where('agentId', isEqualTo: agentId)
-          .limit(1)
-          .get();
+      final querySnapshot =
+          await _collection.where('agentId', isEqualTo: agentId).limit(1).get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
@@ -134,7 +139,7 @@ class HushhAgentFirestoreService {
           'isActive': isActive,
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
-        
+
         print('✅ [Firestore] Agent login status updated: $isActive');
       }
     } catch (e) {
@@ -148,10 +153,8 @@ class HushhAgentFirestoreService {
     try {
       print('🔄 [Firestore] Updating email for agent: $agentId');
 
-      final querySnapshot = await _collection
-          .where('agentId', isEqualTo: agentId)
-          .limit(1)
-          .get();
+      final querySnapshot =
+          await _collection.where('agentId', isEqualTo: agentId).limit(1).get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
@@ -159,7 +162,7 @@ class HushhAgentFirestoreService {
           'email': email,
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
-        
+
         print('✅ [Firestore] Agent email updated successfully');
       }
     } catch (e) {
@@ -172,12 +175,13 @@ class HushhAgentFirestoreService {
   Future<void> initializeCollection() async {
     try {
       print('🚀 [Firestore] Initializing Hushhagents collection...');
-      
+
       // Check if collection exists by trying to get documents
       final snapshot = await _collection.limit(1).get();
-      
+
       if (snapshot.docs.isEmpty) {
-        print('ℹ️ [Firestore] Collection is empty, it will be created when first document is added');
+        print(
+            'ℹ️ [Firestore] Collection is empty, it will be created when first document is added');
       } else {
         print('✅ [Firestore] Hushhagents collection already exists');
       }
@@ -186,4 +190,4 @@ class HushhAgentFirestoreService {
       rethrow;
     }
   }
-} 
+}

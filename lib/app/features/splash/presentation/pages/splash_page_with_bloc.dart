@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../bloc/splash_bloc.dart';
 import '../bloc/splash_event.dart';
 import '../bloc/splash_state.dart';
@@ -26,7 +27,7 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controller
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 3000),
@@ -72,8 +73,8 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
 
   /// Handle state changes for navigation and side effects
   void _handleStateChanges(BuildContext context, SplashState state) {
-    if (state is SplashInitializationCompleteState || 
-        state is SplashNoAgentState || 
+    if (state is SplashInitializationCompleteState ||
+        state is SplashNoAgentState ||
         state is SplashInitializationErrorState) {
       _initializationCompleted = true;
       _checkForRouting();
@@ -87,33 +88,88 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
     }
   }
 
-  /// Route based on authentication status using HomeBloc logic
-  void _routeBasedOnAuthentication() {
+  /// Route based on authentication status and profile completeness
+  void _routeBasedOnAuthentication() async {
     // Add slight delay for smooth UX
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
 
-      // Check Firebase Auth state directly
-      final currentUser = FirebaseAuth.instance.currentUser;
-      
-      if (currentUser != null) {
-        // User is authenticated, navigate to home
-        debugPrint('🏠 → User authenticated, navigating to Home Dashboard');
+    // Check Firebase Auth state directly
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      // User is authenticated, check if profile data exists in Hushhagents
+      debugPrint(
+          '🔍 → User authenticated, checking profile data in Hushhagents...');
+
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('Hushhagents')
+            .doc(currentUser.uid)
+            .get();
+
+        if (doc.exists) {
+          final data = doc.data()!;
+          // Check if all required fields are present and not empty
+          final requiredFields = ['name', 'email', 'brand', 'categories'];
+          bool hasCompleteProfile = true;
+
+          for (final field in requiredFields) {
+            if (data[field] == null ||
+                (data[field] is String &&
+                    data[field].toString().trim().isEmpty) ||
+                (data[field] is List && data[field].isEmpty)) {
+              hasCompleteProfile = false;
+              break;
+            }
+          }
+
+          if (hasCompleteProfile) {
+            // Profile is complete, navigate to dashboard
+            debugPrint('✅ → Profile complete, navigating to Home Dashboard');
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+              (route) => false,
+            );
+          } else {
+            // Profile exists but incomplete, navigate to profile creation flow
+            debugPrint(
+                '⚠️ → Profile incomplete, navigating to Profile Creation Flow');
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.authEmail,
+              (route) => false,
+            );
+          }
+        } else {
+          // No profile data exists, navigate to profile creation flow
+          debugPrint(
+              '❌ → No profile data found, navigating to Profile Creation Flow');
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.authEmail,
+            (route) => false,
+          );
+        }
+      } catch (e) {
+        debugPrint(
+            '❌ → Error checking profile data: $e, navigating to Profile Creation Flow');
         Navigator.pushNamedAndRemoveUntil(
           context,
-          AppRoutes.home,
-          (route) => false,
-        );
-      } else {
-        // User not authenticated, navigate to auth
-        debugPrint('🔐 → User not authenticated, navigating to Authentication');
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.mainAuth,
+          AppRoutes.authEmail,
           (route) => false,
         );
       }
-    });
+    } else {
+      // User not authenticated, navigate to auth
+      debugPrint('🔐 → User not authenticated, navigating to Authentication');
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.mainAuth,
+        (route) => false,
+      );
+    }
   }
 
   /// Build the UI based on current state
@@ -159,12 +215,12 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
   /// Check if we should show loading indicator
   bool _shouldShowLoadingIndicator(SplashState state) {
     return state is SplashInitializingState ||
-           state is SplashCheckingAuthState ||
-           state is SplashLoadingProfileState ||
-           state is SplashSetupNotificationsState ||
-           state is SplashCheckingPermissionsState ||
-           state is SplashInitializingAnalyticsState ||
-           state is SplashLoadingBusinessDataState;
+        state is SplashCheckingAuthState ||
+        state is SplashLoadingProfileState ||
+        state is SplashSetupNotificationsState ||
+        state is SplashCheckingPermissionsState ||
+        state is SplashInitializingAnalyticsState ||
+        state is SplashLoadingBusinessDataState;
   }
 
   /// Build loading indicator with progress and message
@@ -200,7 +256,7 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Status message
         Text(
           message,
@@ -216,7 +272,8 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
   }
 
   /// Build error overlay with retry option
-  Widget _buildErrorOverlay(BuildContext context, SplashInitializationErrorState state) {
+  Widget _buildErrorOverlay(
+      BuildContext context, SplashInitializationErrorState state) {
     return Container(
       color: Colors.black.withOpacity(0.8),
       child: Center(
@@ -236,7 +293,6 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
                 size: 48,
               ),
               const SizedBox(height: 16),
-              
               const Text(
                 'Initialization Failed',
                 style: TextStyle(
@@ -245,7 +301,6 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
                 ),
               ),
               const SizedBox(height: 8),
-              
               Text(
                 state.errorMessage,
                 textAlign: TextAlign.center,
@@ -255,7 +310,6 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
                 ),
               ),
               const SizedBox(height: 24),
-              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -263,8 +317,8 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
                     ElevatedButton(
                       onPressed: () {
                         context.read<SplashBloc>().add(
-                          const SplashRetryInitializationEvent(),
-                        );
+                              const SplashRetryInitializationEvent(),
+                            );
                       },
                       child: const Text('Retry'),
                     ),
@@ -290,4 +344,4 @@ class _SplashPageWithBlocState extends State<SplashPageWithBloc>
       ),
     );
   }
-} 
+}

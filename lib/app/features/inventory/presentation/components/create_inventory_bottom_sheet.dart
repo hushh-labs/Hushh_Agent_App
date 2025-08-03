@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'add_manual_entry_bottom_sheet.dart';
 import 'add_google_sheets_bottom_sheet.dart';
+import '../bloc/lookbook_bloc.dart';
 
 class CreateInventoryBottomSheet extends StatelessWidget {
   const CreateInventoryBottomSheet({super.key});
@@ -8,6 +10,9 @@ class CreateInventoryBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -28,85 +33,94 @@ class CreateInventoryBottomSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
-          const SizedBox(height: 24),
-          
-          // Title
-          const Text(
-            'Choose your Inventory Solution',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Subtitle
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Choose any of these Inventory Solution that works for you!',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-                height: 1.4,
+
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+
+                  // Title
+                  const Text(
+                    'Choose your Inventory Solution',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Subtitle
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Choose any of these Inventory Solution that works for you!',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Options Grid
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.2,
+                      children: [
+                        _buildOptionCard(
+                          context,
+                          title: 'SAP S/4HANA',
+                          icon: Icons.business,
+                          color: Colors.purple,
+                          isEnabled: false,
+                          onTap: () => _showComingSoon(context, 'SAP S/4HANA'),
+                        ),
+                        _buildOptionCard(
+                          context,
+                          title: 'Google Sheets',
+                          icon: Icons.table_chart,
+                          color: Colors.purple,
+                          isEnabled: true,
+                          onTap: () => _openGoogleSheetsModal(context),
+                        ),
+                        _buildOptionCard(
+                          context,
+                          title: 'Manual Entry',
+                          icon: Icons.edit,
+                          color: Colors.purple,
+                          isEnabled: true,
+                          onTap: () => _openManualEntryModal(context),
+                        ),
+                        _buildOptionCard(
+                          context,
+                          title: 'Zoho',
+                          icon: Icons.inventory,
+                          color: Colors.purple,
+                          isEnabled: false,
+                          onTap: () => _showComingSoon(context, 'Zoho'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+                ],
               ),
-              textAlign: TextAlign.center,
             ),
           ),
-          
-          const SizedBox(height: 32),
-          
-          // Options Grid
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-              children: [
-                _buildOptionCard(
-                  context,
-                  title: 'SAP S/4HANA',
-                  icon: Icons.business,
-                  color: Colors.blue,
-                  isEnabled: false,
-                  onTap: () => _showComingSoon(context, 'SAP S/4HANA'),
-                ),
-                _buildOptionCard(
-                  context,
-                  title: 'Google Sheets',
-                  icon: Icons.table_chart,
-                  color: Colors.green,
-                  isEnabled: true,
-                  onTap: () => _openGoogleSheetsModal(context),
-                ),
-                _buildOptionCard(
-                  context,
-                  title: 'Manual Entry',
-                  icon: Icons.edit,
-                  color: Colors.orange,
-                  isEnabled: true,
-                  onTap: () => _openManualEntryModal(context),
-                ),
-                _buildOptionCard(
-                  context,
-                  title: 'Zoho',
-                  icon: Icons.inventory,
-                  color: Colors.purple,
-                  isEnabled: false,
-                  onTap: () => _showComingSoon(context, 'Zoho'),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 32),
         ],
       ),
     );
@@ -146,9 +160,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isEnabled 
-                    ? color.withOpacity(0.1) 
-                    : Colors.grey[200],
+                color: isEnabled ? color.withOpacity(0.1) : Colors.grey[200],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -157,9 +169,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
                 color: isEnabled ? color : Colors.grey[500],
               ),
             ),
-            
             const SizedBox(height: 12),
-            
             Text(
               title,
               style: TextStyle(
@@ -169,7 +179,6 @@ class CreateInventoryBottomSheet extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            
             if (!isEnabled) ...[
               const SizedBox(height: 4),
               Container(
@@ -195,37 +204,58 @@ class CreateInventoryBottomSheet extends StatelessWidget {
   }
 
   void _openGoogleSheetsModal(BuildContext context) {
+    final lookbookBloc = context.read<LookbookBloc>();
     Navigator.pop(context); // Close current modal
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const AddGoogleSheetsBottomSheet(),
+      builder: (context) => BlocProvider.value(
+        value: lookbookBloc,
+        child: const AddGoogleSheetsBottomSheet(),
+      ),
     );
   }
 
   void _openManualEntryModal(BuildContext context) {
+    final lookbookBloc = context.read<LookbookBloc>();
     Navigator.pop(context); // Close current modal
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const AddManualEntryBottomSheet(),
+      builder: (context) => BlocProvider.value(
+        value: lookbookBloc,
+        child: const AddManualEntryBottomSheet(),
+      ),
     );
   }
 
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature integration is coming soon!'),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pinkAccent],
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          child: Text(
+            '$feature integration is coming soon!',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
-} 
+}

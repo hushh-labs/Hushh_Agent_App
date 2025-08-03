@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'auth.dart';
 import '../../domain/enum.dart';
 import '../../../../../shared/core/utils/screen_utils.dart';
+import '../../../../../shared/constants/app_routes.dart';
 import '../../di/auth_injection.dart' as auth_di;
 import '../bloc/auth_bloc.dart';
 
@@ -118,16 +119,12 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                                       // Handle button tap based on type
                                       if (socialMethods[index]['type'] ==
                                           'Phone') {
-                                        _showAuthBottomSheet(
-                                          context,
-                                          LoginMode.phone,
-                                        );
+                                        _navigateToAuth(
+                                            context, LoginMode.phone);
                                       } else if (socialMethods[index]['type'] ==
                                           'Email') {
-                                        _showAuthBottomSheet(
-                                          context,
-                                          LoginMode.email,
-                                        );
+                                        _navigateToAuth(
+                                            context, LoginMode.email);
                                       } else if (socialMethods[index]['type'] ==
                                           'Guest') {
                                         // Handle guest login
@@ -194,51 +191,33 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
     );
   }
 
-  void _showAuthBottomSheet(BuildContext context, LoginMode loginMode) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => BlocProvider(
-        create: (context) => auth_di.sl<AuthBloc>(),
-        child: AuthPage(loginMode: loginMode),
+  void _navigateToAuth(BuildContext context, LoginMode loginMode) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => auth_di.sl<AuthBloc>(),
+          child: AuthPage(loginMode: loginMode),
+        ),
       ),
     );
   }
 
   void _navigateToGuest(BuildContext context) {
-    // Guest authentication - continue without login
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Continue as Guest'),
-          content: const Text(
-            'You can use the app as a guest, but some features may be limited. You can create an account later to access all features.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Navigate to dashboard in guest mode
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Welcome, Guest! Enjoy exploring the app.'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                // TODO: Navigate to dashboard when implemented
-                // Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-              },
-              child: const Text('Continue'),
-            ),
-          ],
-        );
-      },
+    // Direct guest authentication - enter guest mode immediately
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Welcome, Guest! Tap any feature to sign up.'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Navigate directly to home page in guest mode
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.home,
+      (route) => false,
     );
   }
 }

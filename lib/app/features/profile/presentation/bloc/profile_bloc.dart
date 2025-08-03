@@ -1,16 +1,19 @@
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../../shared/utils/app_local_storage.dart';
 
 // Events
 abstract class ProfileEvent extends Equatable {
   const ProfileEvent();
-  
+
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
-class LoadProfileEvent extends ProfileEvent {
-  const LoadProfileEvent();
+class GetProfileEvent extends ProfileEvent {
+  const GetProfileEvent();
 }
 
 class UpdateProfileEvent extends ProfileEvent {
@@ -18,168 +21,281 @@ class UpdateProfileEvent extends ProfileEvent {
   final String? email;
   final String? avatarUrl;
 
-  const UpdateProfileEvent({
-    this.displayName,
-    this.email,
-    this.avatarUrl,
-  });
+  const UpdateProfileEvent({this.displayName, this.email, this.avatarUrl});
 
   @override
-  List<Object> get props => [displayName ?? '', email ?? '', avatarUrl ?? ''];
+  List<Object?> get props => [displayName, email, avatarUrl];
 }
 
-class SendFeedbackEvent extends ProfileEvent {
-  final String feedback;
+class UploadProfileImageEvent extends ProfileEvent {
+  final String imagePath;
 
-  const SendFeedbackEvent(this.feedback);
+  const UploadProfileImageEvent(this.imagePath);
 
   @override
-  List<Object> get props => [feedback];
-}
-
-class DeleteAccountEvent extends ProfileEvent {
-  const DeleteAccountEvent();
-}
-
-class SignOutEvent extends ProfileEvent {
-  const SignOutEvent();
+  List<Object?> get props => [imagePath];
 }
 
 // States
 abstract class ProfileState extends Equatable {
   const ProfileState();
-  
+
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
-class ProfileInitialState extends ProfileState {
-  const ProfileInitialState();
-}
+class ProfileInitial extends ProfileState {}
 
-class ProfileLoadingState extends ProfileState {
-  const ProfileLoadingState();
-}
+class ProfileLoading extends ProfileState {}
 
-class ProfileLoadedState extends ProfileState {
+class ProfileLoaded extends ProfileState {
   final String displayName;
   final String email;
+  final String phoneNumber;
   final String? avatarUrl;
 
-  const ProfileLoadedState({
+  const ProfileLoaded({
     required this.displayName,
     required this.email,
+    required this.phoneNumber,
     this.avatarUrl,
   });
 
   @override
-  List<Object> get props => [displayName, email, avatarUrl ?? ''];
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
-class ProfileUpdatingState extends ProfileState {
-  const ProfileUpdatingState();
-}
-
-class ProfileUpdatedState extends ProfileState {
+class ProfileError extends ProfileState {
   final String message;
 
-  const ProfileUpdatedState(this.message);
+  const ProfileError(this.message);
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [message];
 }
 
-class ProfileErrorState extends ProfileState {
-  final String message;
+class ProfileUpdating extends ProfileState {
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+  final String? avatarUrl;
 
-  const ProfileErrorState(this.message);
+  const ProfileUpdating({
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+    this.avatarUrl,
+  });
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
-class FeedbackSentState extends ProfileState {
-  const FeedbackSentState();
+class ProfileUpdated extends ProfileState {
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+  final String? avatarUrl;
+
+  const ProfileUpdated({
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+    this.avatarUrl,
+  });
+
+  @override
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
-class AccountDeletedState extends ProfileState {
-  const AccountDeletedState();
+class ImageUploading extends ProfileState {
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+  final String? avatarUrl;
+
+  const ImageUploading({
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+    this.avatarUrl,
+  });
+
+  @override
+  List<Object?> get props => [displayName, email, phoneNumber, avatarUrl];
 }
 
-class SignedOutState extends ProfileState {
-  const SignedOutState();
+class ImageUploaded extends ProfileState {
+  final String imageUrl;
+  final String displayName;
+  final String email;
+  final String phoneNumber;
+
+  const ImageUploaded({
+    required this.imageUrl,
+    required this.displayName,
+    required this.email,
+    required this.phoneNumber,
+  });
+
+  @override
+  List<Object?> get props => [imageUrl, displayName, email, phoneNumber];
 }
 
 // BLoC
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
-  ProfileBloc() : super(const ProfileInitialState()) {
-    on<LoadProfileEvent>(_onLoadProfile);
+  ProfileBloc() : super(ProfileInitial()) {
+    on<GetProfileEvent>(_onGetProfile);
     on<UpdateProfileEvent>(_onUpdateProfile);
-    on<SendFeedbackEvent>(_onSendFeedback);
-    on<DeleteAccountEvent>(_onDeleteAccount);
-    on<SignOutEvent>(_onSignOut);
+    on<UploadProfileImageEvent>(_onUploadProfileImage);
   }
 
-  void _onLoadProfile(LoadProfileEvent event, Emitter<ProfileState> emit) async {
-    emit(const ProfileLoadingState());
-    
+  Future<void> _onGetProfile(
+    GetProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    emit(ProfileLoading());
+
     try {
-      // TODO: Implement actual profile loading from repository
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Mock data for now
-      emit(const ProfileLoadedState(
-        displayName: 'Update your name',
-        email: 'Add email',
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+
+      // Check if user is in guest mode
+      if (user == null) {
+        final isGuestMode = AppLocalStorage.isGuestMode;
+        if (isGuestMode) {
+          // Emit guest profile data
+          emit(const ProfileLoaded(
+            displayName: 'Guest User',
+            email: '',
+            phoneNumber: '',
+            avatarUrl: null,
+          ));
+          return;
+        } else {
+          emit(const ProfileError('User not authenticated'));
+          return;
+        }
+      }
+
+      // Fetch profile data from Hushhagents collection
+      final doc = await FirebaseFirestore.instance
+          .collection('Hushhagents')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) {
+        // Try to get phone from Firebase Auth user
+        final phoneNumber = user.phoneNumber ?? 'Add phone number';
+        emit(ProfileLoaded(
+          displayName: 'Update your name',
+          email: 'Add email',
+          phoneNumber: phoneNumber,
+        ));
+        return;
+      }
+
+      final data = doc.data()!;
+      final displayName = data['name'] ?? 'Update your name';
+      final email = data['email'] ?? 'Add email';
+      final phoneNumber =
+          data['phone'] ?? user.phoneNumber ?? 'Add phone number';
+      final avatarUrl = data['profilePictureUrl'] as String?;
+
+      print(
+          '✅ [Profile] Loaded profile data: name=$displayName, email=$email, phone=$phoneNumber');
+
+      emit(ProfileLoaded(
+        displayName: displayName,
+        email: email,
+        phoneNumber: phoneNumber,
+        avatarUrl: avatarUrl,
       ));
     } catch (e) {
-      emit(ProfileErrorState('Failed to load profile: ${e.toString()}'));
+      print('❌ [Profile] Error loading profile: $e');
+      emit(ProfileError('Failed to load profile: ${e.toString()}'));
     }
   }
 
-  void _onUpdateProfile(UpdateProfileEvent event, Emitter<ProfileState> emit) async {
-    emit(const ProfileUpdatingState());
-    
+  Future<void> _onUpdateProfile(
+    UpdateProfileEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    // Check if user is in guest mode first
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      final isGuestMode = AppLocalStorage.isGuestMode;
+      if (isGuestMode) {
+        // Guest users cannot update profile - emit guest profile data
+        emit(const ProfileLoaded(
+          displayName: 'Guest User',
+          email: '',
+          phoneNumber: '',
+          avatarUrl: null,
+        ));
+        return;
+      } else {
+        emit(const ProfileError('User not authenticated'));
+        return;
+      }
+    }
+
+    emit(ProfileUpdating(
+      displayName: event.displayName ?? 'Update your name',
+      email: event.email ?? 'Add email',
+      phoneNumber: 'Add phone number', // Will be updated from current state
+      avatarUrl: event.avatarUrl,
+    ));
+
     try {
-      // TODO: Implement actual profile update logic
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      emit(const ProfileUpdatedState('Profile updated successfully'));
+      // Update profile data in Hushhagents collection
+      final updateData = <String, dynamic>{};
+
+      if (event.displayName != null) {
+        updateData['name'] = event.displayName;
+        updateData['fullName'] = event.displayName;
+      }
+
+      if (event.email != null) {
+        updateData['email'] = event.email;
+      }
+
+      if (event.avatarUrl != null) {
+        updateData['profilePictureUrl'] = event.avatarUrl;
+      }
+
+      updateData['updatedAt'] = FieldValue.serverTimestamp();
+
+      await FirebaseFirestore.instance
+          .collection('Hushhagents')
+          .doc(user.uid)
+          .update(updateData);
+
+      print('✅ [Profile] Updated profile data: $updateData');
+
+      emit(ProfileUpdated(
+        displayName: event.displayName ?? 'Update your name',
+        email: event.email ?? 'Add email',
+        phoneNumber: 'Add phone number', // Will be updated from current state
+        avatarUrl: event.avatarUrl,
+      ));
     } catch (e) {
-      emit(ProfileErrorState('Failed to update profile: ${e.toString()}'));
+      print('❌ [Profile] Error updating profile: $e');
+      emit(ProfileError('Failed to update profile: ${e.toString()}'));
     }
   }
 
-  void _onSendFeedback(SendFeedbackEvent event, Emitter<ProfileState> emit) async {
-    try {
-      // TODO: Implement actual feedback sending logic
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      emit(const FeedbackSentState());
-    } catch (e) {
-      emit(ProfileErrorState('Failed to send feedback: ${e.toString()}'));
-    }
+  Future<void> _onUploadProfileImage(
+    UploadProfileImageEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    // For now, just emit success without actual upload
+    // TODO: Implement actual image upload to Firebase Storage
+    emit(const ImageUploaded(
+      imageUrl: 'https://example.com/placeholder.jpg',
+      displayName: 'Update your name',
+      email: 'Add email',
+      phoneNumber: 'Add phone number',
+    ));
   }
-
-  void _onDeleteAccount(DeleteAccountEvent event, Emitter<ProfileState> emit) async {
-    try {
-      // TODO: Implement actual account deletion logic
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      emit(const AccountDeletedState());
-    } catch (e) {
-      emit(ProfileErrorState('Failed to delete account: ${e.toString()}'));
-    }
-  }
-
-  void _onSignOut(SignOutEvent event, Emitter<ProfileState> emit) async {
-    try {
-      // TODO: Implement actual sign out logic
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      emit(const SignedOutState());
-    } catch (e) {
-      emit(ProfileErrorState('Failed to sign out: ${e.toString()}'));
-    }
-  }
-} 
+}

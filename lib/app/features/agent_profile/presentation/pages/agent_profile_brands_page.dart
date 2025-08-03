@@ -38,17 +38,34 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
 
   Future<void> _fetchBrands() async {
     try {
+      print('🔍 Fetching brands from brand_collections...');
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('AgentCardMarket')
-          .orderBy('brandName')
+          .collection('brand_collections')
+          .orderBy('brand_name')
           .get();
 
-      final List<AgentBrand> brands = snapshot.docs
-          .map((doc) => AgentBrandModel.fromFirestore(
-                doc.data() as Map<String, dynamic>,
-                doc.id,
-              ))
-          .toList();
+      print('📊 Found ${snapshot.docs.length} brands');
+
+      final List<AgentBrand> brands = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        print('📝 Processing brand: ${data['brand_name']}');
+
+        // Map the brand_collections fields to AgentBrandModel fields
+        return AgentBrandModel(
+          id: doc.id,
+          brandName: data['brand_name'] ?? '',
+          domain: data['Domain'] ?? '',
+          brandLogo: data['brand_logo'] ?? '',
+          description: data['brand_name'] ??
+              '', // Using brand_name as description for now
+          isClaimed: data['custom_brand'] ?? false,
+          isVerified: data['brand_approval_status'] == 'approved' ?? false,
+          createdAt: DateTime.now(), // Default value
+          updatedAt: DateTime.now(), // Default value
+        );
+      }).toList();
+
+      print('✅ Successfully processed ${brands.length} brands');
 
       setState(() {
         _allBrands = brands;
@@ -56,7 +73,7 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error fetching brands: $e');
+      print('❌ Error fetching brands: $e');
       // Create mock brands if Firestore fails
       _createMockBrands();
     }
@@ -228,7 +245,8 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
               child: LinearProgressIndicator(
                 value: 1.0,
                 backgroundColor: Colors.grey[300],
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6725F2)),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(Color(0xFF6725F2)),
                 minHeight: 10,
               ),
             ),
@@ -357,26 +375,24 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
                         final brand = _filteredBrands[index];
                         final isSelected = _selectedBrand == brand;
                         final isUnclaimed = !brand.isClaimed;
-                        
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected 
-                                  ? const Color(0xFFE51A5E) 
+                              color: isSelected
+                                  ? const Color(0xFFE51A5E)
                                   : const Color(0xFFE5E5E5),
                               width: isSelected ? 2 : 1,
                             ),
-                            color: isSelected 
+                            color: isSelected
                                 ? const Color(0xFFE51A5E).withOpacity(0.05)
                                 : Colors.white,
                           ),
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, 
-                              vertical: 8
-                            ),
+                                horizontal: 16, vertical: 8),
                             onTap: () {
                               setState(() {
                                 _selectedBrand = brand;
@@ -385,14 +401,56 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
                             leading: CircleAvatar(
                               radius: 20,
                               backgroundColor: const Color(0xFF0051BA),
-                              child: Text(
-                                brand.brandName.substring(0, 2).toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
+                              child: brand.brandLogo != null &&
+                                      brand.brandLogo!.isNotEmpty
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        brand.brandLogo!,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          // Fallback to initials if image fails to load
+                                          return Text(
+                                            brand.brandName
+                                                .substring(0, 2)
+                                                .toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          );
+                                        },
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  : Text(
+                                      // Fallback to initials if no logo URL
+                                      brand.brandName
+                                          .substring(0, 2)
+                                          .toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                             ),
                             title: Text(
                               brand.brandName,
@@ -425,9 +483,7 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
                             trailing: isUnclaimed && !isSelected
                                 ? Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, 
-                                      vertical: 8
-                                    ),
+                                        horizontal: 16, vertical: 8),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(6),
                                       color: const Color(0xFFE51A5E),
@@ -474,10 +530,11 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
                   ),
                   child: ElevatedButton(
                     onPressed: () {
-                      final updatedData = Map<String, dynamic>.from(widget.profileData);
+                      final updatedData =
+                          Map<String, dynamic>.from(widget.profileData);
                       updatedData['brand'] = _selectedBrand!.id;
                       updatedData['brandName'] = _selectedBrand!.brandName;
-                      
+
                       Navigator.pushNamed(
                         context,
                         AppRoutes.agentCardCreated,
@@ -509,4 +566,4 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
       ),
     );
   }
-} 
+}

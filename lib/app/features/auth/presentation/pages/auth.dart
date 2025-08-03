@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 import '../bloc/auth_bloc.dart';
 import '../components/country_code_text_field.dart';
 import '../components/email_text_field.dart';
@@ -53,7 +52,7 @@ class _AuthPageState extends State<AuthPage> {
       final phoneDigits = _authBloc.phoneNumberWithoutCountryCode;
       final countryCode = _authBloc.selectedCountry?.dialCode ?? '91';
       final fullPhoneNumber = '+$countryCode$phoneDigits';
-      
+
       // Store the phone number locally for navigation
       _lastUsedPhoneNumber = fullPhoneNumber;
 
@@ -70,8 +69,8 @@ class _AuthPageState extends State<AuthPage> {
           child: OtpVerificationPage(
             args: OtpVerificationPageArgs(
               emailOrPhone: emailOrPhone,
-              type: widget.loginMode == LoginMode.email 
-                  ? OtpVerificationType.email 
+              type: widget.loginMode == LoginMode.email
+                  ? OtpVerificationType.email
                   : OtpVerificationType.phone,
             ),
           ),
@@ -89,10 +88,10 @@ class _AuthPageState extends State<AuthPage> {
           _showErrorDialog(context, state.message);
         } else if (state is OtpSentState) {
           // OTP sent successfully, navigate to verification
-          final emailOrPhone = widget.loginMode == LoginMode.email 
-              ? _emailController.text 
+          final emailOrPhone = widget.loginMode == LoginMode.email
+              ? _emailController.text
               : _lastUsedPhoneNumber;
-          
+
           // Use post frame callback to ensure navigation happens after build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _navigateToOtpVerification(context, emailOrPhone);
@@ -101,9 +100,7 @@ class _AuthPageState extends State<AuthPage> {
       },
       child: Material(
         color: Colors.white,
-        child: Container(
-          color: Colors.white,
-          height: MediaQuery.of(context).size.height * 0.7,
+        child: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -117,148 +114,155 @@ class _AuthPageState extends State<AuthPage> {
                         onTap: () {
                           Navigator.pop(context);
                         },
-                      child: Container(
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFD8DADC)),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.arrow_back_ios_new_sharp,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFD8DADC)),
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.arrow_back_ios_new_sharp,
-                            color: Colors.black,
-                          ),
+                        child: const Icon(
+                          Icons.star,
+                          color: Colors.orange,
+                          size: 20,
                         ),
                       ),
-                    ),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
+                    ],
+                  ),
+                  const SizedBox(height: 26),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Log in to your account',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -1,
                       ),
-                      child: const Icon(
-                        Icons.star,
-                        color: Colors.orange,
-                        size: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      widget.loginMode == LoginMode.email
+                          ? 'Welcome! Please enter your email address. We\'ll send you an OTP to verify.'
+                          : 'Welcome! Please enter your phone number. We\'ll send you an OTP to verify.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black.withValues(alpha: 0.7),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 26),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Log in to your account',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -1,
+                  ),
+                  const SizedBox(height: 26),
+                  if (widget.loginMode == LoginMode.email) ...[
+                    EmailTextField(
+                      controller: _emailController,
+                      onValidationChanged: (isValid) {
+                        setState(() {
+                          _isEmailValid = isValid;
+                        });
+                      },
                     ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    widget.loginMode == LoginMode.email
-                        ? 'Welcome! Please enter your email address. We\'ll send you an OTP to verify.'
-                        : 'Welcome! Please enter your phone number. We\'ll send you an OTP to verify.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 26),
-                if (widget.loginMode == LoginMode.email) ...[
-                  EmailTextField(
-                    controller: _emailController,
-                    onValidationChanged: (isValid) {
-                      setState(() {
-                        _isEmailValid = isValid;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      final isDisabled = state is SendingOtpState || !_isEmailValid;
-                      
-                      return InkWell(
-                        onTap: isDisabled ? null : _sendOtp,
-                        child: Container(
-                          width: double.infinity,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: isDisabled 
-                                ? LinearGradient(
-                                    colors: [Colors.grey.shade400, Colors.grey.shade500],
-                                  )
-                                : const LinearGradient(
-                                    colors: [Color(0XFFA342FF), Color(0XFFE54D60)],
-                                  ),
-                            borderRadius: BorderRadius.circular(7),
-                          ),
-                          child: Center(
-                            child: state is SendingOtpState
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                : Text(
-                                    "Continue",
-                                    style: TextStyle(
-                                      color: isDisabled 
-                                          ? Colors.grey.shade600 
-                                          : const Color(0xffFFFFFF),
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
+                    const SizedBox(height: 20),
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        final isDisabled =
+                            state is SendingOtpState || !_isEmailValid;
+
+                        return InkWell(
+                          onTap: isDisabled ? null : _sendOtp,
+                          child: Container(
+                            width: double.infinity,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              gradient: isDisabled
+                                  ? LinearGradient(
+                                      colors: [
+                                        Colors.grey.shade400,
+                                        Colors.grey.shade500
+                                      ],
+                                    )
+                                  : const LinearGradient(
+                                      colors: [
+                                        Color(0XFFA342FF),
+                                        Color(0XFFE54D60)
+                                      ],
                                     ),
-                                  ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ] else ...[
-                  const CountryCodeTextField(),
-                  const SizedBox(height: 8),
-                  const PhoneNumberTextField(),
-                  const SizedBox(height: 20),
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      return InkWell(
-                        onTap: state is SendingOtpState ? null : _sendOtp,
-                        child: Container(
-                          width: double.infinity,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0XFFA342FF), Color(0XFFE54D60)],
+                              borderRadius: BorderRadius.circular(7),
                             ),
-                            borderRadius: BorderRadius.circular(7),
-                          ),
-                          child: Center(
-                            child: state is SendingOtpState
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                : const Text(
-                                    "Continue",
-                                    style: TextStyle(
-                                      color: Color(0xffFFFFFF),
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
+                            child: Center(
+                              child: state is SendingOtpState
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : Text(
+                                      "Continue",
+                                      style: TextStyle(
+                                        color: isDisabled
+                                            ? Colors.grey.shade600
+                                            : const Color(0xffFFFFFF),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
-                                  ),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    const CountryCodeTextField(),
+                    const SizedBox(height: 8),
+                    const PhoneNumberTextField(),
+                    const SizedBox(height: 20),
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        return InkWell(
+                          onTap: state is SendingOtpState ? null : _sendOtp,
+                          child: Container(
+                            width: double.infinity,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0XFFA342FF), Color(0XFFE54D60)],
+                              ),
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Center(
+                              child: state is SendingOtpState
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      "Continue",
+                                      style: TextStyle(
+                                        color: Color(0xffFFFFFF),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ],
               ),
