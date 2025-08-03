@@ -84,7 +84,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
                           context,
                           title: 'SAP S/4HANA',
                           icon: Icons.business,
-                          color: Colors.blue,
+                          color: Colors.purple,
                           isEnabled: false,
                           onTap: () => _showComingSoon(context, 'SAP S/4HANA'),
                         ),
@@ -92,7 +92,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
                           context,
                           title: 'Google Sheets',
                           icon: Icons.table_chart,
-                          color: Colors.green,
+                          color: Colors.purple,
                           isEnabled: true,
                           onTap: () => _openGoogleSheetsModal(context),
                         ),
@@ -100,7 +100,7 @@ class CreateInventoryBottomSheet extends StatelessWidget {
                           context,
                           title: 'Manual Entry',
                           icon: Icons.edit,
-                          color: Colors.orange,
+                          color: Colors.purple,
                           isEnabled: true,
                           onTap: () => _openManualEntryModal(context),
                         ),
@@ -236,12 +236,25 @@ class CreateInventoryBottomSheet extends StatelessWidget {
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature integration is coming soon!'),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pinkAccent],
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          child: Text(
+            '$feature integration is coming soon!',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

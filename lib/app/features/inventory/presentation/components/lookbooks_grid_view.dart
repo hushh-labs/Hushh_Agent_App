@@ -92,14 +92,14 @@ class LookbooksGridView extends StatelessWidget {
           Icon(
             Icons.collections_bookmark,
             size: 32,
-            color: Colors.blue[600],
+            color: Colors.purple,
           ),
           const SizedBox(height: 4),
           Text(
             '${lookbook.products.length} Products',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
-              color: Colors.blue[700],
+              color: Colors.purple,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -174,16 +174,16 @@ class LookbooksGridView extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: Colors.purple[50],
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
+                    border: Border.all(color: Colors.purple[200]!),
                   ),
                   child: Text(
                     '${lookbook.products.length}',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.blue[700],
+                      color: Colors.purple[700],
                     ),
                   ),
                 ),
@@ -270,7 +270,7 @@ class LookbooksGridView extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.open_in_new, color: Colors.blue),
+              leading: const Icon(Icons.open_in_new, color: Colors.purple),
               title: const Text('Open'),
               onTap: () {
                 Navigator.pop(context);
@@ -278,7 +278,7 @@ class LookbooksGridView extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
+              leading: const Icon(Icons.delete, color: Colors.purple),
               title: const Text('Delete'),
               onTap: () {
                 Navigator.pop(context);
@@ -304,16 +304,25 @@ class LookbooksGridView extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onLookbookDelete(lookbook.id);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
             ),
-            child: const Text('Delete'),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                onLookbookDelete(lookbook.id);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
+              child: const Text('Delete'),
+            ),
           ),
         ],
       ),

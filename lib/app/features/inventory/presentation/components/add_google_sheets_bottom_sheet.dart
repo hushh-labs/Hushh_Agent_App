@@ -80,11 +80,9 @@ class _AddGoogleSheetsBottomSheetState
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F8FF),
+                      color: Colors.purple.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color:
-                              const Color(0xFFA342FF).withValues(alpha: 0.2)),
+                      border: Border.all(color: Colors.purple.withOpacity(0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +91,7 @@ class _AddGoogleSheetsBottomSheetState
                           children: [
                             Icon(
                               Icons.info_outline,
-                              color: const Color(0xFFA342FF),
+                              color: Colors.purple,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -102,43 +100,18 @@ class _AddGoogleSheetsBottomSheetState
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFFA342FF),
+                                color: Colors.purple,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Required columns: productName, productPrice, productCurrency, productSkuUniqueId',
+                          'Required columns: productName, productPrice, productCurrency, productSkuUniqueId, productDescription, productImage, stockQuantity',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Optional columns: productDescription, productImage, stockQuantity',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: Text(
-                            'Products will be stored in:\n• Your personal collection: Hushhagents/{agentId}/agentProducts/\n• Global collection: AgentProducts/',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[700],
-                              height: 1.3,
-                            ),
                           ),
                         ),
                       ],
@@ -158,7 +131,7 @@ class _AddGoogleSheetsBottomSheetState
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _selectedFile != null
-                              ? const Color(0xFFA342FF)
+                              ? Colors.purple
                               : Colors.grey[300]!,
                           width: 2,
                           style: BorderStyle.solid,
@@ -172,7 +145,7 @@ class _AddGoogleSheetsBottomSheetState
                                 : Icons.upload_file,
                             size: 48,
                             color: _selectedFile != null
-                                ? const Color(0xFFA342FF)
+                                ? Colors.purple
                                 : Colors.grey[400],
                           ),
                           const SizedBox(height: 16),
@@ -184,7 +157,7 @@ class _AddGoogleSheetsBottomSheetState
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: _selectedFile != null
-                                  ? const Color(0xFFA342FF)
+                                  ? Colors.purple
                                   : Colors.grey[600],
                             ),
                             textAlign: TextAlign.center,
@@ -207,19 +180,20 @@ class _AddGoogleSheetsBottomSheetState
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.green[50],
+                        gradient: const LinearGradient(
+                          colors: [Colors.purple, Colors.pinkAccent],
+                        ),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green[200]!),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green[600]),
+                          const Icon(Icons.check_circle, color: Colors.white),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               '${_parsedProducts.length} products parsed successfully and ready for upload',
-                              style: TextStyle(
-                                color: Colors.green[700],
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -254,9 +228,35 @@ class _AddGoogleSheetsBottomSheetState
                 ),
               ],
             ),
-            child: SizedBox(
+            child: Container(
               width: double.infinity,
               height: 48,
+              decoration: BoxDecoration(
+                gradient: (_selectedFile != null &&
+                        _parsedProducts.isNotEmpty &&
+                        !_isUploading)
+                    ? const LinearGradient(
+                        colors: [Colors.purple, Colors.pinkAccent],
+                      )
+                    : null,
+                color: (_selectedFile == null ||
+                        _parsedProducts.isEmpty ||
+                        _isUploading)
+                    ? Colors.grey[300]
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: (_selectedFile != null &&
+                        _parsedProducts.isNotEmpty &&
+                        !_isUploading)
+                    ? [
+                        BoxShadow(
+                          color: Colors.purple.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
               child: ElevatedButton(
                 onPressed: (_selectedFile != null &&
                         _parsedProducts.isNotEmpty &&
@@ -264,8 +264,10 @@ class _AddGoogleSheetsBottomSheetState
                     ? _uploadProducts
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFA342FF),
-                  disabledBackgroundColor: Colors.grey[300],
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.transparent,
+                  disabledForegroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -608,8 +610,24 @@ class _AddGoogleSheetsBottomSheetState
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
+            content: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple, Colors.pinkAccent],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 2),
           ),
@@ -652,18 +670,33 @@ class _AddGoogleSheetsBottomSheetState
         // Show initial success message - detailed results will be shown via BLoC listener
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 2,
+            content: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple, Colors.pinkAccent],
                 ),
-                const SizedBox(width: 12),
-                Text(
-                    'Uploading ${_parsedProducts.length} products to your collection...'),
-              ],
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              child: Row(
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    strokeWidth: 2,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Uploading ${_parsedProducts.length} products to your collection...',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            backgroundColor: const Color(0xFFA342FF),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 2),
           ),
@@ -684,8 +717,24 @@ class _AddGoogleSheetsBottomSheetState
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
+          content: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           behavior: SnackBarBehavior.floating,
         ),
       );

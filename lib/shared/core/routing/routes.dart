@@ -15,7 +15,8 @@ import '../../../app/features/inventory/presentation/bloc/lookbook_bloc.dart';
 import '../../../app/features/inventory/presentation/pages/agent_lookbook_page.dart';
 import '../../../app/features/inventory/domain/entities/product.dart';
 import '../../../app/features/inventory/presentation/components/product_tile.dart';
-import '../../../app/features/inventory/domain/entities/product.dart';
+import '../../../app/features/inventory/data/datasources/lookbook_firestore_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_email_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_name_page.dart';
 import '../../../app/features/agent_profile/presentation/pages/agent_profile_categories_page.dart';
@@ -222,9 +223,25 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
 
     if (_selectedProductIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one product for the lookbook'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: const Text(
+              'Please select at least one product for the lookbook',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -474,9 +491,25 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                    'Lookbook "${state.lookbook.lookbookName}" created successfully!'),
-                backgroundColor: Colors.green,
+                content: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.purple, Colors.pinkAccent],
+                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  child: Text(
+                    'Lookbook "${state.lookbook.lookbookName}" created successfully!',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -549,7 +582,7 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: Color(0xFF2196F3), width: 2),
+                          const BorderSide(color: Colors.purple, width: 2),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -595,7 +628,7 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: Color(0xFF2196F3), width: 2),
+                          const BorderSide(color: Colors.purple, width: 2),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -626,24 +659,23 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F8FF),
+                    color: Colors.purple.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: const Color(0xFF2196F3).withOpacity(0.2)),
+                    border: Border.all(color: Colors.purple.withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.info_outline,
-                        color: const Color(0xFF2196F3),
+                        color: Colors.purple,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'You can add products to your lookbook after creation.',
-                          style: TextStyle(
-                            color: const Color(0xFF2196F3),
+                          style: const TextStyle(
+                            color: Colors.purple,
                             fontSize: 14,
                           ),
                         ),
@@ -654,12 +686,18 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
                 const SizedBox(height: 40),
 
                 // Create Button
-                SizedBox(
+                Container(
                   width: double.infinity,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.purple, Colors.pinkAccent],
+                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _createLookbook,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
+                      backgroundColor: Colors.transparent,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -758,12 +796,21 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       floatingActionButton: widget.lookbookId != null
-          ? FloatingActionButton.extended(
-              onPressed: _showAddProductsToLookbookDialog,
-              backgroundColor: const Color(0xFF8213A5),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Products'),
+          ? Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple, Colors.pinkAccent],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: _showAddProductsToLookbookDialog,
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Products'),
+              ),
             )
           : null,
       appBar: AppBar(
@@ -774,7 +821,10 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // Pop with a refresh signal
+            Navigator.pop(context, 'refresh');
+          },
         ),
         actions: [
           IconButton(
@@ -826,7 +876,7 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
                   hintStyle: const TextStyle(color: Color(0xFF757575)),
                   prefixIcon: const Icon(
                     Icons.search,
-                    color: Color(0xFF2196F3),
+                    color: Colors.purple,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -835,7 +885,7 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        const BorderSide(color: Color(0xFF2196F3), width: 2),
+                        const BorderSide(color: Colors.purple, width: 2),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -856,9 +906,25 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
                     state.operationMessage != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(state.operationMessage!),
-                      backgroundColor:
-                          state.isSuccess ? Colors.green : Colors.red,
+                      content: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.purple, Colors.pinkAccent],
+                          ),
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 12),
+                        child: Text(
+                          state.operationMessage!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
                       duration: Duration(
                         seconds: state.isSuccess ? 2 : 3,
                       ),
@@ -1020,7 +1086,7 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
           children: [
             Icon(
               icon,
-              color: const Color(0xFF2196F3),
+              color: Colors.purple,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -1129,22 +1195,6 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () {
-              // Navigate back to lookbook page to add products
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.add),
-            label: Text(
-                widget.lookbookId != null ? 'Add Products' : 'Create Products'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -1215,14 +1265,51 @@ class _AddProductsToLookbookDialogState
     extends State<_AddProductsToLookbookDialog> {
   List<String> _selectedProductIds = [];
   bool _isAddingProducts = false;
+  List<Product> _allProducts = [];
+  bool _isLoadingProducts = true;
 
   @override
   void initState() {
     super.initState();
-    // Fetch all products when dialog opens (use WidgetsBinding to access context safely)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LookbookBloc>().add(const FetchProductsEvent());
-    });
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+
+      // Get current lookbook products to filter them out
+      final lookbookBloc = context.read<LookbookBloc>();
+      final currentState = lookbookBloc.state;
+      List<String> currentLookbookProductIds = [];
+
+      if (currentState is ProductsLoaded) {
+        currentLookbookProductIds =
+            currentState.products.map((p) => p.productId).toList();
+      }
+
+      // Fetch all agent products directly without affecting BLoC state
+      final allProducts = await LookbookFirestoreService().getProducts(
+        hushhId: currentUser.uid,
+        lookbookId: null, // Get all products
+      );
+
+      // Filter out products already in the current lookbook
+      final availableProducts = allProducts
+          .where((product) =>
+              !currentLookbookProductIds.contains(product.productId))
+          .toList();
+
+      setState(() {
+        _allProducts = availableProducts;
+        _isLoadingProducts = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingProducts = false;
+      });
+    }
   }
 
   Future<void> _addSelectedProducts() async {
@@ -1260,9 +1347,25 @@ class _AddProductsToLookbookDialogState
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text('${_selectedProductIds.length} products added to lookbook'),
-          backgroundColor: Colors.green,
+          content: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: Text(
+              '${_selectedProductIds.length} products added to lookbook',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          behavior: SnackBarBehavior.floating,
         ),
       );
 
@@ -1271,8 +1374,25 @@ class _AddProductsToLookbookDialogState
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error adding products: $e'),
-          backgroundColor: Colors.red,
+          content: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: Text(
+              'Error adding products: $e',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -1317,279 +1437,210 @@ class _AddProductsToLookbookDialogState
 
             // Products List
             Expanded(
-              child: BlocBuilder<LookbookBloc, LookbookState>(
-                builder: (context, state) {
-                  if (state is LookbookLoading) {
-                    return const Center(
+              child: _isLoadingProducts
+                  ? const Center(
                       child: CircularProgressIndicator(
                         valueColor:
                             AlwaysStoppedAnimation<Color>(Color(0xFF8213A5)),
                       ),
-                    );
-                  }
-
-                  if (state is ProductsLoaded) {
-                    // Filter out products that are already in the lookbook
-                    final availableProducts = state.products.where((product) {
-                      return !product.lookbookIds.contains(widget.lookbookId);
-                    }).toList();
-
-                    if (availableProducts.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle,
-                                size: 64, color: Colors.green[600]),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'All products are already\nin this lookbook!',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      children: [
-                        // Selection count
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF8213A5).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFF8213A5).withOpacity(0.2),
-                            ),
-                          ),
-                          child: Row(
+                    )
+                  : _allProducts.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  '${_selectedProductIds.length} of ${availableProducts.length} products selected',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    if (_selectedProductIds.length ==
-                                        availableProducts.length) {
-                                      _selectedProductIds.clear();
-                                    } else {
-                                      _selectedProductIds = availableProducts
-                                          .map((p) => p.productId)
-                                          .toList();
-                                    }
-                                  });
-                                },
-                                child: Text(
-                                  _selectedProductIds.length ==
-                                          availableProducts.length
-                                      ? 'Deselect All'
-                                      : 'Select All',
-                                  style: const TextStyle(
-                                    color: Color(0xFF8213A5),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              Icon(Icons.check_circle,
+                                  size: 64, color: Colors.green[600]),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'All products are already\nin this lookbook!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Products list
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: availableProducts.length,
-                            itemBuilder: (context, index) {
-                              final product = availableProducts[index];
-                              final isSelected = _selectedProductIds
-                                  .contains(product.productId);
-
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFF8213A5)
-                                        : Colors.grey[300]!,
-                                    width: isSelected ? 2 : 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: isSelected
-                                      ? const Color(0xFF8213A5)
-                                          .withOpacity(0.05)
-                                      : Colors.white,
+                        )
+                      : Column(
+                          children: [
+                            // Selection count
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8213A5).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFF8213A5).withOpacity(0.2),
                                 ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${_selectedProductIds.length} of ${_allProducts.length} products selected',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                  leading: ClipRRect(
-                                    borderRadius: BorderRadius.circular(6),
-                                    child: Image.network(
-                                      product.productImage?.isNotEmpty == true
-                                          ? product.productImage!
-                                          : '',
-                                      width: 45,
-                                      height: 45,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Container(
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        if (_selectedProductIds.length ==
+                                            _allProducts.length) {
+                                          _selectedProductIds.clear();
+                                        } else {
+                                          _selectedProductIds = _allProducts
+                                              .map((p) => p.productId)
+                                              .toList();
+                                        }
+                                      });
+                                    },
+                                    child: Text(
+                                      _selectedProductIds.length ==
+                                              _allProducts.length
+                                          ? 'Deselect All'
+                                          : 'Select All',
+                                      style: const TextStyle(
+                                        color: Color(0xFF8213A5),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Products list
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: _allProducts.length,
+                                itemBuilder: (context, index) {
+                                  final product = _allProducts[index];
+                                  final isSelected = _selectedProductIds
+                                      .contains(product.productId);
+
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? const Color(0xFF8213A5)
+                                            : Colors.grey[300]!,
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: isSelected
+                                          ? const Color(0xFF8213A5)
+                                              .withOpacity(0.05)
+                                          : Colors.white,
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      leading: ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Image.network(
+                                          product.productImage?.isNotEmpty ==
+                                                  true
+                                              ? product.productImage!
+                                              : '',
                                           width: 45,
                                           height: 45,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[200],
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                          ),
-                                          child: const Icon(Icons.image,
-                                              color: Colors.grey, size: 20),
-                                        );
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return Container(
+                                              width: 45,
+                                              height: 45,
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey[200],
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: const Icon(Icons.image,
+                                                  color: Colors.grey, size: 20),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      title: Text(
+                                        product.productName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      subtitle: Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                '\$${product.productPrice.toStringAsFixed(2)}',
+                                                style: const TextStyle(
+                                                  color: Color(0xFF8213A5),
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Flexible(
+                                              child: Text(
+                                                'Stock: ${product.stockQuantity}',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      trailing: Icon(
+                                        isSelected
+                                            ? Icons.check_circle
+                                            : Icons.circle_outlined,
+                                        color: isSelected
+                                            ? const Color(0xFF8213A5)
+                                            : Colors.grey[400],
+                                        size: 24,
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          if (isSelected) {
+                                            _selectedProductIds
+                                                .remove(product.productId);
+                                          } else {
+                                            _selectedProductIds
+                                                .add(product.productId);
+                                          }
+                                        });
                                       },
                                     ),
-                                  ),
-                                  title: Text(
-                                    product.productName,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Row(
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            '\$${product.productPrice.toStringAsFixed(2)}',
-                                            style: const TextStyle(
-                                              color: Color(0xFF8213A5),
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 13,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Flexible(
-                                          child: Text(
-                                            'Stock: ${product.stockQuantity}',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 12,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  trailing: Icon(
-                                    isSelected
-                                        ? Icons.check_circle
-                                        : Icons.circle_outlined,
-                                    color: isSelected
-                                        ? const Color(0xFF8213A5)
-                                        : Colors.grey[400],
-                                    size: 24,
-                                  ),
-                                  onTap: () {
-                                    setState(() {
-                                      if (isSelected) {
-                                        _selectedProductIds
-                                            .remove(product.productId);
-                                      } else {
-                                        _selectedProductIds
-                                            .add(product.productId);
-                                      }
-                                    });
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  if (state is LookbookError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline,
-                                size: 64, color: Colors.red[400]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Error loading products',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                  );
+                                },
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              state.message,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Fetch all products (not filtered by lookbook)
-                                context
-                                    .read<LookbookBloc>()
-                                    .add(const FetchProductsEvent());
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF8213A5),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text('Retry'),
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  }
-
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Color(0xFF8213A5)),
-                    ),
-                  );
-                },
-              ),
             ),
 
             const SizedBox(height: 20),
@@ -1598,10 +1649,13 @@ class _AddProductsToLookbookDialogState
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colors.purple, Colors.pinkAccent],
+                ),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF8213A5).withOpacity(0.3),
+                    color: Colors.purple.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -1610,7 +1664,7 @@ class _AddProductsToLookbookDialogState
               child: ElevatedButton(
                 onPressed: _isAddingProducts ? null : _addSelectedProducts,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8213A5),
+                  backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey[300],
                   padding: const EdgeInsets.symmetric(vertical: 16),

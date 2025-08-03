@@ -84,8 +84,26 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
                         state.message.contains('delete')) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(state.message),
-                          backgroundColor: Colors.red,
+                          content: Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.purple, Colors.pinkAccent],
+                              ),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(8)),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 12),
+                            child: Text(
+                              state.message,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
@@ -120,10 +138,7 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
         gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [
-            Color(0xFFF6223C),
-            Color(0xFFA342FF),
-          ],
+          colors: [Colors.purple, Colors.pinkAccent],
         ),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
@@ -218,7 +233,7 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
             name: "Create Lookbook",
             onTap: _navigateToCreateLookbook,
             gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              colors: [Colors.purple, Colors.pinkAccent],
             ),
           ),
         ),
@@ -229,7 +244,7 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
             name: "View All Products",
             onTap: _navigateToAllProducts,
             gradient: const LinearGradient(
-              colors: [Color(0xFF10B981), Color(0xFF059669)],
+              colors: [Colors.purple, Colors.pinkAccent],
             ),
           ),
         ),
@@ -296,7 +311,7 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red[300],
+              color: Colors.purple[300],
             ),
             const SizedBox(height: 16),
             Text(
@@ -427,16 +442,40 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
     }
   }
 
-  void _navigateToAllProducts() {
-    Navigator.pushNamed(context, AppRoutes.agentProducts);
+  void _navigateToAllProducts() async {
+    print('🧭 Navigating to all products page...');
+
+    // Navigate to products page and wait for result
+    final result = await Navigator.pushNamed(context, AppRoutes.agentProducts);
+
+    print('🔙 Returned from all products page. Result: $result');
+
+    // When user returns, refresh the lookbooks list if needed
+    if (mounted && result == 'refresh') {
+      print('🔄 Refreshing lookbooks after returning from products page');
+      _lookbookBloc.add(FetchLookbooksEvent());
+      print('✅ Refresh event dispatched to BLoC');
+    }
   }
 
-  void _onLookbookTap(String lookbookId) {
-    Navigator.pushNamed(
+  void _onLookbookTap(String lookbookId) async {
+    print('🧭 Navigating to lookbook products page for lookbook: $lookbookId');
+
+    // Navigate to products page and wait for result
+    final result = await Navigator.pushNamed(
       context,
       AppRoutes.agentProducts,
       arguments: {'lookbookId': lookbookId},
     );
+
+    print('🔙 Returned from lookbook products page. Result: $result');
+
+    // When user returns, refresh the lookbooks list if needed
+    if (mounted && result == 'refresh') {
+      print('🔄 Refreshing lookbooks after returning from lookbook products');
+      _lookbookBloc.add(FetchLookbooksEvent());
+      print('✅ Refresh event dispatched to BLoC');
+    }
   }
 
   void _onLookbookDelete(String lookbookId) {
@@ -444,11 +483,27 @@ class _AgentLookBookPageState extends State<AgentLookBookPage>
 
     // Show immediate feedback
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Deleting lookbook...'),
-        backgroundColor: Colors.orange,
+      SnackBar(
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pinkAccent],
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          child: const Text(
+            'Deleting lookbook...',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

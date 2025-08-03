@@ -155,30 +155,40 @@ class _ProductTileState extends State<ProductTile> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                if (widget.onDeleteProduct != null) {
-                  setState(() {
-                    _isDeleteInProgress = true;
-                  });
-
-                  widget.onDeleteProduct!(widget.product.productId);
-
-                  // Reset after a delay
-                  Future.delayed(const Duration(seconds: 3), () {
-                    if (mounted) {
-                      setState(() {
-                        _isDeleteInProgress = false;
-                      });
-                    }
-                  });
-                }
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple, Colors.pinkAccent],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
               ),
-              child: const Text('Delete'),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  if (widget.onDeleteProduct != null) {
+                    setState(() {
+                      _isDeleteInProgress = true;
+                    });
+
+                    widget.onDeleteProduct!(widget.product.productId);
+
+                    // Reset after a delay
+                    Future.delayed(const Duration(seconds: 3), () {
+                      if (mounted) {
+                        setState(() {
+                          _isDeleteInProgress = false;
+                        });
+                      }
+                    });
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                ),
+                child: const Text('Delete'),
+              ),
             ),
           ],
         );

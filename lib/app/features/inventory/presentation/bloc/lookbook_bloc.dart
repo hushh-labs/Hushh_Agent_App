@@ -296,11 +296,13 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     Emitter<LookbookState> emit,
   ) async {
     try {
+      print('🔄 [BLoC] Fetching lookbooks...');
       emit(LookbookLoading());
 
       // Get current user's agentId from Firebase Auth
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
+        print('❌ [BLoC] User not authenticated');
         emit(LookbookError('User not authenticated'));
         return;
       }
@@ -309,8 +311,10 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
       final lookbooks = await _firestoreService.getLookbooks(agentId);
       _allLookbooks = lookbooks;
 
+      print('✅ [BLoC] Successfully fetched ${lookbooks.length} lookbooks');
       emit(LookbookLoaded(lookbooks));
     } catch (e) {
+      print('❌ [BLoC] Failed to fetch lookbooks: $e');
       emit(LookbookError('Failed to fetch lookbooks: ${e.toString()}'));
     }
   }
@@ -351,6 +355,7 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
     Emitter<LookbookState> emit,
   ) async {
     try {
+      print('🗑️ [BLoC] Starting deletion of lookbook: ${event.lookbookId}');
       emit(LookbookLoading());
 
       await _firestoreService.deleteLookbook(event.lookbookId);
@@ -358,12 +363,34 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
       // Update local list
       _allLookbooks.removeWhere((lookbook) => lookbook.id == event.lookbookId);
 
-      emit(LookbookLoaded(_allLookbooks));
-
-      // You could add success feedback here if needed
       print(
           '✅ [BLoC] Lookbook deleted successfully, ${_allLookbooks.length} lookbooks remaining');
+      emit(LookbookLoaded(_allLookbooks));
     } catch (e) {
+      print('❌ [BLoC] Failed to delete lookbook: $e');
+
+      // If the error suggests the lookbook was already deleted, refresh the list instead of showing error
+      if (e.toString().contains('not found') ||
+          e.toString().contains('not-found')) {
+        print(
+            '🔄 [BLoC] Lookbook seems to be already deleted, refreshing list...');
+        // Refresh the lookbooks list to get current state
+        try {
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            final lookbooks =
+                await _firestoreService.getLookbooks(currentUser.uid);
+            _allLookbooks = lookbooks;
+            emit(LookbookLoaded(lookbooks));
+            print('✅ [BLoC] Refreshed lookbooks after deletion conflict');
+            return;
+          }
+        } catch (refreshError) {
+          print(
+              '❌ [BLoC] Failed to refresh after deletion conflict: $refreshError');
+        }
+      }
+
       emit(LookbookError('Failed to delete lookbook: ${e.toString()}'));
     }
   }
@@ -758,6 +785,11 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
           lookbookId: event.lookbookId,
         );
         _allProducts = products;
+
+        // Also refresh lookbooks to update the count
+        final lookbooks = await _firestoreService.getLookbooks(currentUser.uid);
+        _allLookbooks = lookbooks;
+
         emit(ProductsLoaded(products));
       }
     } catch (e) {
@@ -786,6 +818,11 @@ class LookbookBloc extends Bloc<LookbookEvent, LookbookState> {
           lookbookId: event.lookbookId,
         );
         _allProducts = products;
+
+        // Also refresh lookbooks to update the count
+        final lookbooks = await _firestoreService.getLookbooks(currentUser.uid);
+        _allLookbooks = lookbooks;
+
         emit(ProductsLoaded(products));
       }
     } catch (e) {

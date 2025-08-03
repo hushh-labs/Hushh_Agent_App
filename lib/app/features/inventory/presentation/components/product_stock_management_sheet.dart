@@ -76,7 +76,27 @@ class _ProductStockManagementSheetState
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating stock: $error')),
+        SnackBar(
+          content: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            child: Text(
+              'Error updating stock: $error',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     });
   }
@@ -110,11 +130,32 @@ class _ProductStockManagementSheetState
                   _isLoading = false;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error deleting product: $error')),
+                  SnackBar(
+                    content: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.purple, Colors.pinkAccent],
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                      child: Text(
+                        'Error deleting product: $error',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
               });
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: Colors.purple),
             child: const Text('Delete'),
           ),
         ],
@@ -152,9 +193,27 @@ class _ProductStockManagementSheetState
                 });
                 Navigator.pop(context); // Close bottom sheet
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Product removed from lookbook successfully'),
-                    backgroundColor: Colors.green,
+                  SnackBar(
+                    content: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.purple, Colors.pinkAccent],
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                      child: const Text(
+                        'Product removed from lookbook successfully',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               }).catchError((error) {
@@ -162,11 +221,32 @@ class _ProductStockManagementSheetState
                   _isLoading = false;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error removing product: $error')),
+                  SnackBar(
+                    content: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.purple, Colors.pinkAccent],
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                      child: Text(
+                        'Error removing product: $error',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
               });
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            style: TextButton.styleFrom(foregroundColor: Colors.purple),
             child: const Text('Remove'),
           ),
         ],
@@ -177,7 +257,6 @@ class _ProductStockManagementSheetState
   @override
   Widget build(BuildContext context) {
     // App theme colors
-    const Color primaryColor = Color(0xFF2196F3); // Blue
     const Color textPrimaryColor = Color(0xFF000000); // Black
     const Color surfaceColor = Color(0xFFFFFFFF); // White
     const Color textSecondaryColor = Color(0xFF757575); // Gray
@@ -270,8 +349,8 @@ class _ProductStockManagementSheetState
                       const SizedBox(height: 4),
                       Text(
                         '${widget.product.productCurrency}${widget.product.productPrice.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: primaryColor,
+                        style: const TextStyle(
+                          color: Colors.purple,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -355,8 +434,8 @@ class _ProductStockManagementSheetState
                     border: OutlineInputBorder(
                       borderSide: BorderSide(color: textSecondaryColor),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: primaryColor, width: 2),
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.purple, width: 2),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: textSecondaryColor),
@@ -373,17 +452,24 @@ class _ProductStockManagementSheetState
           const SizedBox(height: 16),
 
           // Save Changes Button
-          SizedBox(
+          Container(
             width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
             child: ElevatedButton.icon(
               onPressed:
                   _isLoading ? null : () => _updateStock(_localStockQuantity),
               icon: const Icon(Icons.save),
               label: const Text('Save Changes'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
+                backgroundColor: Colors.transparent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 0,
               ),
             ),
           ),
@@ -392,16 +478,23 @@ class _ProductStockManagementSheetState
           // Remove from Lookbook Button (only shown in lookbook context)
           if (widget.lookbookId != null &&
               widget.onRemoveFromLookbook != null) ...[
-            SizedBox(
+            Container(
               width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple, Colors.pinkAccent],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
               child: ElevatedButton.icon(
                 onPressed: _isLoading ? null : _removeFromLookbook,
                 icon: const Icon(Icons.remove_circle_outline),
                 label: const Text('Remove from Lookbook'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
+                  backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
                 ),
               ),
             ),
@@ -409,16 +502,23 @@ class _ProductStockManagementSheetState
           ],
 
           // Delete Button
-          SizedBox(
+          Container(
             width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.purple, Colors.pinkAccent],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : _deleteProduct,
               icon: const Icon(Icons.delete),
               label: const Text('Delete Product'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.transparent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 0,
               ),
             ),
           ),
