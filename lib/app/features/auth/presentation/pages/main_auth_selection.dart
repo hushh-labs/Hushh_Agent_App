@@ -123,8 +123,9 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                                             context, LoginMode.phone);
                                       } else if (socialMethods[index]['type'] ==
                                           'Email') {
-                                        _navigateToAuth(
-                                            context, LoginMode.email);
+                                        // Show coming soon message for email
+                                        _showComingSoonMessage(
+                                            context, 'Continue with Email');
                                       } else if (socialMethods[index]['type'] ==
                                           'Guest') {
                                         // Handle guest login
@@ -231,6 +232,29 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
       context,
       AppRoutes.home,
       (route) => false,
+    );
+  }
+
+  void _showComingSoonMessage(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pink],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: Text(
+            '$feature is coming soon!',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 }

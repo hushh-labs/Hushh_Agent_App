@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_routes.dart';
+import '../../main.dart'; // Import for global navigatorKey
 
 /// Direct authentication service for logout and account management
 /// This service doesn't require BLoC providers and can be called directly
@@ -71,7 +72,7 @@ class AuthService {
   }
 
   /// Direct delete account functionality
-  /// This removes all user data from Firestore and signs the user out
+  /// This removes all user data from Firestore and deletes the Firebase Auth account
   static Future<bool> deleteAccount(BuildContext context) async {
     try {
       final currentUser = _auth.currentUser;
@@ -97,35 +98,122 @@ class AuthService {
 
       final userId = currentUser.uid;
 
+      // Check if user has both agent and user accounts
+      final hasUserAccount = await _hasUserAccount(userId);
+
+      if (hasUserAccount) {
+        print(
+            '👥 User has both agent and user accounts - keeping Firebase Auth');
+        print('🗑️ Deleting only agent data from Firestore...');
+      } else {
+        print('🔐 User has only agent account - will delete Firebase Auth');
+      }
+
       // Delete user data from Firestore collections
       await _deleteUserData(userId);
 
-      // Sign out the user (this avoids the requires-recent-login error)
-      await _auth.signOut();
+      // Try to delete the Firebase Auth account ONLY if user doesn't have user account
+      if (!hasUserAccount) {
+        try {
+          await currentUser.delete();
+          print('✅ Firebase Auth account deleted successfully');
+        } catch (authError) {
+          print('⚠️ Firebase Auth deletion error: $authError');
 
-      print('✅ Account data deleted and user signed out successfully');
+          // If it's a requires-recent-login error, just sign out as fallback
+          if (authError.toString().contains('requires-recent-login')) {
+            print(
+                'ℹ️ Account requires recent authentication, signing out instead');
+            await _auth.signOut();
+            print('✅ User signed out successfully (data still deleted)');
+          } else {
+            // For other auth errors, still sign out but log the error
+            print('ℹ️ Unexpected auth error, signing out as fallback');
+            await _auth.signOut();
+            print('✅ User signed out successfully (data still deleted)');
+          }
+        }
+      } else {
+        // User has both accounts - just sign out, don't delete Firebase Auth
+        print('🔄 Signing out user (keeping Firebase Auth for user account)');
+        await _auth.signOut();
+        print(
+            '✅ User signed out successfully (agent data deleted, user account preserved)');
+      }
 
       // Close loading dialog
       if (context.mounted) {
         Navigator.pop(context);
+        print('✅ Loading dialog closed');
       }
+
+      // Small delay to ensure dialog is fully closed
+      await Future.delayed(const Duration(milliseconds: 300));
 
       // Navigate to auth page and clear all previous routes
       if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.mainAuth,
-          (route) => false,
-        );
+        print('🧭 Navigating to main auth page...');
+        try {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.mainAuth,
+            (route) => false,
+          );
+          print('✅ Successfully navigated to main auth page');
+        } catch (navError) {
+          print('❌ Navigation error: $navError');
+          // Fallback: try to navigate without clearing all routes
+          Navigator.pushReplacementNamed(context, AppRoutes.mainAuth);
+        }
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account data deleted successfully'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        // Show success message after navigation
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (context.mounted) {
+            final successMessage = hasUserAccount
+                ? 'Agent account deleted successfully (user account preserved)'
+                : 'Account deleted successfully';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(successMessage),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        });
+      } else {
+        print('⚠️ Context not mounted for navigation');
+        // Use global navigator as fallback
+        print('🧭 Using global navigator for navigation...');
+        try {
+          final globalContext = navigatorKey.currentContext;
+          if (globalContext != null) {
+            Navigator.pushNamedAndRemoveUntil(
+              globalContext,
+              AppRoutes.mainAuth,
+              (route) => false,
+            );
+            print('✅ Successfully navigated using global navigator');
+
+            // Show success message using global context
+            Future.delayed(const Duration(milliseconds: 500), () {
+              final successMessage = hasUserAccount
+                  ? 'Agent account deleted successfully (user account preserved)'
+                  : 'Account deleted successfully';
+              ScaffoldMessenger.of(globalContext).showSnackBar(
+                SnackBar(
+                  content: Text(successMessage),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            });
+          } else {
+            print('❌ Global navigator context also not available');
+          }
+        } catch (globalNavError) {
+          print('❌ Global navigation error: $globalNavError');
+        }
       }
 
       return true;
@@ -149,9 +237,9 @@ class AuthService {
       return false;
     }
   }
-  
- 
-  static Future<bool> deleteAccountWithReauth(BuildContext context, {
+
+  static Future<bool> deleteAccountWithReauth(
+    BuildContext context, {
     required String email,
     required String password,
   }) async {
@@ -187,34 +275,105 @@ class AuthService {
       await currentUser.reauthenticateWithCredential(credential);
       print('✅ User re-authenticated successfully');
 
+      // Check if user has both agent and user accounts
+      final hasUserAccount = await _hasUserAccount(userId);
+
+      if (hasUserAccount) {
+        print(
+            '👥 User has both agent and user accounts - keeping Firebase Auth');
+        print('🗑️ Deleting only agent data from Firestore...');
+      } else {
+        print('🔐 User has only agent account - will delete Firebase Auth');
+      }
+
       // Delete user data from Firestore collections
       await _deleteUserData(userId);
 
-      // Now delete the Firebase Auth account (this should work after re-auth)
-      await currentUser.delete();
-      print('✅ Firebase Auth account deleted successfully');
+      // Delete the Firebase Auth account ONLY if user doesn't have user account
+      if (!hasUserAccount) {
+        await currentUser.delete();
+        print('✅ Firebase Auth account deleted successfully');
+      } else {
+        // User has both accounts - just sign out, don't delete Firebase Auth
+        print('🔄 Signing out user (keeping Firebase Auth for user account)');
+        await _auth.signOut();
+        print(
+            '✅ User signed out successfully (agent data deleted, user account preserved)');
+      }
 
       // Close loading dialog
       if (context.mounted) {
         Navigator.pop(context);
+        print('✅ Loading dialog closed');
       }
+
+      // Small delay to ensure dialog is fully closed
+      await Future.delayed(const Duration(milliseconds: 300));
 
       // Navigate to auth page and clear all previous routes
       if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.mainAuth,
-          (route) => false,
-        );
+        print('🧭 Navigating to main auth page...');
+        try {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.mainAuth,
+            (route) => false,
+          );
+          print('✅ Successfully navigated to main auth page');
+        } catch (navError) {
+          print('❌ Navigation error: $navError');
+          // Fallback: try to navigate without clearing all routes
+          Navigator.pushReplacementNamed(context, AppRoutes.mainAuth);
+        }
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account completely deleted successfully'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        // Show success message after navigation
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (context.mounted) {
+            final successMessage = hasUserAccount
+                ? 'Agent account deleted successfully (user account preserved)'
+                : 'Account completely deleted successfully';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(successMessage),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        });
+      } else {
+        print('⚠️ Context not mounted for navigation');
+        // Use global navigator as fallback
+        print('🧭 Using global navigator for navigation...');
+        try {
+          final globalContext = navigatorKey.currentContext;
+          if (globalContext != null) {
+            Navigator.pushNamedAndRemoveUntil(
+              globalContext,
+              AppRoutes.mainAuth,
+              (route) => false,
+            );
+            print('✅ Successfully navigated using global navigator');
+
+            // Show success message using global context
+            Future.delayed(const Duration(milliseconds: 500), () {
+              final successMessage = hasUserAccount
+                  ? 'Agent account deleted successfully (user account preserved)'
+                  : 'Account completely deleted successfully';
+              ScaffoldMessenger.of(globalContext).showSnackBar(
+                SnackBar(
+                  content: Text(successMessage),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            });
+          } else {
+            print('❌ Global navigator context also not available');
+          }
+        } catch (globalNavError) {
+          print('❌ Global navigation error: $globalNavError');
+        }
       }
 
       return true;
@@ -239,6 +398,19 @@ class AuthService {
     }
   }
 
+  /// Check if user has both agent and user accounts
+  static Future<bool> _hasUserAccount(String userId) async {
+    try {
+      print('🔍 Checking if user has regular user account: $userId');
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final hasUserAccount = userDoc.exists;
+      print('🔍 User account exists: $hasUserAccount');
+      return hasUserAccount;
+    } catch (e) {
+      print('⚠️ Error checking user account: $e');
+      return false; // If we can't check, assume no user account
+    }
+  }
 
   static Future<void> _deleteUserData(String userId) async {
     try {
@@ -690,7 +862,7 @@ class AuthService {
   static void showDeleteAccountWithReauthDialog(BuildContext context) {
     final TextEditingController emailController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -733,7 +905,8 @@ class AuthService {
               backgroundColor: Colors.red,
             ),
             onPressed: () async {
-              if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+              if (emailController.text.isEmpty ||
+                  passwordController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Please enter both email and password'),
@@ -742,7 +915,7 @@ class AuthService {
                 );
                 return;
               }
-              
+
               Navigator.pop(context); // Close dialog
               await deleteAccountWithReauth(
                 context,
