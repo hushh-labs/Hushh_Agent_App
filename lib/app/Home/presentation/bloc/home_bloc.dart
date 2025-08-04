@@ -6,6 +6,8 @@ import '../../domain/entities/home_section.dart';
 import '../../domain/usecases/get_home_sections_usecase.dart';
 import '../../domain/usecases/initialize_home_usecase.dart';
 import '../../../../shared/domain/usecases/base_usecase.dart';
+import '../../../../shared/utils/app_local_storage.dart';
+import '../../../features/notification_bidding/domain/usecases/refresh_fcm_token_usecase.dart';
 
 // Events
 abstract class HomeEvent extends Equatable {
@@ -17,9 +19,9 @@ abstract class HomeEvent extends Equatable {
 
 class InitializeHomeEvent extends HomeEvent {
   final String? preferredSection;
-  
+
   const InitializeHomeEvent({this.preferredSection});
-  
+
   @override
   List<Object> get props => [preferredSection ?? ''];
 }
@@ -43,9 +45,9 @@ class LogoutEvent extends HomeEvent {}
 
 class AuthStateChangedEvent extends HomeEvent {
   final User? user;
-  
+
   const AuthStateChangedEvent(this.user);
-  
+
   @override
   List<Object> get props => [user?.uid ?? 'null'];
 }
@@ -64,9 +66,9 @@ class HomeLoadingState extends HomeState {}
 
 class HomeAuthenticationRequiredState extends HomeState {
   final String? message;
-  
+
   const HomeAuthenticationRequiredState({this.message});
-  
+
   @override
   List<Object> get props => [message ?? ''];
 }
@@ -111,15 +113,18 @@ class HomeErrorState extends HomeState {
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetHomeSectionsUseCase _getHomeSectionsUseCase;
   final InitializeHomeUseCase _initializeHomeUseCase;
+  final RefreshFcmTokenUseCase _refreshFcmTokenUseCase;
   final FirebaseAuth _firebaseAuth;
   late StreamSubscription<User?> _authStateSubscription;
 
   HomeBloc({
     required GetHomeSectionsUseCase getHomeSectionsUseCase,
     required InitializeHomeUseCase initializeHomeUseCase,
+    required RefreshFcmTokenUseCase refreshFcmTokenUseCase,
     FirebaseAuth? firebaseAuth,
   })  : _getHomeSectionsUseCase = getHomeSectionsUseCase,
         _initializeHomeUseCase = initializeHomeUseCase,
+        _refreshFcmTokenUseCase = refreshFcmTokenUseCase,
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         super(HomeInitialState()) {
     on<InitializeHomeEvent>(_onInitializeHome);
@@ -150,7 +155,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       // Directly check authentication without emitting loading state
       add(CheckAuthenticationEvent());
-      
     } catch (e) {
       emit(HomeErrorState('Failed to initialize home: ${e.toString()}'));
     }
@@ -162,29 +166,42 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     try {
       final currentUser = _firebaseAuth.currentUser;
-      
-      if (currentUser == null) {
-        // User not authenticated, require login
+      final isGuestMode = AppLocalStorage.isGuestMode;
+
+      // Allow access if user is authenticated OR in guest mode
+      if (currentUser == null && !isGuestMode) {
+        // User not authenticated and not in guest mode, require login
         emit(const HomeAuthenticationRequiredState(
           message: 'Please log in to continue',
         ));
         return;
       }
 
-      // User is authenticated, directly load sections without delay
+      // User is authenticated OR in guest mode, load sections
       final result = await _getHomeSectionsUseCase();
-      
+
       if (result is Success<List<HomeSection>>) {
         final sections = result.data;
+
+        // Refresh FCM token if user is authenticated (not guest mode)
+        if (currentUser != null) {
+          try {
+            await _refreshFcmTokenUseCase(null);
+            print('✅ [HOME] FCM token refreshed on app open');
+          } catch (e) {
+            print('⚠️ [HOME] Failed to refresh FCM token on app open: $e');
+            // Continue with app loading even if FCM refresh fails
+          }
+        }
+
         emit(HomeLoadedState(
           currentTabIndex: 0,
           sections: sections,
-          currentUser: currentUser,
+          currentUser: currentUser, // Will be null for guest mode
         ));
       } else if (result is Failed) {
         emit(HomeErrorState('Failed to load home sections'));
       }
-      
     } catch (e) {
       emit(HomeErrorState('Authentication check failed: ${e.toString()}'));
     }
@@ -196,14 +213,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     try {
       final result = await _getHomeSectionsUseCase();
-      
+
       if (result is Success<List<HomeSection>>) {
         final sections = result.data;
-        final currentIndex = state is HomeLoadedState 
-            ? (state as HomeLoadedState).currentTabIndex 
+        final currentIndex = state is HomeLoadedState
+            ? (state as HomeLoadedState).currentTabIndex
             : 0;
         final currentUser = _firebaseAuth.currentUser;
-            
+
         emit(HomeLoadedState(
           currentTabIndex: currentIndex,
           sections: sections,
@@ -254,13 +271,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) async {
     final user = event.user;
-    
-    if (user == null) {
-      // User signed out or not authenticated
+    final isGuestMode = AppLocalStorage.isGuestMode;
+
+    if (user == null && !isGuestMode) {
+      // User signed out and not in guest mode - require authentication
       emit(const HomeAuthenticationRequiredState(
         message: 'Authentication required',
       ));
-    } else {
+    } else if (user != null) {
       // User signed in, reload home if we're in auth required state
       if (state is HomeAuthenticationRequiredState) {
         add(const InitializeHomeEvent());
@@ -270,5 +288,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         emit(currentState.copyWith(currentUser: user));
       }
     }
+    // If user == null && isGuestMode, do nothing - keep current state
   }
-} 
+}

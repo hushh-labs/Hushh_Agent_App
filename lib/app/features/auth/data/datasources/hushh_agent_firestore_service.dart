@@ -40,7 +40,7 @@ class HushhAgentFirestoreService {
           ...existingData,
           'id': existingDoc.id,
         });
-        
+
         final updatedAgent = existingAgent.copyWith(
           phone: phone ?? existingAgent.phone,
           email: email ?? existingAgent.email,
@@ -50,7 +50,7 @@ class HushhAgentFirestoreService {
         );
 
         await existingDoc.reference.update(updatedAgent.toFirestore());
-        
+
         print('✅ [Firestore] Agent updated successfully: $uid');
         return updatedAgent.copyWith(id: uid);
       } else {
@@ -63,7 +63,7 @@ class HushhAgentFirestoreService {
         );
 
         await _collection.doc(uid).set(newAgent.toFirestore());
-        
+
         print('✅ [Firestore] New agent created successfully: $uid');
         return newAgent.copyWith(id: uid);
       }
@@ -78,10 +78,8 @@ class HushhAgentFirestoreService {
     try {
       print('🔍 [Firestore] Searching for agent with phone: $phone');
 
-      final querySnapshot = await _collection
-          .where('phone', isEqualTo: phone)
-          .limit(1)
-          .get();
+      final querySnapshot =
+          await _collection.where('phone', isEqualTo: phone).limit(1).get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
@@ -132,10 +130,8 @@ class HushhAgentFirestoreService {
     try {
       print('🔄 [Firestore] Updating login status for agent: $agentId');
 
-      final querySnapshot = await _collection
-          .where('agentId', isEqualTo: agentId)
-          .limit(1)
-          .get();
+      final querySnapshot =
+          await _collection.where('agentId', isEqualTo: agentId).limit(1).get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
@@ -143,7 +139,7 @@ class HushhAgentFirestoreService {
           'isActive': isActive,
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
-        
+
         print('✅ [Firestore] Agent login status updated: $isActive');
       }
     } catch (e) {
@@ -157,10 +153,8 @@ class HushhAgentFirestoreService {
     try {
       print('🔄 [Firestore] Updating email for agent: $agentId');
 
-      final querySnapshot = await _collection
-          .where('agentId', isEqualTo: agentId)
-          .limit(1)
-          .get();
+      final querySnapshot =
+          await _collection.where('agentId', isEqualTo: agentId).limit(1).get();
 
       if (querySnapshot.docs.isNotEmpty) {
         final doc = querySnapshot.docs.first;
@@ -168,7 +162,7 @@ class HushhAgentFirestoreService {
           'email': email,
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
-        
+
         print('✅ [Firestore] Agent email updated successfully');
       }
     } catch (e) {
@@ -181,12 +175,13 @@ class HushhAgentFirestoreService {
   Future<void> initializeCollection() async {
     try {
       print('🚀 [Firestore] Initializing Hushhagents collection...');
-      
+
       // Check if collection exists by trying to get documents
       final snapshot = await _collection.limit(1).get();
-      
+
       if (snapshot.docs.isEmpty) {
-        print('ℹ️ [Firestore] Collection is empty, it will be created when first document is added');
+        print(
+            'ℹ️ [Firestore] Collection is empty, it will be created when first document is added');
       } else {
         print('✅ [Firestore] Hushhagents collection already exists');
       }
@@ -195,4 +190,4 @@ class HushhAgentFirestoreService {
       rethrow;
     }
   }
-} 
+}

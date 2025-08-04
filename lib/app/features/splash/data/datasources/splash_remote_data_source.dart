@@ -17,16 +17,16 @@ abstract class SplashRemoteDataSource {
 class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   @override
   Future<bool> initializeFirebaseServices() async {
     try {
       // Initialize Firestore
       await FirestoreService.initialize();
-      
+
       // Check Firebase Auth state
       await _auth.authStateChanges().first;
-      
+
       print('✅ [Remote] Firebase services initialized');
       return true;
     } catch (e) {
@@ -43,13 +43,13 @@ class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
         print('🔐 [Remote] No authenticated user found');
         return false;
       }
-      
+
       // Check if user email is verified
       if (!user.emailVerified) {
         print('⚠️ [Remote] User email not verified');
         return false;
       }
-      
+
       print('✅ [Remote] Agent is authenticated: ${user.email}');
       return true;
     } catch (e) {
@@ -68,11 +68,12 @@ class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
       }
 
       // Get agent profile from Firestore
-      final doc = await _firestore.collection('Hushhagents').doc(user.uid).get();
-      
+      final doc =
+          await _firestore.collection('Hushhagents').doc(user.uid).get();
+
       if (!doc.exists) {
         print('⚠️ [Remote] Agent profile not found, creating basic profile');
-      
+
         // Create basic profile from Firebase Auth data
         final basicProfile = AgentProfileModel(
           agentId: user.uid,
@@ -88,20 +89,22 @@ class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
           hasCompletedOnboarding: false,
           hasCompletedBusinessSetup: false,
         );
-        
+
         // Save to Firestore
-        await _firestore.collection('Hushhagents').doc(user.uid).set(basicProfile.toFirestore(), SetOptions(merge: true));
-        
+        await _firestore
+            .collection('Hushhagents')
+            .doc(user.uid)
+            .set(basicProfile.toFirestore(), SetOptions(merge: true));
+
         return basicProfile;
       }
-      
+
       // Convert Firestore document to model
       final data = doc.data() as Map<String, dynamic>;
       final profile = AgentProfileModel.fromFirestore(data, doc.id);
-      
+
       print('✅ [Remote] Agent profile loaded: ${profile.displayName}');
       return profile;
-      
     } catch (e) {
       print('❌ [Remote] Error getting agent profile: $e');
       return null;
@@ -115,7 +118,7 @@ class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
         'fcmToken': token,
         'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
       });
-      
+
       print('✅ [Remote] FCM token updated for agent: $agentId');
     } catch (e) {
       print('❌ [Remote] Error updating FCM token: $e');
@@ -127,21 +130,20 @@ class SplashRemoteDataSourceImpl implements SplashRemoteDataSource {
   Future<bool> checkBusinessVerificationStatus(String agentId) async {
     try {
       final businessDoc = await FirestoreService.getBusinessProfile(agentId);
-      
+
       if (!businessDoc.exists) {
         print('⚠️ [Remote] Business data not found for agent: $agentId');
         return false;
       }
-      
+
       final data = businessDoc.data() as Map<String, dynamic>;
       final isVerified = data['isVerified'] as bool? ?? false;
-      
+
       print('✅ [Remote] Business verification status: $isVerified');
       return isVerified;
-      
     } catch (e) {
       print('❌ [Remote] Error checking business verification: $e');
       return false;
     }
   }
-} 
+}

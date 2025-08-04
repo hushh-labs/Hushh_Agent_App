@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../../shared/utils/app_local_storage.dart';
 
 // Events
 abstract class ProfileEvent extends Equatable {
@@ -158,9 +159,23 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     try {
       // Get current user
       final user = FirebaseAuth.instance.currentUser;
+
+      // Check if user is in guest mode
       if (user == null) {
-        emit(const ProfileError('User not authenticated'));
-        return;
+        final isGuestMode = AppLocalStorage.isGuestMode;
+        if (isGuestMode) {
+          // Emit guest profile data
+          emit(const ProfileLoaded(
+            displayName: 'Guest User',
+            email: '',
+            phoneNumber: '',
+            avatarUrl: null,
+          ));
+          return;
+        } else {
+          emit(const ProfileError('User not authenticated'));
+          return;
+        }
       }
 
       // Fetch profile data from Hushhagents collection
@@ -206,6 +221,25 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     UpdateProfileEvent event,
     Emitter<ProfileState> emit,
   ) async {
+    // Check if user is in guest mode first
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      final isGuestMode = AppLocalStorage.isGuestMode;
+      if (isGuestMode) {
+        // Guest users cannot update profile - emit guest profile data
+        emit(const ProfileLoaded(
+          displayName: 'Guest User',
+          email: '',
+          phoneNumber: '',
+          avatarUrl: null,
+        ));
+        return;
+      } else {
+        emit(const ProfileError('User not authenticated'));
+        return;
+      }
+    }
+
     emit(ProfileUpdating(
       displayName: event.displayName ?? 'Update your name',
       email: event.email ?? 'Add email',
@@ -214,13 +248,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     ));
 
     try {
-      // Get current user
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        emit(const ProfileError('User not authenticated'));
-        return;
-      }
-
       // Update profile data in Hushhagents collection
       final updateData = <String, dynamic>{};
 

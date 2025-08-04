@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../shared/core/routing/routes.dart';
 import '../../../../../shared/constants/app_routes.dart';
+import '../../../../../shared/utils/guest_utils.dart';
 import '../bloc/dashboard_bloc.dart' as dashboard;
 import '../components/dashboard_header.dart';
 import '../components/quick_insights_grid.dart';
@@ -9,14 +10,14 @@ import '../components/dashboard_tab_bar.dart';
 import '../components/dashboard_content.dart';
 import '../components/dashboard_floating_button.dart';
 
-
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => dashboard.DashboardBloc()..add(const dashboard.LoadDashboardEvent()),
+      create: (context) =>
+          dashboard.DashboardBloc()..add(const dashboard.LoadDashboardEvent()),
       child: const _DashboardView(),
     );
   }
@@ -59,7 +60,8 @@ class _DashboardView extends StatelessWidget {
             double walletBalance = 0.0;
             bool isProfileComplete = false;
             List<dashboard.QuickInsightItem> insights = [];
-            dashboard.DashboardTab selectedTab = dashboard.DashboardTab.services;
+            dashboard.DashboardTab selectedTab =
+                dashboard.DashboardTab.services;
             List<dashboard.ServiceItem> services = [];
             List<dashboard.CustomerItem> customers = [];
 
@@ -77,7 +79,16 @@ class _DashboardView extends StatelessWidget {
                 // Header with balance and notification
                 DashboardHeader(
                   balance: walletBalance,
-                  onNotificationTap: () => _showNotifications(context),
+                  onNotificationTap: () => GuestUtils.executeWithGuestCheck(
+                    context,
+                    'Notifications',
+                    () => _showNotifications(context),
+                  ),
+                  onCoinTap: () => GuestUtils.executeWithGuestCheck(
+                    context,
+                    'Wallet Features',
+                    () => _showCoinComingSoon(context),
+                  ),
                 ),
 
                 // Scrollable Content
@@ -91,7 +102,12 @@ class _DashboardView extends StatelessWidget {
                         // Quick Insights Grid
                         QuickInsightsGrid(
                           insights: insights,
-                          onInsightTap: (insightId) => _handleInsightTap(context, insightId),
+                          onInsightTap: (insightId) =>
+                              GuestUtils.executeWithGuestCheck(
+                            context,
+                            'Analytics & Insights',
+                            () => _handleInsightTap(context, insightId),
+                          ),
                         ),
 
                         const SizedBox(height: 32),
@@ -99,8 +115,17 @@ class _DashboardView extends StatelessWidget {
                         // Tab Bar
                         DashboardTabBar(
                           selectedTab: selectedTab,
-                          onTabSelected: (tab) => _selectTab(context, tab),
-                          onRefresh: () => _refreshDashboard(context),
+                          onTabSelected: (tab) =>
+                              GuestUtils.executeWithGuestCheck(
+                            context,
+                            'Services & Customers',
+                            () => _selectTab(context, tab),
+                          ),
+                          onRefresh: () => GuestUtils.executeWithGuestCheck(
+                            context,
+                            'Refresh Data',
+                            () => _refreshDashboard(context),
+                          ),
                         ),
 
                         const SizedBox(height: 16),
@@ -123,7 +148,11 @@ class _DashboardView extends StatelessWidget {
         ),
       ),
       floatingActionButton: DashboardFloatingButton(
-        onPressed: () => _launchQRScanner(context),
+        onPressed: () => GuestUtils.executeWithGuestCheck(
+          context,
+          'QR Scanner',
+          () => _launchQRScanner(context),
+        ),
       ),
     );
   }
@@ -137,9 +166,23 @@ class _DashboardView extends StatelessWidget {
     );
   }
 
+  void _showCoinComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Coming soon!'),
+        backgroundColor: Color(0xFFA342FF),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
   void _completeProfile(BuildContext context) {
-    // Navigate to profile completion flow
-    Navigator.pushNamed(context, AppRoutes.agentProfileEmail);
+    // Check guest access before navigating to profile completion
+    if (GuestUtils.checkGuestAccess(context, 'Profile Completion')) {
+      // Navigate to profile completion flow
+      Navigator.pushNamed(context, AppRoutes.agentProfileEmail);
+    }
   }
 
   void _dismissCongrats(BuildContext context) {
@@ -159,12 +202,21 @@ class _DashboardView extends StatelessWidget {
   }
 
   void _refreshDashboard(BuildContext context) {
-    context.read<dashboard.DashboardBloc>().add(const dashboard.RefreshDashboardEvent());
+    context
+        .read<dashboard.DashboardBloc>()
+        .add(const dashboard.RefreshDashboardEvent());
   }
 
   void _launchQRScanner(BuildContext context) {
-    // Navigate to Lookbooks & Products page
-    Navigator.pushNamed(context, AppRoutes.agentLookbook);
+    // Show coming soon message for QR scanner
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('QR Scanner feature coming soon!'),
+        backgroundColor: Color(0xFFA342FF),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
   void _addService(BuildContext context) {
@@ -197,7 +249,10 @@ class _DashboardView extends StatelessWidget {
   void _handleInsightTap(BuildContext context, String insightId) {
     switch (insightId) {
       case 'logbooks_products':
-        Navigator.pushNamed(context, AppRoutes.agentLookbook);
+        // Check guest access before navigating to lookbook
+        if (GuestUtils.checkGuestAccess(context, 'Lookbook & Products')) {
+          Navigator.pushNamed(context, AppRoutes.agentLookbook);
+        }
         break;
       case 'new_customers':
         // TODO: Navigate to customers page
@@ -221,4 +276,4 @@ class _DashboardView extends StatelessWidget {
         break;
     }
   }
-} 
+}

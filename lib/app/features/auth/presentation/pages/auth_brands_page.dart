@@ -401,14 +401,56 @@ class _AuthBrandsPageState extends State<AuthBrandsPage> {
                             leading: CircleAvatar(
                               radius: 20,
                               backgroundColor: const Color(0xFF0051BA),
-                              child: Text(
-                                brand.brandName.substring(0, 2).toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
+                              child: brand.brandLogo != null &&
+                                      brand.brandLogo!.isNotEmpty
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        brand.brandLogo!,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          // Fallback to initials if image fails to load
+                                          return Text(
+                                            brand.brandName
+                                                .substring(0, 2)
+                                                .toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          );
+                                        },
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  : Text(
+                                      // Fallback to initials if no logo URL
+                                      brand.brandName
+                                          .substring(0, 2)
+                                          .toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                             ),
                             title: Text(
                               brand.brandName,

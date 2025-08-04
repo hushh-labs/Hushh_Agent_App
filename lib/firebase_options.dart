@@ -73,8 +73,8 @@ class DefaultFirebaseOptions {
     projectId: 'hushone-app',
     databaseURL: 'https://hushone-app-default-rtdb.firebaseio.com',
     storageBucket: 'hushone-app.appspot.com',
-    androidClientId: '53407187172-0h9ckq232jev9dd2u8re190pck2kku3o.apps.googleusercontent.com',
-    iosBundleId: 'com.example.hushhAgentApp',
+    androidClientId:
+        '53407187172-0h9ckq232jev9dd2u8re190pck2kku3o.apps.googleusercontent.com',
+    iosBundleId: 'com.hushhone.hushh.agent',
   );
-
-} 
+}

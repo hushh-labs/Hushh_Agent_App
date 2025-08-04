@@ -15,6 +15,8 @@ import '../../domain/usecases/create_agent_card_usecase.dart';
 import '../../domain/entities/agent_card.dart';
 import '../../../../../shared/domain/usecases/base_usecase.dart';
 import '../../domain/usecases/sign_out_usecase.dart';
+import '../../domain/usecases/save_fcm_token_after_login_usecase.dart';
+import '../../domain/usecases/sign_out_with_fcm_cleanup_usecase.dart';
 import '../../domain/enum.dart';
 
 import '../../../../../shared/core/routing/routes.dart';
@@ -217,6 +219,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _checkUserProfileCompletenessUseCase;
   final CreateAgentCardUseCase _createAgentCardUseCase;
   final SignOutUseCase _signOutUseCase;
+  final SignOutWithFcmCleanupUseCase _signOutWithFcmCleanupUseCase;
+  final SaveFcmTokenAfterLoginUseCase _saveFcmTokenAfterLoginUseCase;
 
   AuthBloc({
     required SendPhoneOtpUseCase sendPhoneOtpUseCase,
@@ -228,6 +232,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         checkUserProfileCompletenessUseCase,
     required CreateAgentCardUseCase createAgentCardUseCase,
     required SignOutUseCase signOutUseCase,
+    required SignOutWithFcmCleanupUseCase signOutWithFcmCleanupUseCase,
+    required SaveFcmTokenAfterLoginUseCase saveFcmTokenAfterLoginUseCase,
   })  : _sendPhoneOtpUseCase = sendPhoneOtpUseCase,
         _verifyPhoneOtpUseCase = verifyPhoneOtpUseCase,
         _sendEmailOtpUseCase = sendEmailOtpUseCase,
@@ -237,6 +243,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             checkUserProfileCompletenessUseCase,
         _createAgentCardUseCase = createAgentCardUseCase,
         _signOutUseCase = signOutUseCase,
+        _signOutWithFcmCleanupUseCase = signOutWithFcmCleanupUseCase,
+        _saveFcmTokenAfterLoginUseCase = saveFcmTokenAfterLoginUseCase,
         super(AuthInitialState()) {
     on<InitializeEvent>(onInitializeEvent);
     on<OnCountryUpdateEvent>(onCountryUpdateEvent);
@@ -397,6 +405,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
                 'Adding CheckUserProfileCompletenessEvent for user: ${user.uid}');
             add(CheckUserProfileCompletenessEvent(user.uid));
           }
+
+          // Save FCM token for new user
+          try {
+            await _saveFcmTokenAfterLoginUseCase(null);
+            print('✅ [AUTH] FCM token saved for new user');
+          } catch (e) {
+            print('⚠️ [AUTH] Failed to save FCM token for new user: $e');
+            // Don't fail the login process if FCM token saving fails
+          }
         } else {
           // Existing user - check if they have complete profile
           print('Existing user - checking profile completeness');
@@ -464,6 +481,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           if (user != null) {
             add(CheckUserProfileCompletenessEvent(user.uid));
           }
+
+          // Save FCM token for new user
+          try {
+            await _saveFcmTokenAfterLoginUseCase(null);
+            print('✅ [AUTH] FCM token saved for new user (email)');
+          } catch (e) {
+            print(
+                '⚠️ [AUTH] Failed to save FCM token for new user (email): $e');
+            // Don't fail the login process if FCM token saving fails
+          }
         } else {
           // Existing user - check if they have complete profile
           final user = userCredential.user;
@@ -515,6 +542,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     if (result is Success<bool>) {
       print('Profile completeness: ${result.data}');
+
+      // Save FCM token after successful login
+      try {
+        await _saveFcmTokenAfterLoginUseCase(null);
+        print('✅ [AUTH] FCM token saved successfully after login');
+      } catch (e) {
+        print('⚠️ [AUTH] Failed to save FCM token after login: $e');
+        // Don't fail the login process if FCM token saving fails
+      }
+
       emit(UserProfileCompleteState(result.data));
     } else if (result is Failed<bool>) {
       print('Profile completeness check failed: ${result.failure.message}');
@@ -545,7 +582,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(SigningOutState());
 
-    final result = await _signOutUseCase();
+    final result = await _signOutWithFcmCleanupUseCase();
 
     if (result is Success<void>) {
       emit(SignedOutState());

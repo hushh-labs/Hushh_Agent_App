@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class DashboardHeader extends StatelessWidget {
   final double balance;
   final VoidCallback? onNotificationTap;
+  final VoidCallback? onCoinTap;
 
   const DashboardHeader({
     super.key,
     required this.balance,
     this.onNotificationTap,
+    this.onCoinTap,
   });
 
   @override
@@ -25,41 +27,29 @@ class DashboardHeader extends StatelessWidget {
               color: Colors.black,
             ),
           ),
-          
+
           const Spacer(),
-          
-          // Balance
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '\$ ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  balance.toInt().toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+
+          // Coin Icon
+          GestureDetector(
+            onTap: onCoinTap,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.monetization_on,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // Notification Icon
           GestureDetector(
             onTap: onNotificationTap,
@@ -81,4 +71,4 @@ class DashboardHeader extends StatelessWidget {
       ),
     );
   }
-} 
+}

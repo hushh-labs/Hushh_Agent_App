@@ -313,9 +313,25 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
         Navigator.pop(context);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Product added successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple, Colors.pinkAccent],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              child: const Text(
+                'Product added successfully!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
             behavior: SnackBarBehavior.floating,
           ),
         );

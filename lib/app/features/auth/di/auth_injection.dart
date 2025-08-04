@@ -11,7 +11,10 @@ import '../domain/usecases/check_agent_card_exists_usecase.dart';
 import '../domain/usecases/check_user_profile_completeness_usecase.dart';
 import '../domain/usecases/create_agent_card_usecase.dart';
 import '../domain/usecases/sign_out_usecase.dart';
+import '../domain/usecases/save_fcm_token_after_login_usecase.dart';
+import '../domain/usecases/sign_out_with_fcm_cleanup_usecase.dart';
 import '../presentation/bloc/auth_bloc.dart';
+import '../../notification_bidding/domain/repositories/notification_bidding_repository.dart';
 
 /// Service locator instance
 final sl = GetIt.instance;
@@ -65,6 +68,19 @@ void initializeAuthFeature() {
     () => SignOutUseCase(sl<AuthRepository>()),
   );
 
+  // Save FCM Token After Login Use Case
+  sl.registerLazySingleton<SaveFcmTokenAfterLoginUseCase>(
+    () => SaveFcmTokenAfterLoginUseCase(sl<NotificationBiddingRepository>()),
+  );
+
+  // Sign Out With FCM Cleanup Use Case
+  sl.registerLazySingleton<SignOutWithFcmCleanupUseCase>(
+    () => SignOutWithFcmCleanupUseCase(
+      sl<AuthRepository>(),
+      sl<NotificationBiddingRepository>(),
+    ),
+  );
+
   // ===== BLOCS =====
   // Auth BLoC
   sl.registerFactory<AuthBloc>(
@@ -78,6 +94,8 @@ void initializeAuthFeature() {
           sl<CheckUserProfileCompletenessUseCase>(),
       createAgentCardUseCase: sl<CreateAgentCardUseCase>(),
       signOutUseCase: sl<SignOutUseCase>(),
+      signOutWithFcmCleanupUseCase: sl<SignOutWithFcmCleanupUseCase>(),
+      saveFcmTokenAfterLoginUseCase: sl<SaveFcmTokenAfterLoginUseCase>(),
     ),
   );
 }

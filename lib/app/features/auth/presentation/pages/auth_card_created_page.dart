@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../shared/constants/app_routes.dart';
+import '../../../agent_profile/presentation/components/luxury_identity_card.dart';
 
 class AuthCardCreatedPage extends StatefulWidget {
   final Map<String, dynamic> profileData;
@@ -81,6 +82,7 @@ class _AuthCardCreatedPageState extends State<AuthCardCreatedPage>
         'email': widget.profileData['email'],
         'name': widget.profileData['name'],
         'fullName': widget.profileData['name'],
+        'phone': user.phoneNumber ?? '', // Add phone number from Firebase Auth
         'categories': widget.profileData['categories'] ?? [],
         'brand': widget.profileData['brand'],
         'brandName': widget.profileData['brandName'],
@@ -196,17 +198,23 @@ class _AuthCardCreatedPageState extends State<AuthCardCreatedPage>
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: AnimatedBuilder(
-                  animation: _cardController,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _cardScaleAnimation.value,
-                      child: Opacity(
-                        opacity: _cardOpacityAnimation.value,
-                        child: _buildAgentCard(),
-                      ),
-                    );
-                  },
+                child: Center(
+                  child: AnimatedBuilder(
+                    animation: _cardController,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _cardScaleAnimation.value,
+                        child: Opacity(
+                          opacity: _cardOpacityAnimation.value,
+                          child: ResponsiveLuxuryCard(
+                            name: widget.profileData['name'] ?? 'Agent Name',
+                            designation: widget.profileData['brandName'] ??
+                                'Brand Representative',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -265,201 +273,6 @@ class _AuthCardCreatedPageState extends State<AuthCardCreatedPage>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildAgentCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 40),
-      child: Stack(
-        children: [
-          // Card shadow
-          Container(
-            height: 300,
-            margin: const EdgeInsets.only(top: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-          ),
-
-          // Main card
-          Container(
-            height: 300,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF6725F2),
-                  Color(0xFF8A52FF),
-                  Color(0xFFE51A5E),
-                ],
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Background pattern
-                Positioned(
-                  right: -50,
-                  top: -50,
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.1),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: -30,
-                  bottom: -30,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.05),
-                    ),
-                  ),
-                ),
-
-                // Card content
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'AGENT CARD',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'VERIFIED',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const Spacer(),
-
-                      // Agent details
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.profileData['name'] ?? 'Agent Name',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              widget.profileData['brandName'] ?? 'Brand Name',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const Spacer(),
-
-                      // Footer
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'AGENT ID',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 10,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                              Text(
-                                '#${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.qr_code,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

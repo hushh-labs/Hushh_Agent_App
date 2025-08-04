@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../../shared/constants/app_routes.dart';
+import '../../../../../shared/utils/guest_utils.dart';
 import '../bloc/profile_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../../shared/services/auth_service.dart';
@@ -162,34 +163,45 @@ class _ProfilePageState extends State<ProfilePage>
                   state is ProfileUpdated ||
                   state is ImageUploading ||
                   state is ImageUploaded) {
-                final displayName = state is ProfileLoaded
-                    ? state.displayName
-                    : state is ProfileUpdated
+                // Check if user is in guest mode and override profile data
+                final isGuest = GuestUtils.isGuestMode;
+
+                final displayName = isGuest
+                    ? 'Guest User'
+                    : state is ProfileLoaded
                         ? state.displayName
-                        : state is ImageUploaded
+                        : state is ProfileUpdated
                             ? state.displayName
-                            : (state as ProfileUpdating).displayName;
-                final email = state is ProfileLoaded
-                    ? state.email
-                    : state is ProfileUpdated
+                            : state is ImageUploaded
+                                ? state.displayName
+                                : (state as ProfileUpdating).displayName;
+                final email = isGuest
+                    ? ''
+                    : state is ProfileLoaded
                         ? state.email
-                        : state is ImageUploaded
+                        : state is ProfileUpdated
                             ? state.email
-                            : (state as ProfileUpdating).email;
-                final phoneNumber = state is ProfileLoaded
-                    ? state.phoneNumber
-                    : state is ProfileUpdated
+                            : state is ImageUploaded
+                                ? state.email
+                                : (state as ProfileUpdating).email;
+                final phoneNumber = isGuest
+                    ? ''
+                    : state is ProfileLoaded
                         ? state.phoneNumber
-                        : state is ImageUploaded
+                        : state is ProfileUpdated
                             ? state.phoneNumber
-                            : (state as ProfileUpdating).phoneNumber;
-                final avatarUrl = state is ProfileLoaded
-                    ? state.avatarUrl
-                    : state is ProfileUpdated
+                            : state is ImageUploaded
+                                ? state.phoneNumber
+                                : (state as ProfileUpdating).phoneNumber;
+                final avatarUrl = isGuest
+                    ? null // No avatar for guest users
+                    : state is ProfileLoaded
                         ? state.avatarUrl
-                        : state is ImageUploaded
-                            ? state.imageUrl
-                            : (state as ProfileUpdating).avatarUrl;
+                        : state is ProfileUpdated
+                            ? state.avatarUrl
+                            : state is ImageUploaded
+                                ? state.imageUrl
+                                : (state as ProfileUpdating).avatarUrl;
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -413,8 +425,12 @@ class _ProfilePageState extends State<ProfilePage>
                 child: InkWell(
                   onTap: isLoading
                       ? null
-                      : () => _showEditProfileBottomSheet(
-                          context, displayName, email, avatarUrl),
+                      : () => GuestUtils.executeWithGuestCheck(
+                            context,
+                            'Edit Profile',
+                            () => _showEditProfileBottomSheet(context,
+                                displayName, email, phoneNumber, avatarUrl),
+                          ),
                   borderRadius: BorderRadius.circular(10),
                   child: Padding(
                     padding: const EdgeInsets.all(10),
@@ -464,51 +480,64 @@ class _ProfilePageState extends State<ProfilePage>
         const SizedBox(height: 12),
         _buildMenuCard([
           _MenuItemData('Notifications', Icons.notifications_outlined, () {
-            try {
-              Navigator.pushNamed(context, AppRoutes.home);
-            } catch (e) {
-              _showErrorSnackBar(
-                'Unable to open Notifications: ${e.toString()}',
-              );
-            }
+            GuestUtils.executeWithGuestCheck(
+              context,
+              'Notifications',
+              () {
+                try {
+                  Navigator.pushNamed(context, AppRoutes.home);
+                } catch (e) {
+                  _showErrorSnackBar(
+                    'Unable to open Notifications: ${e.toString()}',
+                  );
+                }
+              },
+            );
           }),
           _MenuItemData('Permissions', Icons.security_outlined, () {
-            try {
-              Navigator.pushNamed(context, AppRoutes.home);
-            } catch (e) {
-              _showErrorSnackBar('Unable to open Permissions');
-            }
+            GuestUtils.executeWithGuestCheck(
+              context,
+              'Permissions',
+              () {
+                try {
+                  Navigator.pushNamed(context, AppRoutes.permissions);
+                } catch (e) {
+                  _showErrorSnackBar('Unable to open Permissions');
+                }
+              },
+            );
           }),
-          _MenuItemData(
-            'Wallet & Cards',
-            Icons.account_balance_wallet_outlined,
-            () {
-              try {
-                Navigator.pushNamed(context, AppRoutes.home);
-              } catch (e) {
-                _showErrorSnackBar('Unable to open Wallet & Cards');
-              }
-            },
-          ),
         ]),
         const SizedBox(height: 20),
         _buildSectionTitle('More'),
         const SizedBox(height: 12),
         _buildMenuCard([
           _MenuItemData('Send Feedback', Icons.rate_review_outlined, () {
-            try {
-              _showErrorSnackBar('Feedback feature coming soon!');
-            } catch (e) {
-              _showErrorSnackBar('Unable to open Send Feedback');
-            }
+            GuestUtils.executeWithGuestCheck(
+              context,
+              'Send Feedback',
+              () {
+                try {
+                  _showErrorSnackBar('Feedback feature coming soon!');
+                } catch (e) {
+                  _showErrorSnackBar('Unable to open Send Feedback');
+                }
+              },
+            );
           }),
           if (!kIsWeb) ...[
             _MenuItemData('Delete Account', Icons.delete_outline, () {
-              try {
-                AuthService.showDeleteAccountDialog(context);
-              } catch (e) {
-                _showErrorSnackBar('Unable to open Delete Account');
-              }
+              GuestUtils.executeWithGuestCheck(
+                context,
+                'Account Management',
+                () {
+                  try {
+                    AuthService.showDeleteAccountDialog(context);
+                  } catch (e) {
+                    _showErrorSnackBar('Unable to open Delete Account');
+                  }
+                },
+              );
             }),
           ],
         ]),
@@ -641,12 +670,18 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildLogoutButton() {
+    final isGuest = GuestUtils.isGuestMode;
+    final buttonColor = isGuest ? const Color(0xFFA342FF) : Colors.red[600]!;
+    final borderColor = isGuest ? const Color(0xFFA342FF) : Colors.red[300]!;
+    final buttonText = isGuest ? 'Log Out' : 'Logout';
+    final buttonIcon = isGuest ? Icons.login : Icons.logout;
+
     return Container(
       width: double.infinity,
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red[300]!, width: 1),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Material(
         color: Colors.transparent,
@@ -658,12 +693,12 @@ class _ProfilePageState extends State<ProfilePage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.logout, color: Colors.red[600], size: 20),
+                Icon(buttonIcon, color: buttonColor, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Logout',
+                  buttonText,
                   style: TextStyle(
-                    color: Colors.red[600],
+                    color: buttonColor,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -688,7 +723,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _showEditProfileBottomSheet(BuildContext context, String displayName,
-      String email, String? avatarUrl) {
+      String email, String phoneNumber, String? avatarUrl) {
     final nameController = TextEditingController(text: displayName);
     String? selectedImagePath;
 
@@ -882,7 +917,10 @@ class _ProfilePageState extends State<ProfilePage>
                     const SizedBox(height: 16),
                     _buildReadOnlyField(
                       'Phone Number',
-                      'Not provided',
+                      phoneNumber.isNotEmpty &&
+                              phoneNumber != 'Add phone number'
+                          ? phoneNumber
+                          : 'Not provided',
                     ),
 
                     const SizedBox(height: 24),
@@ -1269,7 +1307,18 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _showLogoutDialog() {
-    AuthService.showLogoutDialog(context);
+    // Check if user is in guest mode
+    if (GuestUtils.isGuestMode) {
+      // For guest users, directly navigate to main auth page without popup
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.mainAuth,
+        (route) => false,
+      );
+    } else {
+      // For authenticated users, show regular logout dialog
+      AuthService.showLogoutDialog(context);
+    }
   }
 
   void _showErrorSnackBar(String message) {
