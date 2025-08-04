@@ -46,6 +46,7 @@ dependencies:
   firebase_performance: ^0.10.1+10
   firebase_remote_config: ^5.5.0
   firebase_app_check: ^0.3.2+10
+  cloud_functions: ^5.6.2
   
   # ===== HTTP & API =====
   dio: ^5.3.3
@@ -173,6 +174,8 @@ flutter:
     - assets/splash.gif
     - assets/app-logo.png
     - assets/Hushh agent app.png
+    - assets/dashboard_bottom_bar_icon.svg
+    - assets/profile_bottom_bar_icon.svg
   
   fonts:
     - family: Inter

@@ -7,6 +7,7 @@ import '../../domain/usecases/get_home_sections_usecase.dart';
 import '../../domain/usecases/initialize_home_usecase.dart';
 import '../../../../shared/domain/usecases/base_usecase.dart';
 import '../../../../shared/utils/app_local_storage.dart';
+import '../../../features/notification_bidding/domain/usecases/refresh_fcm_token_usecase.dart';
 
 // Events
 abstract class HomeEvent extends Equatable {
@@ -112,15 +113,18 @@ class HomeErrorState extends HomeState {
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetHomeSectionsUseCase _getHomeSectionsUseCase;
   final InitializeHomeUseCase _initializeHomeUseCase;
+  final RefreshFcmTokenUseCase _refreshFcmTokenUseCase;
   final FirebaseAuth _firebaseAuth;
   late StreamSubscription<User?> _authStateSubscription;
 
   HomeBloc({
     required GetHomeSectionsUseCase getHomeSectionsUseCase,
     required InitializeHomeUseCase initializeHomeUseCase,
+    required RefreshFcmTokenUseCase refreshFcmTokenUseCase,
     FirebaseAuth? firebaseAuth,
   })  : _getHomeSectionsUseCase = getHomeSectionsUseCase,
         _initializeHomeUseCase = initializeHomeUseCase,
+        _refreshFcmTokenUseCase = refreshFcmTokenUseCase,
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         super(HomeInitialState()) {
     on<InitializeHomeEvent>(_onInitializeHome);
@@ -178,6 +182,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       if (result is Success<List<HomeSection>>) {
         final sections = result.data;
+
+        // Refresh FCM token if user is authenticated (not guest mode)
+        if (currentUser != null) {
+          try {
+            await _refreshFcmTokenUseCase(null);
+            print('✅ [HOME] FCM token refreshed on app open');
+          } catch (e) {
+            print('⚠️ [HOME] Failed to refresh FCM token on app open: $e');
+            // Continue with app loading even if FCM refresh fails
+          }
+        }
+
         emit(HomeLoadedState(
           currentTabIndex: 0,
           sections: sections,

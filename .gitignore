@@ -45,3 +45,4 @@ app.*.map.json
 /android/app/release
 serviceAccountKey.json
 scripts/*.json
+functions/node_modules/
