@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class AppLocalStorage {
   static const String _guestModeKey = 'guest_mode';
+  static const String _guestModeTypeKey = 'guest_mode_type';
+  static const String _userTypeKey = 'user_type';
   static const String _userIdKey = 'user_id';
   static const String _userEmailKey = 'user_email';
   static const String _userPhoneKey = 'user_phone';
@@ -15,6 +17,106 @@ class AppLocalStorage {
     // Check if user is authenticated with Firebase
     final currentUser = FirebaseAuth.instance.currentUser;
     return currentUser == null;
+  }
+
+  // Guest mode type (user/agent)
+  static String get guestModeType {
+    // For now, default to 'user' - can be enhanced to detect agent mode
+    return 'user';
+  }
+
+  static Future<void> setGuestModeType(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_guestModeTypeKey, value);
+  }
+
+  // User type (user/agent) for registered users
+  static String get userType {
+    // For now, default to 'user' - can be enhanced based on user profile
+    return 'user';
+  }
+
+  static Future<void> setUserType(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userTypeKey, value);
+  }
+
+  // Feature access control for guest users
+  static bool canAccessFeature(String feature) {
+    if (!isGuestMode) return true; // Registered users have full access
+
+    final guestType = guestModeType;
+    
+    // Features available for all guest users
+    final allowedGuestFeatures = [
+      'discover',
+      'basic_settings',
+      'terms_privacy',
+      'app_info',
+      'theme_options',
+      'basic_permissions',
+      'feedback',
+      'basic_wallet',
+      'notification',
+      'location',
+      'camera',
+    ];
+
+    // Additional features for guest agents
+    final allowedAgentFeatures = [
+      'basic_chat',
+      'qr_scanner',
+      'new_customers',
+      'agent_dashboard',
+    ];
+
+    // Check base guest access
+    if (allowedGuestFeatures.contains(feature)) {
+      return true;
+    }
+
+    // Check agent-specific access
+    if (guestType == 'agent' && allowedAgentFeatures.contains(feature)) {
+      return true;
+    }
+
+    return false; // Feature is restricted for guests
+  }
+
+  // Get restricted features for current guest type
+  static List<String> get restrictedGuestFeatures {
+    if (!isGuestMode) return []; // No restrictions for registered users
+
+    final guestType = guestModeType;
+    
+    final restrictedUserFeatures = [
+      'contact',
+      'media',
+      'microphone',
+      'pda',
+      'receipts',
+      'chat',
+      'cart',
+      'full_wallet',
+      'notifications',
+      'profile',
+      'cards_data',
+      'add_to_cart',
+      'follow_post_like',
+      'upgrade',
+      'agent_profile',
+      'marketplace',
+    ];
+
+    final restrictedAgentFeatures = [
+      'contact',
+      'media',
+      'microphone',
+      'full_chat_features',
+      'marketplace_access',
+    ];
+
+    return guestType == 'agent' ? restrictedAgentFeatures : restrictedUserFeatures;
   }
 
   static Future<void> setGuestMode(bool value) async {

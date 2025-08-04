@@ -76,5 +76,65 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	
+	<!-- ===== PRIVACY PERMISSION DESCRIPTIONS ===== -->
+	
+	<!-- Camera Permission -->
+	<key>NSCameraUsageDescription</key>
+	<string>Hushh needs camera access to take photos for your profile, scan QR codes, and capture images for sharing. Your photos remain private and are used only within the app.</string>
+	
+	<!-- Microphone Permission -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Hushh uses microphone access for voice input features, audio messages, and enhanced communication capabilities. Audio is processed securely.</string>
+	
+	<!-- Location Permission -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Hushh uses location access to provide location-based features, nearby services, and improve your experience with local content.</string>
+	
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Hushh uses location access to provide location-based features and improve your experience with local content.</string>
+	
+	<!-- Contacts Permission -->
+	<key>NSContactsUsageDescription</key>
+	<string>Hushh needs access to your contacts to help you connect with people you know and share cards easily. Your contacts are kept private and secure.</string>
+	
+	<!-- Photo Library Permission -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Hushh needs access to your photo library to upload profile pictures, share images, and access media for your content.</string>
+	
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Hushh needs permission to save photos and media to your photo library for easy access and sharing.</string>
+	
+	<!-- Notifications Permission -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>Hushh uses notifications to keep you updated about new messages, card shares, and important updates. Enable notifications to stay connected.</string>
+	
+	<!-- Bluetooth Permission (for device connectivity) -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Hushh may use Bluetooth to connect with nearby devices and enhance your experience with location-based features.</string>
+	
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Hushh may use Bluetooth to connect with compatible devices and improve app functionality.</string>
+	
+	<!-- Speech Recognition Permission -->
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Hushh uses speech recognition to provide voice-to-text features and improve your interaction with the app.</string>
+	
+	<!-- Face ID / Touch ID Permission -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Hushh uses Face ID for secure authentication and to protect your sensitive information within the app.</string>
+	
+	<!-- Motion Permission -->
+	<key>NSMotionUsageDescription</key>
+	<string>Hushh may use motion data to enhance user experience and provide activity-based features.</string>
+	
+	<!-- Calendar Permission -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>Hushh may access your calendar to help schedule events and integrate with your daily activities.</string>
+	
+	<!-- Reminders Permission -->
+	<key>NSRemindersUsageDescription</key>
+	<string>Hushh may access your reminders to help you stay organized and manage your tasks effectively.</string>
+	
 </dict>
 </plist>
