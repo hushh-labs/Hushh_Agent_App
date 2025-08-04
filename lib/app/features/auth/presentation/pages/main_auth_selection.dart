@@ -206,10 +206,23 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
   void _navigateToGuest(BuildContext context) {
     // Direct guest authentication - enter guest mode immediately
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Welcome, Guest! Tap any feature to sign up.'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pink],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: const Text(
+            'Welcome guest explore the limited feature',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        duration: const Duration(seconds: 2),
       ),
     );
 
