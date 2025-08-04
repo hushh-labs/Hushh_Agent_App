@@ -41,8 +41,6 @@ class _PermissionsViewState extends State<PermissionsView> {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-
-
   @override
   void initState() {
     super.initState();
@@ -52,15 +50,16 @@ class _PermissionsViewState extends State<PermissionsView> {
   /// Initialize all permission statuses
   Future<void> _initializePermissionStatuses() async {
     // Check individual permissions
-    permissionStatuses['notification'] = await Permission.notification.isGranted;
+    permissionStatuses['notification'] =
+        await Permission.notification.isGranted;
     permissionStatuses['contact'] = await Permission.contacts.isGranted;
-    
+
     // Location has multiple permission types to check
     permissionStatuses['location'] =
         (await Permission.locationWhenInUse.isGranted) ||
-        (await Permission.locationAlways.isGranted) ||
-        (await Permission.location.isGranted);
-    
+            (await Permission.locationAlways.isGranted) ||
+            (await Permission.location.isGranted);
+
     permissionStatuses['camera'] = await Permission.camera.isGranted;
     permissionStatuses['media'] = await Permission.photos.isGranted;
     permissionStatuses['microphone'] = await Permission.microphone.isGranted;
@@ -117,7 +116,7 @@ class _PermissionsViewState extends State<PermissionsView> {
     permissionStates[key] = status;
 
     // Handle result
-    if (status == PermissionStatus.denied || 
+    if (status == PermissionStatus.denied ||
         status == PermissionStatus.permanentlyDenied) {
       _showPermissionExplanationDialog(key);
     }
@@ -172,27 +171,33 @@ class _PermissionsViewState extends State<PermissionsView> {
     switch (key) {
       case 'notification':
         title = 'Notification Permission';
-        message = 'Hushh uses notifications to keep you updated about new messages, card shares, and important updates. Enable notifications to stay connected.';
+        message =
+            'Hushh uses notifications to keep you updated about new messages, card shares, and important updates. Enable notifications to stay connected.';
         break;
       case 'contact':
         title = 'Contacts Permission';
-        message = 'Hushh needs access to your contacts to help you connect with people you know and share cards easily. Your contacts are kept private and secure.';
+        message =
+            'Hushh needs access to your contacts to help you connect with people you know and share cards easily. Your contacts are kept private and secure.';
         break;
       case 'location':
         title = 'Location Permission';
-        message = 'Hushh uses location access to provide location-based features, nearby services, and improve your experience with local content.';
+        message =
+            'Hushh uses location access to provide location-based features, nearby services, and improve your experience with local content.';
         break;
       case 'camera':
         title = 'Camera Permission';
-        message = 'Hushh needs camera access to take photos for your profile, scan QR codes, and capture images for sharing. Your photos remain private.';
+        message =
+            'Hushh needs camera access to take photos for your profile, scan QR codes, and capture images for sharing. Your photos remain private.';
         break;
       case 'media':
         title = 'Media Permission';
-        message = 'Hushh needs access to your photo library to upload profile pictures, share images, and access media for your content.';
+        message =
+            'Hushh needs access to your photo library to upload profile pictures, share images, and access media for your content.';
         break;
       case 'microphone':
         title = 'Microphone Permission';
-        message = 'Hushh uses microphone access for voice input features, audio messages, and enhanced communication capabilities.';
+        message =
+            'Hushh uses microphone access for voice input features, audio messages, and enhanced communication capabilities.';
         break;
     }
 
@@ -503,7 +508,7 @@ class _PermissionsViewState extends State<PermissionsView> {
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Title and description with Pro badge
           Expanded(
             child: Column(
@@ -554,7 +559,7 @@ class _PermissionsViewState extends State<PermissionsView> {
               ],
             ),
           ),
-          
+
           // Permission toggle switch
           if (isRestrictedForGuest)
             CupertinoSwitch(

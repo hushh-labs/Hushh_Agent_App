@@ -159,20 +159,48 @@ class _DashboardView extends StatelessWidget {
 
   void _showNotifications(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Notifications feature coming soon!'),
-        backgroundColor: Colors.blue,
+      SnackBar(
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pinkAccent],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: const Text(
+            'Notifications feature coming soon!',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
 
   void _showCoinComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Coming soon!'),
-        backgroundColor: Color(0xFFA342FF),
+      SnackBar(
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pinkAccent],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: const Text(
+            'Coming soon!',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -210,11 +238,24 @@ class _DashboardView extends StatelessWidget {
   void _launchQRScanner(BuildContext context) {
     // Show coming soon message for QR scanner
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('QR Scanner feature coming soon!'),
-        backgroundColor: Color(0xFFA342FF),
+      SnackBar(
+        content: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.pinkAccent],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: const Text(
+            'QR Scanner feature coming soon!',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
