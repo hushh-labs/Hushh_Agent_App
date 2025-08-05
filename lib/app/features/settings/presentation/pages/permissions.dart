@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../../shared/utils/app_local_storage.dart';
 import '../../../../../shared/core/components/guest_access_control.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 /// Main permissions management page implementing comprehensive permission system
 class PermissionsView extends StatefulWidget {
@@ -100,67 +101,43 @@ class _PermissionsViewState extends State<PermissionsView> {
     }
   }
 
-  /// Request specific permission
+  /// Request permission for a specific feature
   Future<void> _requestPermission(Permission permission, String key) async {
-    // Check current status first
-    PermissionStatus currentStatus = await permission.status;
-
-    // Handle permanently denied case
-    if (currentStatus == PermissionStatus.permanentlyDenied) {
-      _showPermissionExplanationDialog(key);
-      return;
-    }
-
-    // Request permission
-    PermissionStatus status = await permission.request();
-    permissionStates[key] = status;
-
-    // Handle result
-    if (status == PermissionStatus.denied ||
-        status == PermissionStatus.permanentlyDenied) {
-      _showPermissionExplanationDialog(key);
-    }
-
-    // Update UI
-    permissionStatuses[key] = status.isGranted;
+    final status = await permission.request();
+    
+    setState(() {
+      permissionStatuses[key] = status.isGranted;
+      permissionStates[key] = status;
+    });
+    
     _checkAllPermissionStatuses();
-    setState(() {});
+    
+    if (status.isPermanentlyDenied) {
+      _showPermissionExplanationDialog(key);
+    }
   }
 
-  /// Handle bulk permission toggle
-  void _toggleAllPermissions(bool value) async {
+  /// Toggle all permissions on/off
+  Future<void> _toggleAllPermissions(bool value) async {
     if (value) {
       // Request all permissions
-      await _initializeNotificationPermission();
+      await _requestPermission(Permission.notification, 'notification');
       await _requestPermission(Permission.contacts, 'contact');
       await _requestPermission(Permission.locationWhenInUse, 'location');
       await _requestPermission(Permission.camera, 'camera');
       await _requestPermission(Permission.photos, 'media');
       await _requestPermission(Permission.microphone, 'microphone');
     } else {
-      // Show explanation for disabling permissions
-      showDialog(
+      // Show dialog explaining how to disable permissions
+      StandardDialog.showInfoDialog(
         context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Text('Disable Permissions'),
-            content: const Text(
-              'To disable all permissions, you\'ll need to go to your device settings and manually turn them off.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
+        title: 'Disable Permissions',
+        message: 'To disable all permissions, you\'ll need to go to your device settings and manually turn them off.',
+        primaryButtonText: 'OK',
+        icon: Icons.settings,
+        iconColor: const Color(0xFFA342FF),
       );
     }
-    _checkAllPermissionStatuses();
   }
 
   /// Show permission explanation dialog
@@ -201,77 +178,13 @@ class _PermissionsViewState extends State<PermissionsView> {
         break;
     }
 
-    showDialog(
+    StandardDialog.showInfoDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFA342FF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.info_outline,
-                  color: Color(0xFFA342FF),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-              height: 1.4,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-            if (permissionStates[key] == PermissionStatus.permanentlyDenied)
-              Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    openAppSettings();
-                  },
-                  child: const Text(
-                    'Open Settings',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
+      title: title,
+      message: message,
+      primaryButtonText: 'OK',
+      icon: Icons.info_outline,
+      iconColor: const Color(0xFFA342FF),
     );
   }
 
@@ -315,7 +228,7 @@ class _PermissionsViewState extends State<PermissionsView> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFA342FF).withOpacity(0.1),
+                      color: const Color(0xFFA342FF).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: const Icon(
@@ -349,8 +262,9 @@ class _PermissionsViewState extends State<PermissionsView> {
 
             const SizedBox(height: 20),
 
-            // Master toggle
+            // All permissions toggle
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -434,7 +348,7 @@ class _PermissionsViewState extends State<PermissionsView> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
@@ -482,7 +396,7 @@ class _PermissionsViewState extends State<PermissionsView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: isRestrictedForGuest
-            ? Border.all(color: const Color(0xFFA342FF).withOpacity(0.3))
+            ? Border.all(color: const Color(0xFFA342FF).withValues(alpha: 0.3))
             : null,
       ),
       child: Row(
@@ -493,10 +407,10 @@ class _PermissionsViewState extends State<PermissionsView> {
             height: 40,
             decoration: BoxDecoration(
               color: isRestrictedForGuest
-                  ? const Color(0xFFA342FF).withOpacity(0.1)
+                  ? const Color(0xFFA342FF).withValues(alpha: 0.1)
                   : (isGranted
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.grey.withOpacity(0.1)),
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.grey.withValues(alpha: 0.1)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -532,7 +446,7 @@ class _PermissionsViewState extends State<PermissionsView> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFA342FF).withOpacity(0.1),
+                          color: const Color(0xFFA342FF).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(

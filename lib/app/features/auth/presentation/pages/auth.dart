@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../bloc/auth_bloc.dart';
 import '../components/country_code_text_field.dart';
@@ -12,6 +13,7 @@ import '../../domain/enum.dart';
 import 'otp_verification.dart';
 
 import '../../../../../shared/utils/development_helper.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 class AuthPage extends StatefulWidget {
   final LoginMode loginMode;
@@ -134,13 +136,17 @@ class _AuthPageState extends State<AuthPage> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: Colors.grey.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.star,
-                          color: Colors.orange,
-                          size: 20,
+                        child: SvgPicture.asset(
+                          'assets/star-icon.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: const ColorFilter.mode(
+                            Colors.black,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ],
@@ -274,82 +280,28 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   void _showErrorDialog(BuildContext context, String errorMessage) {
-    showDialog(
+    String message = errorMessage;
+    
+    if (DevelopmentHelper.isDebugMode && errorMessage.contains('Too many OTP requests')) {
+      message += '\n\nDevelopment Mode:\nThis is a common issue during development. Try:\n• Wait 5-10 minutes before retrying\n• Use a different phone number\n• Check Firebase console for quota limits';
+    }
+    
+    StandardDialog.showErrorDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Error'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(errorMessage),
-              if (DevelopmentHelper.isDebugMode &&
-                  errorMessage.contains('Too many OTP requests')) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.orange.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Development Mode',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'This is a common issue during development. Try:',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        '• Wait 5-10 minutes before retrying\n• Use a different phone number\n• Check Firebase console for quota limits',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-            if (DevelopmentHelper.isDebugMode &&
-                errorMessage.contains('Too many OTP requests')) ...[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  // Show a snackbar with development tip
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Development tip: Wait 5-10 minutes before retrying or use a different phone number.',
-                      ),
-                      duration: Duration(seconds: 8),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                },
-                child: const Text('Development Tip'),
+      title: 'Authentication Error',
+      message: message,
+      onPressed: () {
+        if (DevelopmentHelper.isDebugMode && errorMessage.contains('Too many OTP requests')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Development tip: Wait 5-10 minutes before retrying or use a different phone number.',
               ),
-            ],
-          ],
-        );
+              duration: Duration(seconds: 8),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       },
     );
   }

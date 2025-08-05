@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/agent_card_widget.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 /// Demo page to showcase the agent card widget
 class AgentCardDemoPage extends StatelessWidget {
@@ -186,40 +187,24 @@ class AgentCardDemoPage extends StatelessWidget {
   }
 
   void _showShareDialog(BuildContext context, String agentName) {
-    showDialog(
+    StandardDialog.showInfoDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Share $agentName\'s Card'),
-          content: const Text(
-            'Share functionality would be implemented here. Options could include:\n\n'
-            '• Social media sharing\n'
-            '• QR code display\n'
-            '• Email/SMS sharing\n'
-            '• Download as image',
+      title: 'Share $agentName\'s Card',
+      message: 'Share functionality would be implemented here. Options could include:\n\n'
+          '• Social media sharing\n'
+          '• QR code display\n'
+          '• Email/SMS sharing\n'
+          '• Download as image',
+      primaryButtonText: 'Share',
+      secondaryButtonText: 'Close',
+      icon: Icons.share,
+      iconColor: const Color(0xFFA342FF),
+      onPrimaryPressed: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$agentName\'s card would be shared'),
+            behavior: SnackBarBehavior.floating,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('$agentName\'s card would be shared'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Share'),
-            ),
-          ],
         );
       },
     );

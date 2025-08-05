@@ -176,6 +176,8 @@ flutter:
     - assets/Hushh agent app.png
     - assets/dashboard_bottom_bar_icon.svg
     - assets/profile_bottom_bar_icon.svg
+    - assets/hushh_s_logo_v1.png
+    - assets/star-icon.svg
   
   fonts:
     - family: Inter

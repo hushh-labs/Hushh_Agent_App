@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/lookbook.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 class LookbooksGridView extends StatelessWidget {
   final List<Lookbook> lookbooks;
@@ -292,40 +293,16 @@ class LookbooksGridView extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, Lookbook lookbook) {
-    showDialog(
+    StandardDialog.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Lookbook'),
-        content: Text(
-          'Are you sure you want to delete "${lookbook.lookbookName}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.purple, Colors.pinkAccent],
-              ),
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                onLookbookDelete(lookbook.id);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-              child: const Text('Delete'),
-            ),
-          ),
-        ],
-      ),
+      title: 'Delete Lookbook',
+      message: 'Are you sure you want to delete "${lookbook.lookbookName}"? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever,
+      iconColor: const Color(0xFFE54D60),
+      isDestructive: true,
+      onConfirm: () => onLookbookDelete(lookbook.id),
     );
   }
 

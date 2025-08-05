@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/product.dart';
 import 'product_stock_management_sheet.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 enum ProductTileType { grid, list, compact }
 
@@ -143,55 +144,32 @@ class _ProductTileState extends State<ProductTile> {
   void _showDeleteConfirmation() {
     if (_isDeleteInProgress) return;
 
-    showDialog(
+    StandardDialog.showConfirmationDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Product'),
-          content: Text(
-              'Are you sure you want to delete "${widget.product.productName}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.purple, Colors.pinkAccent],
-                ),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  if (widget.onDeleteProduct != null) {
-                    setState(() {
-                      _isDeleteInProgress = true;
-                    });
+      title: 'Delete Product',
+      message: 'Are you sure you want to delete "${widget.product.productName}"?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever,
+      iconColor: const Color(0xFFE54D60),
+      isDestructive: true,
+      onConfirm: () {
+        if (widget.onDeleteProduct != null) {
+          setState(() {
+            _isDeleteInProgress = true;
+          });
 
-                    widget.onDeleteProduct!(widget.product.productId);
+          widget.onDeleteProduct!(widget.product.productId);
 
-                    // Reset after a delay
-                    Future.delayed(const Duration(seconds: 3), () {
-                      if (mounted) {
-                        setState(() {
-                          _isDeleteInProgress = false;
-                        });
-                      }
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                ),
-                child: const Text('Delete'),
-              ),
-            ),
-          ],
-        );
+          // Reset after a delay
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              setState(() {
+                _isDeleteInProgress = false;
+              });
+            }
+          });
+        }
       },
     );
   }
