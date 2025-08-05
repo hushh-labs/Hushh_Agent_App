@@ -488,6 +488,7 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Create Lookbook'),
         backgroundColor: Colors.white,
@@ -550,9 +551,14 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
             });
           }
         },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
+        child: GestureDetector(
+          onTap: () {
+            // Dismiss keyboard when tapping outside
+            FocusScope.of(context).unfocus();
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -745,6 +751,7 @@ class _CreateLookbookPageState extends State<CreateLookbookPage> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

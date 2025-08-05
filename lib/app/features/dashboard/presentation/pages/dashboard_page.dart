@@ -161,22 +161,48 @@ class _DashboardView extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.purple, Colors.pinkAccent],
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
+            borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: const Text(
-            'Notifications feature coming soon!',
-            style: TextStyle(color: Colors.white),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Notifications feature coming soon!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         backgroundColor: Colors.transparent,
+        elevation: 0,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -185,22 +211,48 @@ class _DashboardView extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.purple, Colors.pinkAccent],
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
+            borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: const Text(
-            'Coming soon!',
-            style: TextStyle(color: Colors.white),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.monetization_on_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Coins feature coming soon!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         backgroundColor: Colors.transparent,
+        elevation: 0,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
