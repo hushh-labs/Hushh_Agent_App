@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../../shared/utils/app_local_storage.dart';
 import '../../../../../shared/core/components/guest_access_control.dart';
 import '../../../../../shared/core/components/standard_dialog.dart';
+import '../../../../../shared/core/utils/permission_utils.dart';
 
 /// Main permissions management page implementing comprehensive permission system
 class PermissionsView extends StatefulWidget {
@@ -37,6 +38,7 @@ class _PermissionsViewState extends State<PermissionsView> {
   };
 
   bool allPermissionsGranted = false;
+  bool isLoading = true;
 
   // Flutter Local Notifications Plugin
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -50,70 +52,83 @@ class _PermissionsViewState extends State<PermissionsView> {
 
   /// Initialize all permission statuses
   Future<void> _initializePermissionStatuses() async {
-    // Check individual permissions
-    permissionStatuses['notification'] =
-        await Permission.notification.isGranted;
-    permissionStatuses['contact'] = await Permission.contacts.isGranted;
+    try {
+      // Check individual permissions using PermissionUtils
+      final corePermissions = await PermissionUtils.checkAllCorePermissions();
+      
+      setState(() {
+        permissionStatuses.addAll(corePermissions);
+        isLoading = false;
+      });
 
-    // Location has multiple permission types to check
-    permissionStatuses['location'] =
-        (await Permission.locationWhenInUse.isGranted) ||
-            (await Permission.locationAlways.isGranted) ||
-            (await Permission.location.isGranted);
+      // Initialize detailed states for better handling
+      permissionStates['notification'] = await Permission.notification.status;
+      permissionStates['contact'] = await Permission.contacts.status;
+      permissionStates['location'] = await Permission.locationWhenInUse.status;
+      permissionStates['camera'] = await Permission.camera.status;
+      permissionStates['media'] = await Permission.photos.status;
+      permissionStates['microphone'] = await Permission.microphone.status;
 
-    permissionStatuses['camera'] = await Permission.camera.isGranted;
-    permissionStatuses['media'] = await Permission.photos.isGranted;
-    permissionStatuses['microphone'] = await Permission.microphone.isGranted;
-
-    // Initialize detailed states for better handling
-    permissionStates['notification'] = await Permission.notification.status;
-    permissionStates['contact'] = await Permission.contacts.status;
-    permissionStates['location'] = await Permission.locationWhenInUse.status;
-    permissionStates['camera'] = await Permission.camera.status;
-    permissionStates['media'] = await Permission.photos.status;
-    permissionStates['microphone'] = await Permission.microphone.status;
-
-    _checkAllPermissionStatuses();
-    setState(() {});
+      _checkAllPermissionStatuses();
+    } catch (e) {
+      debugPrint('Error initializing permissions: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
+
+
 
   /// Check if all permissions are granted
   void _checkAllPermissionStatuses() {
     allPermissionsGranted = permissionStatuses.values.every((status) => status);
   }
 
-  /// Platform-specific notification permission initialization
-  Future<void> _initializeNotificationPermission() async {
-    if (Platform.isIOS) {
-      await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
-    } else {
-      await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
-    }
-  }
+
 
   /// Request permission for a specific feature
   Future<void> _requestPermission(Permission permission, String key) async {
-    final status = await permission.request();
-    
-    setState(() {
-      permissionStatuses[key] = status.isGranted;
-      permissionStates[key] = status;
-    });
-    
-    _checkAllPermissionStatuses();
-    
-    if (status.isPermanentlyDenied) {
-      _showPermissionExplanationDialog(key);
+    try {
+      PermissionStatus status;
+      
+      // Use PermissionUtils for better handling
+      if (permission == Permission.notification) {
+        status = await PermissionUtils.requestNotificationPermission();
+      } else if (permission == Permission.locationWhenInUse || 
+                 permission == Permission.locationAlways || 
+                 permission == Permission.location) {
+        status = await PermissionUtils.requestLocationPermission();
+      } else {
+        status = await PermissionUtils.requestPermission(permission);
+      }
+      
+      setState(() {
+        permissionStatuses[key] = status.isGranted;
+        permissionStates[key] = status;
+      });
+      
+      _checkAllPermissionStatuses();
+      
+      if (status.isPermanentlyDenied) {
+        _showPermissionExplanationDialog(key);
+      } else if (status.isDenied) {
+        // Show custom dialog for denied permissions
+        PermissionUtils.handlePermissionDenied(
+          context: context,
+          permission: permission,
+          onRetry: () => _requestPermission(permission, key),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error requesting permission $key: $e');
+      if (mounted) {
+        StandardDialog.showErrorDialog(
+          context: context,
+          title: 'Permission Error',
+          message: 'Failed to request permission. Please try again.',
+        );
+      }
     }
   }
 
@@ -209,7 +224,26 @@ class _PermissionsViewState extends State<PermissionsView> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
+      body: isLoading
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA342FF)),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading permissions...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -260,7 +294,7 @@ class _PermissionsViewState extends State<PermissionsView> {
               ),
             ),
 
-            const SizedBox(height: 20),
+
 
             // All permissions toggle
             Container(
@@ -284,7 +318,7 @@ class _PermissionsViewState extends State<PermissionsView> {
                   CupertinoSwitch(
                     value: allPermissionsGranted,
                     onChanged: _toggleAllPermissions,
-                    activeColor: const Color(0xFFA342FF),
+                    activeTrackColor: const Color(0xFFA342FF),
                   ),
                 ],
               ),
@@ -481,16 +515,18 @@ class _PermissionsViewState extends State<PermissionsView> {
               onChanged: (value) {
                 GuestAccessControl.showPermissionBlockedDialog(context, title);
               },
-              activeColor: const Color(0xFFA342FF),
+              activeTrackColor: const Color(0xFFA342FF),
             )
           else
             CupertinoSwitch(
               value: isGranted,
               onChanged: (value) => _requestPermission(permission, key),
-              activeColor: const Color(0xFFA342FF),
+              activeTrackColor: const Color(0xFFA342FF),
             ),
         ],
       ),
     );
   }
+
+
 }

@@ -27,13 +27,17 @@ class ProfileDialogs {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFA342FF).withOpacity(0.1),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.feedback_outlined,
-                color: Color(0xFFA342FF),
-                size: 24,
+                color: Colors.white,
+                size: 20,
               ),
             ),
             const SizedBox(width: 12),

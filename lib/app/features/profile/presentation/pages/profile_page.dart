@@ -481,13 +481,53 @@ class _ProfilePageState extends State<ProfilePage>
               context,
               'Notifications',
               () {
-                try {
-                  Navigator.pushNamed(context, AppRoutes.home);
-                } catch (e) {
-                  _showErrorSnackBar(
-                    'Unable to open Notifications: ${e.toString()}',
-                  );
-                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Notifications feature coming soon!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 3),
+                    margin: const EdgeInsets.all(16),
+                  ),
+                );
               },
             );
           }),
@@ -496,11 +536,53 @@ class _ProfilePageState extends State<ProfilePage>
               context,
               'Permissions',
               () {
-                try {
-                  Navigator.pushNamed(context, AppRoutes.permissions);
-                } catch (e) {
-                  _showErrorSnackBar('Unable to open Permissions');
-                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.security_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Permissions feature coming soon!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 3),
+                    margin: const EdgeInsets.all(16),
+                  ),
+                );
               },
             );
           }),
@@ -514,35 +596,53 @@ class _ProfilePageState extends State<ProfilePage>
               context,
               'Send Feedback',
               () {
-                try {
-                  // Show purple gradient SnackBar for feedback coming soon
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.purple, Colors.pinkAccent],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 16),
-                        child: const Text(
-                          'Feedback feature coming soon!',
-                          style: TextStyle(color: Colors.white),
-                        ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      backgroundColor: Colors.transparent,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      duration: const Duration(seconds: 3),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.feedback_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Feedback feature coming soon!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                } catch (e) {
-                  _showErrorSnackBar('Unable to open Send Feedback');
-                }
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 3),
+                    margin: const EdgeInsets.all(16),
+                  ),
+                );
               },
             );
           }),
