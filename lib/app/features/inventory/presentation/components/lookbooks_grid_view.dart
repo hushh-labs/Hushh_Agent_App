@@ -152,7 +152,7 @@ class LookbooksGridView extends StatelessWidget {
     return Expanded(
       flex: 2,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -164,7 +164,7 @@ class LookbooksGridView extends StatelessWidget {
                     lookbook.lookbookName,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: 12,
                       color: Colors.black87,
                     ),
                     maxLines: 1,
@@ -173,16 +173,16 @@ class LookbooksGridView extends StatelessWidget {
                 ),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
                     color: Colors.purple[50],
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: Colors.purple[200]!),
                   ),
                   child: Text(
                     '${lookbook.products.length}',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w600,
                       color: Colors.purple[700],
                     ),
@@ -191,7 +191,7 @@ class LookbooksGridView extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
 
             // Description (if available)
             if (lookbook.description != null &&
@@ -199,14 +199,14 @@ class LookbooksGridView extends StatelessWidget {
               Text(
                 lookbook.description!,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   color: Colors.grey[600],
-                  height: 1.2,
+                  height: 1.1,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
             ],
 
             const Spacer(),
@@ -216,7 +216,7 @@ class LookbooksGridView extends StatelessWidget {
               children: [
                 Icon(
                   Icons.access_time,
-                  size: 10,
+                  size: 8,
                   color: Colors.grey[500],
                 ),
                 const SizedBox(width: 2),
@@ -224,14 +224,14 @@ class LookbooksGridView extends StatelessWidget {
                   child: Text(
                     _formatRelativeTime(lookbook.createdAt),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color: Colors.grey[500],
                     ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  size: 10,
+                  size: 8,
                   color: Colors.grey[400],
                 ),
               ],

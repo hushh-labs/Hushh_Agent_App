@@ -43,99 +43,36 @@ class _ChatViewState extends State<_ChatView> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            const Text(
-              'Chats',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+        title: const Text(
+          'Chats',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 64,
+              color: Colors.grey,
             ),
-            const Spacer(),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.add,
+            SizedBox(height: 24),
+            Text(
+              'Coming soon',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
                 color: Colors.black,
-                size: 24,
               ),
             ),
           ],
         ),
-      ),
-      body: BlocConsumer<chat.ChatBloc, chat.ChatState>(
-        listener: (context, state) {
-          if (state is chat.ChatErrorState) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is chat.ChatLoadingState) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          List<chat.ChatItem> chats = [];
-
-          if (state is chat.ChatsLoadedState) {
-            chats = state.filteredChats;
-          }
-
-          return Column(
-            children: [
-              // Search Bar
-              ChatSearchBar(
-                controller: _searchController,
-                onChanged: (query) {
-                  GuestUtils.executeWithGuestCheck(
-                    context,
-                    'Chat Search',
-                    () => context
-                        .read<chat.ChatBloc>()
-                        .add(chat.SearchChatsEvent(query)),
-                  );
-                },
-              ),
-
-              // Chat List
-              Expanded(
-                child: chats.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.only(top: 100),
-                        child: EmptyChatState(),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: chats.length,
-                        itemBuilder: (context, index) {
-                          final chat = chats[index];
-                          return ChatListItem(
-                            chatItem: chat,
-                            onTap: () => GuestUtils.executeWithGuestCheck(
-                              context,
-                              'Chat Messages',
-                              () => _openChat(context, chat),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
       ),
     );
   }
