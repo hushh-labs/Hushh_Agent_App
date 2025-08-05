@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'auth.dart';
 import '../../domain/enum.dart';
 import '../../../../../shared/core/utils/screen_utils.dart';
@@ -22,11 +23,11 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
       'icon': Icons.phone,
       'text': 'Continue with Phone',
     },
-    {
-      'type': 'Email',
-      'icon': Icons.email,
-      'text': 'Continue with Email',
-    },
+    // {
+    //   'type': 'Email',
+    //   'icon': Icons.email,
+    //   'text': 'Continue with Email',
+    // },
     {
       'type': 'Guest',
       'icon': Icons.person_outline,
@@ -70,7 +71,7 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                                       borderRadius: BorderRadius.circular(
                                           50), // Adjust value for roundness
                                       child: Image.asset(
-                                        'assets/app-logo.png',
+                                        'assets/hushh_s_logo_v1.png',
                                         width: context.widthPercent(33),
                                         height: context.widthPercent(33) * 1.2,
                                         fit: BoxFit.contain,
@@ -154,36 +155,44 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
                 horizontal: 20.0,
                 vertical: 2.0,
               ),
-              child: Text.rich(
-                TextSpan(
-                  text: "By entering information, I agree to Hushh's ",
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.black.withValues(alpha: 0.7),
+              child: GestureDetector(
+                onTap: () async {
+                  final Uri url = Uri.parse('https://hushh.ai');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Text.rich(
+                  TextSpan(
+                    text: "By entering information, I agree to Hushh's ",
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.black.withValues(alpha: 0.7),
+                        ),
+                    children: <InlineSpan>[
+                      const TextSpan(
+                        text: 'Terms of Service',
+                        style: TextStyle(color: Color(0xFFE54D60)),
                       ),
-                  children: <InlineSpan>[
-                    const TextSpan(
-                      text: 'Terms of Service',
-                      style: TextStyle(color: Color(0xFFE54D60)),
-                    ),
-                    const TextSpan(text: ', '),
-                    const TextSpan(
-                      text: 'Non-discrimination Policy',
-                      style: TextStyle(color: Color(0xFFE54D60)),
-                    ),
-                    const TextSpan(text: ' and '),
-                    const TextSpan(
-                      text: 'Payments Terms of Service',
-                      style: TextStyle(color: Color(0xFFE54D60)),
-                    ),
-                    const TextSpan(text: ' and acknowledge the '),
-                    const TextSpan(
-                      text: 'Privacy Policy',
-                      style: TextStyle(color: Color(0xFFE54D60)),
-                    ),
-                    const TextSpan(text: '.'),
-                  ],
+                      const TextSpan(text: ', '),
+                      const TextSpan(
+                        text: 'Non-discrimination Policy',
+                        style: TextStyle(color: Color(0xFFE54D60)),
+                      ),
+                      const TextSpan(text: ' and '),
+                      const TextSpan(
+                        text: 'Payments Terms of Service',
+                        style: TextStyle(color: Color(0xFFE54D60)),
+                      ),
+                      const TextSpan(text: ' and acknowledge the '),
+                      const TextSpan(
+                        text: 'Privacy Policy',
+                        style: TextStyle(color: Color(0xFFE54D60)),
+                      ),
+                      const TextSpan(text: '.'),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ],
@@ -205,29 +214,7 @@ class _MainAuthSelectionPageState extends State<MainAuthSelectionPage> {
   }
 
   void _navigateToGuest(BuildContext context) {
-    // Direct guest authentication - enter guest mode immediately
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.purple, Colors.pink],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: const Text(
-            'Welcome guest explore the limited feature',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    // Navigate directly to home page in guest mode
+    // Navigate directly to home page in guest mode without popup
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.home,

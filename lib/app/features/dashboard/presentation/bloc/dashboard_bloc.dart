@@ -187,9 +187,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           iconName: 'people',
           value: '', // Empty as requested
         ),
-        const QuickInsightItem(
+        const         QuickInsightItem(
           id: 'logbooks_products',
-          title: 'Logbooks &\nProducts',
+          title: 'Lookbooks &\nProducts',
           iconName: 'inventory',
           value: '', // Empty as requested
         ),

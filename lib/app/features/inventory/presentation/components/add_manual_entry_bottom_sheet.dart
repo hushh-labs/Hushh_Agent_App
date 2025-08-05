@@ -67,7 +67,11 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    // Dismiss keyboard before closing
+                    FocusScope.of(context).unfocus();
+                    Navigator.pop(context);
+                  },
                   icon: const Icon(Icons.close),
                 ),
                 const Expanded(
@@ -87,89 +91,94 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
 
           // Form
           Expanded(
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _buildTextField(
-                    controller: _nameController,
-                    label: 'Product Name',
-                    hint: 'Enter product name',
-                    isRequired: true,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _descriptionController,
-                    label: 'Product Description',
-                    hint: 'Enter product description (optional)',
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _imageController,
-                    label: 'Product Image URL',
-                    hint: 'https://example.com/image.jpg (optional)',
-                    keyboardType: TextInputType.url,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: _buildTextField(
-                          controller: _priceController,
-                          label: 'Product Price',
-                          hint: '0.00',
-                          isRequired: true,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+            child: GestureDetector(
+              onTap: () {
+                // Dismiss keyboard when tapping outside
+                FocusScope.of(context).unfocus();
+              },
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'Product Name',
+                      hint: 'Enter product name',
+                      isRequired: true,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Product Description',
+                      hint: 'Enter product description (optional)',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _imageController,
+                      label: 'Product Image URL',
+                      hint: 'https://example.com/image.jpg (optional)',
+                      keyboardType: TextInputType.url,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildTextField(
+                            controller: _priceController,
+                            label: 'Product Price',
+                            hint: '0.00',
+                            isRequired: true,
+                            keyboardType: TextInputType.number,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _currencyController,
-                          label: 'Currency',
-                          hint: 'USD',
-                          isRequired: true,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildTextField(
+                            controller: _currencyController,
+                            label: 'Currency',
+                            hint: 'USD',
+                            isRequired: true,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _skuController,
-                    label: 'Product SKU/ID',
-                    hint: 'Unique product identifier',
-                    isRequired: true,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _quantityController,
-                    label: 'Stock Quantity',
-                    hint: '0',
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _skuController,
+                      label: 'Product SKU/ID',
+                      hint: 'Unique product identifier',
+                      isRequired: true,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _quantityController,
+                      label: 'Stock Quantity',
+                      hint: '0',
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
           ),
 
           // Submit Button
           Container(
-            padding: EdgeInsets.only(
+            padding: const EdgeInsets.only(
               left: 20,
               right: 20,
-              bottom: MediaQuery.of(context).padding.bottom + 20,
+              bottom: 20,
               top: 16,
             ),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),
@@ -276,6 +285,9 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
   }
 
   void _submitForm() async {
+    // Dismiss keyboard first
+    FocusScope.of(context).unfocus();
+    
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -291,6 +303,17 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
         throw Exception('User not authenticated');
       }
 
+      // Validate price input
+      final priceText = _priceController.text.trim();
+      if (priceText.isEmpty) {
+        throw Exception('Price is required');
+      }
+      
+      final price = double.tryParse(priceText);
+      if (price == null || price < 0) {
+        throw Exception('Please enter a valid price');
+      }
+
       final product = Product(
         productId: const Uuid().v4(),
         productName: _nameController.text.trim(),
@@ -300,7 +323,7 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
         productImage: _imageController.text.trim().isEmpty
             ? null
             : _imageController.text.trim(),
-        productPrice: double.parse(_priceController.text.trim()),
+        productPrice: price,
         productCurrency: _currencyController.text.trim(),
         productSkuUniqueId: _skuController.text.trim(),
         createdAt: DateTime.now(),
@@ -340,7 +363,7 @@ class _AddManualEntryBottomSheetState extends State<AddManualEntryBottomSheet> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add product: $e'),
+            content: Text('Failed to add product: ${e.toString()}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

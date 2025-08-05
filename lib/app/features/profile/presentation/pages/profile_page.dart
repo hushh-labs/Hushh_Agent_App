@@ -166,42 +166,39 @@ class _ProfilePageState extends State<ProfilePage>
                 // Check if user is in guest mode and override profile data
                 final isGuest = GuestUtils.isGuestMode;
 
-                final displayName = isGuest
-                    ? 'Guest User'
-                    : state is ProfileLoaded
+                // If guest mode, show the simplified guest UI
+                if (isGuest) {
+                  return _buildGuestProfileUI();
+                }
+
+                final displayName = state is ProfileLoaded
+                    ? state.displayName
+                    : state is ProfileUpdated
                         ? state.displayName
-                        : state is ProfileUpdated
+                        : state is ImageUploaded
                             ? state.displayName
-                            : state is ImageUploaded
-                                ? state.displayName
-                                : (state as ProfileUpdating).displayName;
-                final email = isGuest
-                    ? ''
-                    : state is ProfileLoaded
+                            : (state as ProfileUpdating).displayName;
+                final email = state is ProfileLoaded
+                    ? state.email
+                    : state is ProfileUpdated
                         ? state.email
-                        : state is ProfileUpdated
+                        : state is ImageUploaded
                             ? state.email
-                            : state is ImageUploaded
-                                ? state.email
-                                : (state as ProfileUpdating).email;
-                final phoneNumber = isGuest
-                    ? ''
-                    : state is ProfileLoaded
+                            : (state as ProfileUpdating).email;
+                final phoneNumber = state is ProfileLoaded
+                    ? state.phoneNumber
+                    : state is ProfileUpdated
                         ? state.phoneNumber
-                        : state is ProfileUpdated
+                        : state is ImageUploaded
                             ? state.phoneNumber
-                            : state is ImageUploaded
-                                ? state.phoneNumber
-                                : (state as ProfileUpdating).phoneNumber;
-                final avatarUrl = isGuest
-                    ? null // No avatar for guest users
-                    : state is ProfileLoaded
+                            : (state as ProfileUpdating).phoneNumber;
+                final avatarUrl = state is ProfileLoaded
+                    ? state.avatarUrl
+                    : state is ProfileUpdated
                         ? state.avatarUrl
-                        : state is ProfileUpdated
-                            ? state.avatarUrl
-                            : state is ImageUploaded
-                                ? state.imageUrl
-                                : (state as ProfileUpdating).avatarUrl;
+                        : state is ImageUploaded
+                            ? state.imageUrl
+                            : (state as ProfileUpdating).avatarUrl;
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -1363,6 +1360,96 @@ class _ProfilePageState extends State<ProfilePage>
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  /// Build the guest profile UI that matches the exact design from the image
+  Widget _buildGuestProfileUI() {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          // Main content area - centered
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Large grey user icon
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.grey.withValues(alpha: 0.1),
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      size: 60,
+                      color: Colors.grey.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // "Guest User" text
+                  const Text(
+                    'Guest User',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // Description text
+                  Text(
+                    'Sign in to unlock full profile features.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Sign in button at the bottom
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.mainAuth,
+                    (route) => false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFA342FF), // Purple color
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Sign In to Unlock',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

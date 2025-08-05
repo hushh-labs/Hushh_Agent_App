@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/product.dart';
 import 'product_stock_management_sheet.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 enum ProductTileType { grid, list, compact }
 
@@ -143,55 +144,32 @@ class _ProductTileState extends State<ProductTile> {
   void _showDeleteConfirmation() {
     if (_isDeleteInProgress) return;
 
-    showDialog(
+    StandardDialog.showConfirmationDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Product'),
-          content: Text(
-              'Are you sure you want to delete "${widget.product.productName}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.purple, Colors.pinkAccent],
-                ),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  if (widget.onDeleteProduct != null) {
-                    setState(() {
-                      _isDeleteInProgress = true;
-                    });
+      title: 'Delete Product',
+      message: 'Are you sure you want to delete "${widget.product.productName}"?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever,
+      iconColor: const Color(0xFFE54D60),
+      isDestructive: true,
+      onConfirm: () {
+        if (widget.onDeleteProduct != null) {
+          setState(() {
+            _isDeleteInProgress = true;
+          });
 
-                    widget.onDeleteProduct!(widget.product.productId);
+          widget.onDeleteProduct!(widget.product.productId);
 
-                    // Reset after a delay
-                    Future.delayed(const Duration(seconds: 3), () {
-                      if (mounted) {
-                        setState(() {
-                          _isDeleteInProgress = false;
-                        });
-                      }
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                ),
-                child: const Text('Delete'),
-              ),
-            ),
-          ],
-        );
+          // Reset after a delay
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              setState(() {
+                _isDeleteInProgress = false;
+              });
+            }
+          });
+        }
       },
     );
   }
@@ -201,7 +179,7 @@ class _ProductTileState extends State<ProductTile> {
     return GestureDetector(
       onTap: () => widget.onProductClicked(widget.product.productId),
       child: Container(
-        height: widget.specifyDimensions ? 300.0 : 280,
+        height: widget.specifyDimensions ? 300.0 : 290,
         width: widget.specifyDimensions ? 200.0 : 180,
         child: Card(
           color: Colors.white,
@@ -219,7 +197,7 @@ class _ProductTileState extends State<ProductTile> {
                 children: [
                   // Product Image
                   Expanded(
-                    flex: 4,
+                    flex: 3,
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
@@ -231,24 +209,24 @@ class _ProductTileState extends State<ProductTile> {
 
                   // Product Info
                   Expanded(
-                    flex: 3,
+                    flex: 4,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           // Product Name
                           Text(
                             widget.product.productName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           // Price with strikethrough
                           RichText(
                             text: TextSpan(
@@ -263,7 +241,7 @@ class _ProductTileState extends State<ProductTile> {
                                       '${widget.product.productCurrency}${widget.product.productPrice.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     color: Colors.blue[700],
-                                    fontSize: 16,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 const TextSpan(text: ' '),
@@ -273,14 +251,14 @@ class _ProductTileState extends State<ProductTile> {
                                   style: const TextStyle(
                                     color: Color(0xFF637087),
                                     fontWeight: FontWeight.w400,
-                                    fontSize: 12,
+                                    fontSize: 10,
                                     decoration: TextDecoration.lineThrough,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                         ],
                       ),
                     ),
@@ -290,46 +268,48 @@ class _ProductTileState extends State<ProductTile> {
 
               // Stock Status and Management Section
               Positioned(
-                left: 6,
-                right: 6,
-                bottom: 6,
+                left: 4,
+                right: 4,
+                bottom: 4,
                 child: Row(
                   children: [
                     // Stock Status Badge (Tappable)
-                    GestureDetector(
-                      onTap: _showStockManagementSheet,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: widget.product.stockQuantity > 0
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: widget.product.stockQuantity > 0
-                                ? Colors.green
-                                : Colors.red,
-                            width: 1,
+                    Flexible(
+                      child: GestureDetector(
+                        onTap: _showStockManagementSheet,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
                           ),
-                        ),
-                        child: Text(
-                          widget.product.stockQuantity > 0
-                              ? 'Stock: ${widget.product.stockQuantity}'
-                              : 'Out of Stock',
-                          style: TextStyle(
-                            fontSize: 10,
+                          decoration: BoxDecoration(
                             color: widget.product.stockQuantity > 0
-                                ? Colors.green.shade700
-                                : Colors.red.shade700,
-                            fontWeight: FontWeight.w500,
+                                ? Colors.green.withValues(alpha: 0.1)
+                                : Colors.red.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: widget.product.stockQuantity > 0
+                                  ? Colors.green
+                                  : Colors.red,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            widget.product.stockQuantity > 0
+                                ? 'Stock: ${widget.product.stockQuantity}'
+                                : 'Out of Stock',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: widget.product.stockQuantity > 0
+                                  ? Colors.green.shade700
+                                  : Colors.red.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 4),
                     // Stock Management Buttons
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -342,37 +322,48 @@ class _ProductTileState extends State<ProductTile> {
                                   _updateStock(widget.product.stockQuantity - 1)
                               : null,
                           child: Container(
-                            width: 24,
-                            height: 24,
+                            width: 28,
+                            height: 28,
                             decoration: BoxDecoration(
+                              gradient: (!_isDecreaseInProgress &&
+                                      widget.product.stockQuantity > 0)
+                                  ? const LinearGradient(
+                                      begin: Alignment.topRight,
+                                      end: Alignment.bottomLeft,
+                                      colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                                    )
+                                  : null,
                               color: (!_isDecreaseInProgress &&
                                       widget.product.stockQuantity > 0)
-                                  ? Colors.orange.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: (!_isDecreaseInProgress &&
-                                        widget.product.stockQuantity > 0)
-                                    ? Colors.orange
-                                    : Colors.grey,
-                                width: 1,
-                              ),
+                                  ? null
+                                  : Colors.grey.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              boxShadow: (!_isDecreaseInProgress &&
+                                      widget.product.stockQuantity > 0)
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFFE54D60).withValues(alpha: 0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             child: _isDecreaseInProgress
-                                ? SizedBox(
-                                    width: 8,
-                                    height: 8,
+                                ? const SizedBox(
+                                    width: 10,
+                                    height: 10,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 1,
-                                      color: Colors.grey.shade400,
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
                                 : Icon(
                                     Icons.remove,
-                                    size: 12,
+                                    size: 14,
                                     color: (!_isDecreaseInProgress &&
                                             widget.product.stockQuantity > 0)
-                                        ? Colors.orange.shade700
+                                        ? Colors.white
                                         : Colors.grey.shade400,
                                   ),
                           ),
@@ -385,34 +376,44 @@ class _ProductTileState extends State<ProductTile> {
                                   _updateStock(widget.product.stockQuantity + 1)
                               : null,
                           child: Container(
-                            width: 24,
-                            height: 24,
+                            width: 28,
+                            height: 28,
                             decoration: BoxDecoration(
+                              gradient: !_isIncreaseInProgress
+                                  ? const LinearGradient(
+                                      begin: Alignment.topRight,
+                                      end: Alignment.bottomLeft,
+                                      colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                                    )
+                                  : null,
                               color: !_isIncreaseInProgress
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: !_isIncreaseInProgress
-                                    ? Colors.green
-                                    : Colors.grey,
-                                width: 1,
-                              ),
+                                  ? null
+                                  : Colors.grey.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              boxShadow: !_isIncreaseInProgress
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             child: _isIncreaseInProgress
-                                ? SizedBox(
-                                    width: 8,
-                                    height: 8,
+                                ? const SizedBox(
+                                    width: 10,
+                                    height: 10,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 1,
-                                      color: Colors.grey.shade400,
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
                                 : Icon(
                                     Icons.add,
-                                    size: 12,
+                                    size: 14,
                                     color: !_isIncreaseInProgress
-                                        ? Colors.green.shade700
+                                        ? Colors.white
                                         : Colors.grey.shade400,
                                   ),
                           ),
@@ -424,34 +425,44 @@ class _ProductTileState extends State<ProductTile> {
                               ? () => _showDeleteConfirmation()
                               : null,
                           child: Container(
-                            width: 24,
-                            height: 24,
+                            width: 28,
+                            height: 28,
                             decoration: BoxDecoration(
+                              gradient: !_isDeleteInProgress
+                                  ? const LinearGradient(
+                                      begin: Alignment.topRight,
+                                      end: Alignment.bottomLeft,
+                                      colors: [Color(0xFFE53E3E), Color(0xFFC53030)],
+                                    )
+                                  : null,
                               color: !_isDeleteInProgress
-                                  ? Colors.red.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: !_isDeleteInProgress
-                                    ? Colors.red
-                                    : Colors.grey,
-                                width: 1,
-                              ),
+                                  ? null
+                                  : Colors.grey.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              boxShadow: !_isDeleteInProgress
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFFE53E3E).withValues(alpha: 0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             child: _isDeleteInProgress
-                                ? SizedBox(
-                                    width: 8,
-                                    height: 8,
+                                ? const SizedBox(
+                                    width: 10,
+                                    height: 10,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 1,
-                                      color: Colors.grey.shade400,
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
                                 : Icon(
                                     Icons.delete_outline,
-                                    size: 12,
+                                    size: 14,
                                     color: !_isDeleteInProgress
-                                        ? Colors.red.shade700
+                                        ? Colors.white
                                         : Colors.grey.shade400,
                                   ),
                           ),

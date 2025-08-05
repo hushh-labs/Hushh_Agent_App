@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../domain/entities/product.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 class ProductStockManagementSheet extends StatefulWidget {
   final Product product;
@@ -102,64 +103,54 @@ class _ProductStockManagementSheetState
   }
 
   void _deleteProduct() {
-    showDialog(
+    StandardDialog.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Product'),
-        content: Text(
-          'Are you sure you want to delete "${widget.product.productName}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              setState(() {
-                _isLoading = true;
-              });
-              widget.onDeleteProduct(widget.product.productId).then((_) {
-                setState(() {
-                  _isLoading = false;
-                });
-                Navigator.pop(context); // Close bottom sheet
-              }).catchError((error) {
-                setState(() {
-                  _isLoading = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.purple, Colors.pinkAccent],
-                        ),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
-                      child: Text(
-                        'Error deleting product: $error',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    behavior: SnackBarBehavior.floating,
+      title: 'Delete Product',
+      message: 'Are you sure you want to delete "${widget.product.productName}"? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever,
+      iconColor: const Color(0xFFE54D60),
+      isDestructive: true,
+      onConfirm: () {
+        setState(() {
+          _isLoading = true;
+        });
+        widget.onDeleteProduct(widget.product.productId).then((_) {
+          setState(() {
+            _isLoading = false;
+          });
+          Navigator.pop(context); // Close bottom sheet
+        }).catchError((error) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple, Colors.pinkAccent],
                   ),
-                );
-              });
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.purple),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 8, horizontal: 12),
+                child: Text(
+                  'Error deleting product: $error',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        });
+      },
     );
   }
 
@@ -167,90 +158,79 @@ class _ProductStockManagementSheetState
     if (widget.lookbookId == null || widget.onRemoveFromLookbook == null)
       return;
 
-    showDialog(
+    StandardDialog.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove from Lookbook'),
-        content: Text(
-          'Are you sure you want to remove "${widget.product.productName}" from this lookbook?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              setState(() {
-                _isLoading = true;
-              });
-              widget.onRemoveFromLookbook!
-                      (widget.lookbookId!, widget.product.productId)
-                  .then((_) {
-                setState(() {
-                  _isLoading = false;
-                });
-                Navigator.pop(context); // Close bottom sheet
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.purple, Colors.pinkAccent],
-                        ),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
-                      child: const Text(
-                        'Product removed from lookbook successfully',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    behavior: SnackBarBehavior.floating,
+      title: 'Remove from Lookbook',
+      message: 'Are you sure you want to remove "${widget.product.productName}" from this lookbook?',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      icon: Icons.remove_circle_outline,
+      iconColor: const Color(0xFFA342FF),
+      onConfirm: () {
+        setState(() {
+          _isLoading = true;
+        });
+        widget.onRemoveFromLookbook!
+                (widget.lookbookId!, widget.product.productId)
+            .then((_) {
+          setState(() {
+            _isLoading = false;
+          });
+          Navigator.pop(context); // Close bottom sheet
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple, Colors.pinkAccent],
                   ),
-                );
-              }).catchError((error) {
-                setState(() {
-                  _isLoading = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.purple, Colors.pinkAccent],
-                        ),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
-                      child: Text(
-                        'Error removing product: $error',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    behavior: SnackBarBehavior.floating,
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 8, horizontal: 12),
+                child: const Text(
+                  'Product removed from lookbook successfully',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
                   ),
-                );
-              });
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.purple),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
+                ),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }).catchError((error) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple, Colors.pinkAccent],
+                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 8, horizontal: 12),
+                child: Text(
+                  'Error removing product: $error',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        });
+      },
     );
   }
 
@@ -349,17 +329,17 @@ class _ProductStockManagementSheetState
                       const SizedBox(height: 4),
                       Text(
                         '${widget.product.productCurrency}${widget.product.productPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Colors.purple,
-                          fontWeight: FontWeight.w500,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: textSecondaryColor,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Current Stock: $_localStockQuantity',
                         style: TextStyle(
-                          color: textSecondaryColor,
                           fontSize: 14,
+                          color: textSecondaryColor,
                         ),
                       ),
                     ],
@@ -372,166 +352,239 @@ class _ProductStockManagementSheetState
 
           // Stock Controls
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
+              // Decrease Button
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE54D60).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: IconButton(
                   onPressed: _isLoading ? null : _decreaseStock,
-                  icon: const Icon(Icons.remove),
-                  label: const Text('Decrease'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[100],
-                    foregroundColor: Colors.red[700],
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  icon: const Icon(Icons.remove, color: Colors.white, size: 24),
+                ),
+              ),
+
+              // Stock Display
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  '$_localStockQuantity',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _increaseStock,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Increase'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[100],
-                    foregroundColor: Colors.green[700],
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+
+              // Increase Button
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
                   ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: _isLoading ? null : _increaseStock,
+                  icon: const Icon(Icons.add, color: Colors.white, size: 24),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Manual Stock Input
-          Text(
-            'Set Stock Quantity',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: textPrimaryColor,
-                ),
+          TextField(
+            controller: _stockController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              labelText: 'Manual Stock Input',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              suffixIcon: IconButton(
+                onPressed: () {
+                  final newStock = int.tryParse(_stockController.text);
+                  if (newStock != null && newStock >= 0) {
+                    setState(() {
+                      _localStockQuantity = newStock;
+                    });
+                  }
+                },
+                icon: const Icon(Icons.check),
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
+
+          // Action Buttons
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _stockController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly, // Only allow digits
-                  ],
-                  onChanged: (value) {
-                    final newStock = int.tryParse(value);
-                    if (newStock != null && newStock >= 0) {
-                      setState(() {
-                        _localStockQuantity = newStock;
-                      });
-                    }
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Enter stock quantity',
-                    hintStyle: TextStyle(color: textSecondaryColor),
-                    border: OutlineInputBorder(
-                      borderSide: BorderSide(color: textSecondaryColor),
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
                     ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.purple, width: 2),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA342FF).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : () =>
+                        _updateStock(_localStockQuantity),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: textSecondaryColor),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Update Stock',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Remove from Lookbook button (if applicable)
+          if (widget.lookbookId != null &&
+              widget.onRemoveFromLookbook != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _removeFromLookbook,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFA342FF),
+                      side: const BorderSide(color: Color(0xFFA342FF)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
+                    child: const Text('Remove from Lookbook'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Delete Product Button
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [Color(0xFFE53E3E), Color(0xFFC53030)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFE53E3E).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _deleteProduct,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Delete Product',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Save Changes Button
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.purple, Colors.pinkAccent],
-              ),
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            child: ElevatedButton.icon(
-              onPressed:
-                  _isLoading ? null : () => _updateStock(_localStockQuantity),
-              icon: const Icon(Icons.save),
-              label: const Text('Save Changes'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 0,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Remove from Lookbook Button (only shown in lookbook context)
-          if (widget.lookbookId != null &&
-              widget.onRemoveFromLookbook != null) ...[
-            Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.purple, Colors.pinkAccent],
-                ),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : _removeFromLookbook,
-                icon: const Icon(Icons.remove_circle_outline),
-                label: const Text('Remove from Lookbook'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  elevation: 0,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Delete Button
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.purple, Colors.pinkAccent],
-              ),
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            child: ElevatedButton.icon(
-              onPressed: _isLoading ? null : _deleteProduct,
-              icon: const Icon(Icons.delete),
-              label: const Text('Delete Product'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 0,
-              ),
-            ),
-          ),
-
-          // Loading indicator
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-
-          // Bottom padding for safe area
-          const SizedBox(height: 20),
         ],
       ),
     );

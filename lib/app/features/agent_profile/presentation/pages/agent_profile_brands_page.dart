@@ -231,11 +231,23 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerRight,
-              child: Text(
-                '100%',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                ),
+                child: const Text(
+                  '100%',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -245,8 +257,7 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
               child: LinearProgressIndicator(
                 value: 1.0,
                 backgroundColor: Colors.grey[300],
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(Color(0xFF6725F2)),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFA342FF)),
                 minHeight: 10,
               ),
             ),
@@ -267,12 +278,19 @@ class _AgentProfileBrandsPageState extends State<AgentProfileBrandsPage> {
             const SizedBox(height: 8),
 
             // Subtitle
-            const Text(
-              'Choose the brand',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-                letterSpacing: 0.4,
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
+              ).createShader(bounds),
+              child: const Text(
+                'Choose the brand',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  letterSpacing: 0.4,
+                ),
               ),
             ),
 

@@ -18,17 +18,17 @@ class QuickInsightCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFCE4EC), // Light pink background
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFFF8BBD9).withOpacity(0.3),
-            width: 1,
+          gradient: const LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
           ),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFF8BBD9).withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Color(0xFFA342FF).withOpacity(0.08),
+              blurRadius: 8,
+              offset: Offset(0, 4),
             ),
           ],
         ),

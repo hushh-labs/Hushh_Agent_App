@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/lookbook.dart';
+import '../../../../../shared/core/components/standard_dialog.dart';
 
 class LookbooksGridView extends StatelessWidget {
   final List<Lookbook> lookbooks;
@@ -151,7 +152,7 @@ class LookbooksGridView extends StatelessWidget {
     return Expanded(
       flex: 2,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -163,7 +164,7 @@ class LookbooksGridView extends StatelessWidget {
                     lookbook.lookbookName,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: 12,
                       color: Colors.black87,
                     ),
                     maxLines: 1,
@@ -172,16 +173,16 @@ class LookbooksGridView extends StatelessWidget {
                 ),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
                     color: Colors.purple[50],
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: Colors.purple[200]!),
                   ),
                   child: Text(
                     '${lookbook.products.length}',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w600,
                       color: Colors.purple[700],
                     ),
@@ -190,7 +191,7 @@ class LookbooksGridView extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
 
             // Description (if available)
             if (lookbook.description != null &&
@@ -198,14 +199,14 @@ class LookbooksGridView extends StatelessWidget {
               Text(
                 lookbook.description!,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   color: Colors.grey[600],
-                  height: 1.2,
+                  height: 1.1,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
             ],
 
             const Spacer(),
@@ -215,7 +216,7 @@ class LookbooksGridView extends StatelessWidget {
               children: [
                 Icon(
                   Icons.access_time,
-                  size: 10,
+                  size: 8,
                   color: Colors.grey[500],
                 ),
                 const SizedBox(width: 2),
@@ -223,14 +224,14 @@ class LookbooksGridView extends StatelessWidget {
                   child: Text(
                     _formatRelativeTime(lookbook.createdAt),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color: Colors.grey[500],
                     ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  size: 10,
+                  size: 8,
                   color: Colors.grey[400],
                 ),
               ],
@@ -292,40 +293,16 @@ class LookbooksGridView extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, Lookbook lookbook) {
-    showDialog(
+    StandardDialog.showConfirmationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Lookbook'),
-        content: Text(
-          'Are you sure you want to delete "${lookbook.lookbookName}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.purple, Colors.pinkAccent],
-              ),
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                onLookbookDelete(lookbook.id);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-              child: const Text('Delete'),
-            ),
-          ),
-        ],
-      ),
+      title: 'Delete Lookbook',
+      message: 'Are you sure you want to delete "${lookbook.lookbookName}"? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever,
+      iconColor: const Color(0xFFE54D60),
+      isDestructive: true,
+      onConfirm: () => onLookbookDelete(lookbook.id),
     );
   }
 

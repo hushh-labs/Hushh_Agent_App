@@ -1,7 +1,7 @@
 // Shared app constants
 class AppConstants {
   // App information
-  static const String appName = 'Hushh User App';
+  static const String appName = 'Hushh Agent';
   static const String appVersion = '1.0.0';
 
   // API constants
