@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../constants/app_routes.dart';
 import 'app_local_storage.dart';
+import '../core/components/guest_access_control.dart';
 
 class GuestUtils {
   /// Check if user is in guest mode
@@ -10,131 +10,15 @@ class GuestUtils {
   /// Returns true if action should proceed (not in guest mode)
   /// Returns false if dialog was shown (guest mode)
   static bool checkGuestAccess(BuildContext context, String featureName) {
-    if (!isGuestMode) {
-      return true; // User is authenticated, allow action
-    }
-
-    // User is in guest mode, show sign-in dialog
-    showGuestSignInDialog(context, featureName);
-    return false; // Block the action
+    // Use the comprehensive GuestAccessControl system
+    return GuestAccessControl.checkFeatureAccess(context, featureName);
   }
 
   /// Show the guest sign-in dialog
+  /// @deprecated Use GuestAccessControl.showGuestAccessPopup instead
   static void showGuestSignInDialog(BuildContext context, String featureName) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFA342FF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.lock_outline,
-                  color: Color(0xFFA342FF),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Sign In Required',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Sign in to unlock $featureName and access all features.',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.star_outline,
-                      color: Color(0xFFA342FF),
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Get full access to all premium features',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Maybe Later',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  // Navigate to main auth page
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.mainAuth,
-                    (route) => false,
-                  );
-                },
-                child: const Text(
-                  'Sign In',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    // Redirect to the new comprehensive guest access control
+    GuestAccessControl.showGuestAccessPopup(context, featureName: featureName);
   }
 
   /// Wrapper function to execute action only if not in guest mode
@@ -143,8 +27,7 @@ class GuestUtils {
     String featureName,
     VoidCallback action,
   ) {
-    if (checkGuestAccess(context, featureName)) {
-      action();
-    }
+    // Use the comprehensive GuestAccessControl system
+    GuestAccessControl.executeWithAccessCheck(context, featureName, action);
   }
 }

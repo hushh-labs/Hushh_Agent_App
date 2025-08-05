@@ -405,44 +405,44 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ),
 
-            // Enhanced Edit Button
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFA342FF).withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: isLoading
-                      ? null
-                      : () => GuestUtils.executeWithGuestCheck(
-                            context,
-                            'Edit Profile',
-                            () => _showEditProfileBottomSheet(context,
-                                displayName, email, phoneNumber, avatarUrl),
-                          ),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Icon(
-                      Icons.edit_outlined,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Enhanced Edit Button - COMMENTED OUT
+            // Container(
+            //   decoration: BoxDecoration(
+            //     gradient: const LinearGradient(
+            //       colors: [Color(0xFFA342FF), Color(0xFFE54D60)],
+            //     ),
+            //     borderRadius: BorderRadius.circular(10),
+            //     boxShadow: [
+            //       BoxShadow(
+            //         color: const Color(0xFFA342FF).withValues(alpha: 0.3),
+            //         blurRadius: 6,
+            //         offset: const Offset(0, 3),
+            //       ),
+            //     ],
+            //   ),
+            //   child: Material(
+            //     color: Colors.transparent,
+            //     child: InkWell(
+            //       onTap: isLoading
+            //           ? null
+            //           : () => GuestUtils.executeWithGuestCheck(
+            //                 context,
+            //                 'Edit Profile',
+            //                 () => _showEditProfileBottomSheet(context,
+            //                     displayName, email, phoneNumber, avatarUrl),
+            //               ),
+            //       borderRadius: BorderRadius.circular(10),
+            //       child: Padding(
+            //         padding: const EdgeInsets.all(10),
+            //         child: Icon(
+            //           Icons.edit_outlined,
+            //           color: Colors.white,
+            //           size: 20,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ],
@@ -518,7 +518,31 @@ class _ProfilePageState extends State<ProfilePage>
               'Send Feedback',
               () {
                 try {
-                  _showErrorSnackBar('Feedback feature coming soon!');
+                  // Show purple gradient SnackBar for feedback coming soon
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.purple, Colors.pinkAccent],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 16),
+                        child: const Text(
+                          'Feedback feature coming soon!',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      backgroundColor: Colors.transparent,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
                 } catch (e) {
                   _showErrorSnackBar('Unable to open Send Feedback');
                 }

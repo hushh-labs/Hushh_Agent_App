@@ -843,27 +843,31 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
           },
         ),
         actions: [
-          IconButton(
-            icon: Icon(_isSearchVisible ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                _isSearchVisible = !_isSearchVisible;
-                if (!_isSearchVisible) {
-                  _searchController.clear();
-                  context
-                      .read<LookbookBloc>()
-                      .add(const SearchProductsEvent(''));
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.filter_list,
-              color: Colors.grey[400], // Disabled appearance
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: Icon(_isSearchVisible ? Icons.close : Icons.search),
+              onPressed: () {
+                setState(() {
+                  _isSearchVisible = !_isSearchVisible;
+                  if (!_isSearchVisible) {
+                    _searchController.clear();
+                    context
+                        .read<LookbookBloc>()
+                        .add(const SearchProductsEvent(''));
+                  }
+                });
+              },
             ),
-            onPressed: null, // Disabled
           ),
+          // Filter button - COMMENTED OUT
+          // IconButton(
+          //   icon: Icon(
+          //     Icons.filter_list,
+          //     color: Colors.grey[400], // Disabled appearance
+          //   ),
+          //   onPressed: null, // Disabled
+          // ),
         ],
       ),
       body: Column(
@@ -978,153 +982,155 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
     );
   }
 
-  void _showFilterBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.4,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              height: 4,
-              width: 40,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Sort By',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF000000),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildFilterOption(
-                    context,
-                    'Price (Low to High)',
-                    Icons.attach_money,
-                    'price',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFilterOption(
-                    context,
-                    'Stock (High to Low)',
-                    Icons.inventory,
-                    'stock',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFilterOption(
-                    context,
-                    'Name (A to Z)',
-                    Icons.sort_by_alpha,
-                    'name',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Filter bottom sheet - COMMENTED OUT
+  // void _showFilterBottomSheet(BuildContext context) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (context) => Container(
+  //       height: MediaQuery.of(context).size.height * 0.4,
+  //       decoration: const BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.only(
+  //           topLeft: Radius.circular(20),
+  //           topRight: Radius.circular(20),
+  //         ),
+  //       ),
+  //       child: Column(
+  //         children: [
+  //           Container(
+  //             margin: const EdgeInsets.only(top: 8),
+  //             height: 4,
+  //             width: 40,
+  //             decoration: BoxDecoration(
+  //               color: Colors.grey[300],
+  //               borderRadius: BorderRadius.circular(2),
+  //             ),
+  //           ),
+  //           Padding(
+  //             padding: const EdgeInsets.all(20),
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                   children: [
+  //                     const Text(
+  //                       'Sort By',
+  //                       style: TextStyle(
+  //                         fontSize: 20,
+  //                         fontWeight: FontWeight.bold,
+  //                         color: Color(0xFF000000),
+  //                       ),
+  //                     ),
+  //                     IconButton(
+  //                       icon: const Icon(Icons.close),
+  //                       onPressed: () => Navigator.pop(context),
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 const SizedBox(height: 20),
+  //                 _buildFilterOption(
+  //                   context,
+  //                   'Price (Low to High)',
+  //                   Icons.attach_money,
+  //                   'price',
+  //                 ),
+  //                 const SizedBox(height: 16),
+  //                 _buildFilterOption(
+  //                   context,
+  //                   'Stock (High to Low)',
+  //                   Icons.inventory,
+  //                   'stock',
+  //                 ),
+  //                 const SizedBox(height: 16),
+  //                 _buildFilterOption(
+  //                   context,
+  //                   'Name (A to Z)',
+  //                   Icons.sort_by_alpha,
+  //                   'name',
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _buildFilterOption(
-    BuildContext context,
-    String title,
-    IconData icon,
-    String sortByString,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        print(
-            'Filter option tapped: $title, sortBy: $sortByString'); // Debug print
-        Navigator.pop(context);
+  // Filter option widget - COMMENTED OUT
+  // Widget _buildFilterOption(
+  //   BuildContext context,
+  //   String title,
+  //   IconData icon,
+  //   String sortByString,
+  // ) {
+  //   return GestureDetector(
+  //     onTap: () {
+  //       print(
+  //           'Filter option tapped: $title, sortBy: $sortByString'); // Debug print
+  //       Navigator.pop(context);
 
-        // Convert string to enum
-        ProductSortBy sortBy;
-        switch (sortByString) {
-          case 'price':
-            sortBy = ProductSortBy.price;
-            break;
-          case 'stock':
-            sortBy = ProductSortBy.stock;
-            break;
-          case 'name':
-            sortBy = ProductSortBy.name;
-            break;
-          default:
-            sortBy = ProductSortBy.name;
-            break;
-        }
+  //       // Convert string to enum
+  //       ProductSortBy sortBy;
+  //       switch (sortByString) {
+  //         case 'price':
+  //           sortBy = ProductSortBy.price;
+  //           break;
+  //         case 'stock':
+  //           sortBy = ProductSortBy.stock;
+  //           break;
+  //         case 'name':
+  //           sortBy = ProductSortBy.name;
+  //           break;
+  //         default:
+  //           sortBy = ProductSortBy.name;
+  //           break;
+  //       }
 
-        try {
-          context.read<LookbookBloc>().add(FilterProductsEvent(sortBy));
-          print(
-              'FilterProductsEvent dispatched successfully with: $sortBy'); // Debug print
-        } catch (e) {
-          print('Error dispatching FilterProductsEvent: $e');
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE0E0E0)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: Colors.purple,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF000000),
-              ),
-            ),
-            const Spacer(),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Color(0xFF757575),
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  //       try {
+  //         context.read<LookbookBloc>().add(FilterProductsEvent(sortBy));
+  //         print(
+  //             'FilterProductsEvent dispatched successfully with: $sortBy'); // Debug print
+  //       } catch (e) {
+  //         print('Error dispatching FilterProductsEvent: $e');
+  //       }
+  //     },
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+  //       decoration: BoxDecoration(
+  //         border: Border.all(color: const Color(0xFFE0E0E0)),
+  //         borderRadius: BorderRadius.circular(12),
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           Icon(
+  //             icon,
+  //             color: Colors.purple,
+  //             size: 20,
+  //           ),
+  //           const SizedBox(width: 12),
+  //           Text(
+  //             title,
+  //             style: const TextStyle(
+  //               fontSize: 16,
+  //               fontWeight: FontWeight.w500,
+  //               color: Color(0xFF000000),
+  //             ),
+  //           ),
+  //           const Spacer(),
+  //           const Icon(
+  //             Icons.arrow_forward_ios,
+  //             color: Color(0xFF757575),
+  //             size: 16,
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildProductsGrid(List<Product> products) {
     return GridView.builder(
