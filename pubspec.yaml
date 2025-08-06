@@ -2,7 +2,7 @@ name: hushh_agent_app
 description: "Hushh Agent - Business management platform for agents"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+133
 
 environment:
   sdk: '>=3.1.0 <4.0.0'
@@ -86,7 +86,7 @@ dependencies:
   
   # ===== BUSINESS FEATURES =====
   barcode_widget: ^2.0.3
-  qr_code_scanner: ^1.0.1
+
   pdf: ^3.10.7
   printing: ^5.11.1
   excel: ^2.1.0

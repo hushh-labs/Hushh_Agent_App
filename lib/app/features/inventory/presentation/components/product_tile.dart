@@ -179,7 +179,7 @@ class _ProductTileState extends State<ProductTile> {
     return GestureDetector(
       onTap: () => widget.onProductClicked(widget.product.productId),
       child: Container(
-        height: widget.specifyDimensions ? 300.0 : 290,
+        height: widget.specifyDimensions ? 260.0 : 250,
         width: widget.specifyDimensions ? 200.0 : 180,
         child: Card(
           color: Colors.white,
@@ -368,7 +368,7 @@ class _ProductTileState extends State<ProductTile> {
                                   ),
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         // Increase Stock Button
                         GestureDetector(
                           onTap: !_isIncreaseInProgress
@@ -418,7 +418,7 @@ class _ProductTileState extends State<ProductTile> {
                                   ),
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         // Delete Button
                         GestureDetector(
                           onTap: !_isDeleteInProgress
