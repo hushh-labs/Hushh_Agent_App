@@ -1,6 +1,48 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- ===== CAMERA & MEDIA PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    
+    <!-- ===== AUDIO PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- ===== LOCATION PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    
+    <!-- ===== CONTACTS PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    
+    <!-- ===== NOTIFICATION PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    
+    <!-- ===== INTERNET & NETWORK PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    
+    <!-- ===== PHONE PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    
+    <!-- ===== STORAGE PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" 
+                     android:maxSdkVersion="29" />
+    
+    <!-- ===== BIOMETRIC PERMISSIONS ===== -->
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    
     <application
-        android:label="hushh_agent_app"
+        android:label="Hushh Agent"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
