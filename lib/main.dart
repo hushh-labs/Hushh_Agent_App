@@ -15,6 +15,7 @@ import 'app/features/inventory/di/inventory_injection.dart' as inventory_di;
 import 'app/features/notification_bidding/di/notification_bidding_injection.dart'
     as notification_di;
 import 'app/features/notification_bidding/data/datasources/notification_handler_service.dart';
+import 'shared/services/app_tracking_service.dart';
 import 'package:flutter/services.dart';
 
 void main() async {
@@ -40,7 +41,36 @@ void main() async {
   final notificationHandler = NotificationHandlerService();
   notificationHandler.initializeNotificationHandlers();
 
+  // Initialize App Tracking Transparency
+  await _initializeAppTrackingTransparency();
+
   runApp(const MyApp());
+}
+
+/// Initialize App Tracking Transparency
+Future<void> _initializeAppTrackingTransparency() async {
+  print('🔍 [MAIN] Initializing App Tracking Transparency...');
+  
+  try {
+    // Set up listener for tracking authorization status changes
+    AppTrackingService.setTrackingAuthorizationStatusListener((status) {
+      print('🔍 [MAIN] Tracking authorization status changed: $status');
+      print('🔍 [MAIN] Status description: ${AppTrackingService.getStatusDescription(status)}');
+    });
+    
+    // Get current tracking status
+    final currentStatus = await AppTrackingService.getTrackingAuthorizationStatus();
+    print('🔍 [MAIN] Current tracking authorization status: $currentStatus');
+    
+    // If not determined, request authorization (this will be handled by iOS native code)
+    if (currentStatus == TrackingAuthorizationStatus.notDetermined) {
+      print('🔍 [MAIN] Tracking status not determined - iOS will request permission');
+    }
+    
+    print('🔍 [MAIN] App Tracking Transparency initialization complete');
+  } catch (e) {
+    print('🔍 [MAIN] Error initializing App Tracking Transparency: $e');
+  }
 }
 
 /// Initialize notification handling
