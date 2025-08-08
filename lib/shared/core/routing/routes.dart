@@ -1144,9 +1144,9 @@ class _AgentProductsPageState extends State<AgentProductsPage> {
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.65,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        childAspectRatio: 0.9,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {

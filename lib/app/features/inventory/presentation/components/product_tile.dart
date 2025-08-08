@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 import '../../domain/entities/product.dart';
 import 'product_stock_management_sheet.dart';
 import '../../../../../shared/core/components/standard_dialog.dart';
@@ -38,6 +40,9 @@ class _ProductTileState extends State<ProductTile> {
   bool _isIncreaseInProgress = false;
   bool _isDecreaseInProgress = false;
   bool _isDeleteInProgress = false;
+  Timer? _repeatTimer;
+  int _repeatBaseStock = 0;
+  int _repeatCurrentStock = 0;
   bool get isRecentProduct => DateTime.now()
       .subtract(const Duration(days: 1))
       .isAfter(widget.product.createdAt);
@@ -141,6 +146,252 @@ class _ProductTileState extends State<ProductTile> {
     }
   }
 
+  void _startRepeatIncrease() {
+    if (widget.onUpdateStock == null) return;
+    _repeatBaseStock = widget.product.stockQuantity;
+    _repeatCurrentStock = _repeatBaseStock;
+    _repeatTimer?.cancel();
+    _repeatTimer = Timer.periodic(const Duration(milliseconds: 120), (_) {
+      _repeatCurrentStock += 1;
+      widget.onUpdateStock!(widget.product.productId, _repeatCurrentStock);
+    });
+  }
+
+  void _startRepeatDecrease() {
+    if (widget.onUpdateStock == null) return;
+    _repeatBaseStock = widget.product.stockQuantity;
+    _repeatCurrentStock = _repeatBaseStock;
+    _repeatTimer?.cancel();
+    _repeatTimer = Timer.periodic(const Duration(milliseconds: 120), (_) {
+      if (_repeatCurrentStock > 0) {
+        _repeatCurrentStock -= 1;
+        widget.onUpdateStock!(widget.product.productId, _repeatCurrentStock);
+      }
+    });
+  }
+
+  void _stopRepeat() {
+    _repeatTimer?.cancel();
+    _repeatTimer = null;
+  }
+
+  void _changeStockBy(int delta) {
+    final int current = widget.product.stockQuantity;
+    int next = current + delta;
+    if (next < 0) next = 0;
+    _updateStock(next);
+  }
+
+  void _showQuickActionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final controller = TextEditingController(text: '1');
+        return StatefulBuilder(
+          builder: (context, setStateSB) {
+            bool isAdd = true;
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.product.productName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Amount input with +/- circles in the same row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            decoration: InputDecoration(
+                              labelText: 'Amount',
+                              hintText: 'Enter quantity',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                            onChanged: (_) => setStateSB(() {}),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Minus circle (off-black)
+                        InkWell(
+                          onTap: () {
+                            isAdd = false;
+                            final current = int.tryParse(controller.text) ?? 0;
+                            final next = (current - 1).clamp(0, 999999);
+                            controller.text = next.toString();
+                            setStateSB(() {});
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.remove, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Plus circle (off-black)
+                        InkWell(
+                          onTap: () {
+                            isAdd = true;
+                            final current = int.tryParse(controller.text) ?? 0;
+                            final next = (current + 1).clamp(0, 999999);
+                            controller.text = next.toString();
+                            setStateSB(() {});
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.add, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Submit and Delete buttons below
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _gradientActionButton(
+                            label: 'Submit',
+                            onTap: () {
+                              final amt = int.tryParse(controller.text) ?? 0;
+                              if (amt > 0) {
+                                Navigator.pop(context);
+                                _changeStockBy(isAdd ? amt : -amt);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _gradientIconButton(
+                            icon: Icons.delete_outline,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _showDeleteConfirmation();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _gradientActionButton({required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+
+  Widget _gradientIconButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            )
+          ],
+        ),
+        child: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
+
   void _showDeleteConfirmation() {
     if (_isDeleteInProgress) return;
 
@@ -178,8 +429,9 @@ class _ProductTileState extends State<ProductTile> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => widget.onProductClicked(widget.product.productId),
+      onLongPress: _showQuickActionsSheet,
       child: Container(
-        height: widget.specifyDimensions ? 260.0 : 250,
+        height: widget.specifyDimensions ? 220.0 : 200,
         width: widget.specifyDimensions ? 200.0 : 180,
         child: Card(
           color: Colors.white,
@@ -195,9 +447,9 @@ class _ProductTileState extends State<ProductTile> {
               // Main content
               Column(
                 children: [
-                  // Product Image
+                  // Product Image (slightly larger height)
                   Expanded(
-                    flex: 3,
+                    flex: 4,
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
@@ -209,13 +461,14 @@ class _ProductTileState extends State<ProductTile> {
 
                   // Product Info
                   Expanded(
-                    flex: 4,
+                    flex: 3,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           // Product Name
                           Text(
                             widget.product.productName,
@@ -258,7 +511,7 @@ class _ProductTileState extends State<ProductTile> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 10),
                         ],
                       ),
                     ),
@@ -266,208 +519,90 @@ class _ProductTileState extends State<ProductTile> {
                 ],
               ),
 
-              // Stock Status and Management Section
+              // Removed inline quick-actions; now provided via long-press sheet
+
+              // Bottom controls: quantity pill (− count +) with adaptive layout
               Positioned(
-                left: 4,
-                right: 4,
+                left: 8,
+                right: 8,
                 bottom: 4,
                 child: Row(
                   children: [
-                    // Stock Status Badge (Tappable)
-                    Flexible(
+                    // Stock label (gradient) - expands and scales if tight
+                    Expanded(
                       child: GestureDetector(
                         onTap: _showStockManagementSheet,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: widget.product.stockQuantity > 0
-                                ? Colors.green.withValues(alpha: 0.1)
-                                : Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: widget.product.stockQuantity > 0
-                                  ? Colors.green
-                                  : Colors.red,
-                              width: 1,
+                        child: Builder(builder: (context) {
+                          final gradient = const LinearGradient(colors: [Color(0xFFE54D60), Color(0xFFA342FF)]);
+                          final shader = gradient.createShader(const Rect.fromLTWH(0, 0, 200, 20));
+                          return FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Stock: ${widget.product.stockQuantity}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                foreground: Paint()..shader = shader,
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            widget.product.stockQuantity > 0
-                                ? 'Stock: ${widget.product.stockQuantity}'
-                                : 'Out of Stock',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: widget.product.stockQuantity > 0
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+                          );
+                        }),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    // Stock Management Buttons
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Decrease Stock Button
-                        GestureDetector(
-                          onTap: (!_isDecreaseInProgress &&
-                                  widget.product.stockQuantity > 0)
-                              ? () =>
-                                  _updateStock(widget.product.stockQuantity - 1)
-                              : null,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              gradient: (!_isDecreaseInProgress &&
-                                      widget.product.stockQuantity > 0)
-                                  ? const LinearGradient(
-                                      begin: Alignment.topRight,
-                                      end: Alignment.bottomLeft,
-                                      colors: [Color(0xFFE54D60), Color(0xFFA342FF)],
-                                    )
-                                  : null,
-                              color: (!_isDecreaseInProgress &&
-                                      widget.product.stockQuantity > 0)
-                                  ? null
-                                  : Colors.grey.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                              boxShadow: (!_isDecreaseInProgress &&
-                                      widget.product.stockQuantity > 0)
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color(0xFFE54D60).withValues(alpha: 0.3),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: _isDecreaseInProgress
-                                ? const SizedBox(
-                                    width: 10,
-                                    height: 10,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    const SizedBox(width: 6),
+                    // Quantity controls - flex and scale within remaining width
+                    Flexible(
+                      child: FittedBox(
+                        alignment: Alignment.centerRight,
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // minus (off-black, larger)
+                                  GestureDetector(
+                                    onTap: (!_isDecreaseInProgress && widget.product.stockQuantity > 0)
+                                        ? () => _updateStock(widget.product.stockQuantity - 1)
+                                        : null,
+                                    onLongPressStart: (_) => _startRepeatDecrease(),
+                                    onLongPressEnd: (_) => _stopRepeat(),
+                                    child: const Icon(
+                                      Icons.remove_circle,
+                                      size: 26,
+                                      color: Colors.black87,
                                     ),
-                                  )
-                                : Icon(
-                                    Icons.remove,
-                                    size: 14,
-                                    color: (!_isDecreaseInProgress &&
-                                            widget.product.stockQuantity > 0)
-                                        ? Colors.white
-                                        : Colors.grey.shade400,
                                   ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Increase Stock Button
-                        GestureDetector(
-                          onTap: !_isIncreaseInProgress
-                              ? () =>
-                                  _updateStock(widget.product.stockQuantity + 1)
-                              : null,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              gradient: !_isIncreaseInProgress
-                                  ? const LinearGradient(
-                                      begin: Alignment.topRight,
-                                      end: Alignment.bottomLeft,
-                                      colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
-                                    )
-                                  : null,
-                              color: !_isIncreaseInProgress
-                                  ? null
-                                  : Colors.grey.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                              boxShadow: !_isIncreaseInProgress
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: _isIncreaseInProgress
-                                ? const SizedBox(
-                                    width: 10,
-                                    height: 10,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  const SizedBox(width: 14),
+                                  // plus (off-black, larger)
+                                  GestureDetector(
+                                    onTap: !_isIncreaseInProgress
+                                        ? () => _updateStock(widget.product.stockQuantity + 1)
+                                        : null,
+                                    onLongPressStart: (_) => _startRepeatIncrease(),
+                                    onLongPressEnd: (_) => _stopRepeat(),
+                                    child: const Icon(
+                                      Icons.add_circle,
+                                      size: 26,
+                                      color: Colors.black87,
                                     ),
-                                  )
-                                : Icon(
-                                    Icons.add,
-                                    size: 14,
-                                    color: !_isIncreaseInProgress
-                                        ? Colors.white
-                                        : Colors.grey.shade400,
                                   ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Delete Button
-                        GestureDetector(
-                          onTap: !_isDeleteInProgress
-                              ? () => _showDeleteConfirmation()
-                              : null,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              gradient: !_isDeleteInProgress
-                                  ? const LinearGradient(
-                                      begin: Alignment.topRight,
-                                      end: Alignment.bottomLeft,
-                                      colors: [Color(0xFFE53E3E), Color(0xFFC53030)],
-                                    )
-                                  : null,
-                              color: !_isDeleteInProgress
-                                  ? null
-                                  : Colors.grey.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                              boxShadow: !_isDeleteInProgress
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color(0xFFE53E3E).withValues(alpha: 0.3),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
+                                ],
+                              ),
                             ),
-                            child: _isDeleteInProgress
-                                ? const SizedBox(
-                                    width: 10,
-                                    height: 10,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.delete_outline,
-                                    size: 14,
-                                    color: !_isDeleteInProgress
-                                        ? Colors.white
-                                        : Colors.grey.shade400,
-                                  ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -500,5 +635,11 @@ class _ProductTileState extends State<ProductTile> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _repeatTimer?.cancel();
+    super.dispose();
   }
 }
