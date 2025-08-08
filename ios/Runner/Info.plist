@@ -136,5 +136,9 @@
 	<key>NSRemindersUsageDescription</key>
 	<string>Hushh may access your reminders to help you stay organized and manage your tasks effectively.</string>
 	
+	<!-- App Tracking Transparency Permission -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Hushh would like to track your activity across other companies' apps and websites to provide you with personalized content, improve our services, and deliver relevant advertisements. This helps us enhance your experience and keep our app free. You can choose to allow or deny this tracking at any time in your device settings.</string>
+	
 </dict>
 </plist>

@@ -3,6 +3,8 @@ import UIKit
 import Firebase
 import FirebaseMessaging
 import UserNotifications
+import AppTrackingTransparency
+import AdSupport
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -42,6 +44,9 @@ import UserNotifications
     print("=== REGISTERING FOR REMOTE NOTIFICATIONS ===")
     print("Registered for remote notifications")
     
+    // Request App Tracking Transparency permission
+    requestTrackingAuthorization()
+    
     // Try to get APNS token directly
     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
       if let apnsToken = Messaging.messaging().apnsToken {
@@ -60,6 +65,56 @@ import UserNotifications
     }
     
     GeneratedPluginRegistrant.register(with: self)
+    
+    // Setup method channel for App Tracking Transparency
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let channel = FlutterMethodChannel(name: "app_tracking_transparency", binaryMessenger: controller.binaryMessenger)
+      channel.setMethodCallHandler { [weak self] (call, result) in
+        switch call.method {
+        case "requestTrackingAuthorization":
+          if #available(iOS 14.0, *) {
+            ATTrackingManager.requestTrackingAuthorization { status in
+              DispatchQueue.main.async {
+                self?.handleTrackingAuthorizationStatus(status)
+                result("success")
+              }
+            }
+          } else {
+            result("success")
+          }
+        case "getTrackingAuthorizationStatus":
+          if #available(iOS 14.0, *) {
+            let status = ATTrackingManager.trackingAuthorizationStatus
+            var statusString = ""
+            switch status {
+            case .authorized: statusString = "authorized"
+            case .denied: statusString = "denied"
+            case .restricted: statusString = "restricted"
+            case .notDetermined: statusString = "notDetermined"
+            @unknown default: statusString = "unknown"
+            }
+            result(statusString)
+          } else {
+            result("authorized")
+          }
+        case "getAdvertisingIdentifier":
+          if #available(iOS 14.0, *) {
+            let status = ATTrackingManager.trackingAuthorizationStatus
+            if status == .authorized {
+              let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+              result(idfa)
+            } else {
+              result("")
+            }
+          } else {
+            let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+            result(idfa)
+          }
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
@@ -134,6 +189,81 @@ import UserNotifications
       } else {
         completionHandler([.alert, .badge, .sound])
       }
+    }
+  }
+  
+  // MARK: - App Tracking Transparency
+  
+  private func requestTrackingAuthorization() {
+    // Delay the request to ensure the app is fully loaded
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      if #available(iOS 14.0, *) {
+        let status = ATTrackingManager.trackingAuthorizationStatus
+        print("=== APP TRACKING TRANSPARENCY STATUS ===")
+        print("Current Status: \(status.rawValue)")
+        
+        switch status {
+        case .notDetermined:
+          print("Requesting tracking authorization...")
+          ATTrackingManager.requestTrackingAuthorization { newStatus in
+            DispatchQueue.main.async {
+              self.handleTrackingAuthorizationStatus(newStatus)
+            }
+          }
+        case .authorized:
+          print("Tracking already authorized")
+          self.handleTrackingAuthorizationStatus(.authorized)
+        case .denied:
+          print("Tracking denied by user")
+          self.handleTrackingAuthorizationStatus(.denied)
+        case .restricted:
+          print("Tracking restricted by system")
+          self.handleTrackingAuthorizationStatus(.restricted)
+        @unknown default:
+          print("Unknown tracking status")
+          self.handleTrackingAuthorizationStatus(.denied)
+        }
+      } else {
+        // iOS 13 and below - tracking is always allowed
+        print("iOS 13 or below - tracking always allowed")
+        self.handleTrackingAuthorizationStatus(.authorized)
+      }
+    }
+  }
+  
+  private func handleTrackingAuthorizationStatus(_ status: ATTrackingManager.AuthorizationStatus) {
+    print("=== HANDLING TRACKING AUTHORIZATION ===")
+    print("Status: \(status.rawValue)")
+    
+    var statusString = ""
+    switch status {
+    case .authorized:
+      statusString = "authorized"
+      print("✅ Tracking authorized - can collect IDFA")
+      // Get IDFA if authorized
+      if #available(iOS 14.0, *) {
+        let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+        print("IDFA: \(idfa)")
+      }
+    case .denied:
+      statusString = "denied"
+      print("❌ Tracking denied - cannot collect IDFA")
+    case .restricted:
+      statusString = "restricted"
+      print("🚫 Tracking restricted - cannot collect IDFA")
+    case .notDetermined:
+      statusString = "notDetermined"
+      print("❓ Tracking not determined")
+    @unknown default:
+      statusString = "unknown"
+      print("❓ Unknown tracking status")
+    }
+    
+    // Notify Flutter about the tracking status
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let channel = FlutterMethodChannel(name: "app_tracking_transparency", binaryMessenger: controller.binaryMessenger)
+      channel.invokeMethod("trackingAuthorizationStatusChanged", arguments: statusString)
+      print("=== FLUTTER NOTIFIED OF TRACKING STATUS ===")
     }
   }
   
